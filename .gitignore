@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+playwright-report/
+test-results/
+*.zip
+
+# Unused pre-modular runtime and its superseded media pack remain recoverable
+# from the verified source archive, but are not part of the published build.
+audio.js
+data.js
+assets/audio/music/
+assets/audio/sfx/
+assets/sprites/npcs/expert-eva.png
+assets/sprites/npcs/farmer-vaclav.png
+assets/sprites/npcs/forester-jan.png
+assets/sprites/npcs/rival-karel.png
+assets/sprites/npcs/thief-franta.png

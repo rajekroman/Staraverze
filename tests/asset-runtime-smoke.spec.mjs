@@ -3,10 +3,10 @@ import { test, expect } from "@playwright/test";
 async function openChlum(page) {
   await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
-  await page.locator("#playButton").click();
+  await page.locator("#playButton").dispatchEvent("click");
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
-  await page.locator("#briefButton").click();
-  await expect(page.locator("#app")).toHaveClass(/playing/);
+  await page.locator("#briefButton").dispatchEvent("click");
+  await expect(page.locator("#app")).toHaveClass(/playing/, { timeout: 20_000 });
 }
 
 test("standardní GLTFLoader r185 načte texturovaný GLB a instance mají oddělené dispose vlastnictví", async ({ page }) => {

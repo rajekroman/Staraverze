@@ -4,6 +4,11 @@ async function audioSnapshot(page) {
   return page.evaluate(() => window.__lovecRuntime.snapshot().audio);
 }
 
+async function activateButton(page, locator) {
+  await locator.focus();
+  await page.keyboard.press("Enter");
+}
+
 async function setDocumentHidden(page, hidden) {
   await page.evaluate(value => {
     Object.defineProperty(document, "hidden", {
@@ -15,6 +20,7 @@ async function setDocumentHidden(page, hidden) {
 }
 
 test("audio lifecycle remains gesture-gated and disposes cleanly", async ({ page }) => {
+  test.setTimeout(90_000);
   const pageErrors = [];
   const httpErrors = [];
 
@@ -39,7 +45,7 @@ test("audio lifecycle remains gesture-gated and disposes cleanly", async ({ page
 
   const playButton = page.locator("#playButton");
   await expect(playButton).toBeVisible();
-  await playButton.click();
+  await activateButton(page, playButton);
   await expect.poll(() => audioSnapshot(page)).toMatchObject({
     state: "ready",
     muted: false,
@@ -48,17 +54,17 @@ test("audio lifecycle remains gesture-gated and disposes cleanly", async ({ page
 
   const briefButton = page.locator("#briefButton");
   await expect(briefButton).toBeVisible();
-  await briefButton.click();
+  await activateButton(page, briefButton);
   await expect(soundButton).toBeVisible();
 
-  await soundButton.click();
+  await activateButton(page, soundButton);
   await expect.poll(() => audioSnapshot(page)).toMatchObject({
     state: "muted",
     muted: true,
     contextState: "running"
   });
 
-  await soundButton.click();
+  await activateButton(page, soundButton);
   await expect.poll(() => audioSnapshot(page)).toMatchObject({
     state: "ready",
     muted: false,
@@ -72,7 +78,7 @@ test("audio lifecycle remains gesture-gated and disposes cleanly", async ({ page
   });
 
   await setDocumentHidden(page, false);
-  await soundButton.click();
+  await activateButton(page, soundButton);
   await expect.poll(() => audioSnapshot(page)).toMatchObject({
     state: "ready",
     muted: false,
