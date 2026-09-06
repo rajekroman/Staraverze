@@ -28,8 +28,8 @@ const projectSpecs = projectName => PLAYWRIGHT_SPEC_ASSIGNMENTS[projectName]
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
-  // WebGL full-flow projects saturate a shared GitHub runner when launched together.
-  // Keep the release matrix deterministic; all projects still run in the same job.
+  // Each full-flow project runs on its own CI runner. Keep every individual
+  // WebGL project deterministic and avoid resource contention inside a runner.
   workers: 1,
   retries: 0,
   timeout: 30_000,
