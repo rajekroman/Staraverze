@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07120d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Lovec vltavínů">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="Mobilní arkádová výprava po jihočeských lokalitách vltavínů.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-180.png">
+  <link rel="stylesheet" href="./style.css">
+  <style id="slavia-final-ui-contract">
+    .primary-button,.secondary-button,.text-button{min-height:44px}
+    #resultScreen{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+    #againButton{min-height:48px}
+    @media(max-width:430px) and (orientation:portrait){
+      #resultScreen .result-card{padding:18px}
+      #resultScreen .score-ring{width:124px;height:124px;margin:12px auto;border-width:6px}
+      #resultScreen .result-stats{grid-template-columns:repeat(2,minmax(0,1fr));margin:11px 0}
+    }
+    @media(orientation:landscape) and (max-height:520px){
+      #resultScreen{place-items:stretch center;padding:calc(8px + var(--safe-t)) calc(12px + var(--safe-r)) calc(8px + var(--safe-b)) calc(12px + var(--safe-l))}
+      #resultScreen .result-card{align-self:center;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(118px,.7fr);grid-template-areas:"kicker score" "title score" "text score" "stats stats" "action action";gap:6px 14px;max-width:780px;padding:14px 18px;text-align:left}
+      #resultKicker{grid-area:kicker;margin:0}
+      #resultTitle{grid-area:title;margin:0;font-size:clamp(24px,5vw,38px)}
+      #resultScreen .score-ring{grid-area:score;width:104px;height:104px;margin:0 auto;border-width:5px}
+      #resultScreen .score-ring strong{font-size:31px}
+      #resultText{grid-area:text;margin:0;font-size:12px;line-height:1.3}
+      #resultStats{grid-area:stats;margin:4px 0}
+      #resultStats div{padding:7px}
+      #againButton{grid-area:action}
+    }
+  </style>
+  <title>Lovec vltavínů: Zelená vlna</title>
+</head>
+<body>
+<main id="app">
+  <canvas id="game" aria-label="Herní plocha"></canvas>
+
+  <section id="hud" class="hud hidden" aria-live="polite">
+    <div class="hud-topbar">
+      <div class="mission-panel">
+        <span id="missionNumber" class="mission-index">1</span>
+        <div class="mission-copy"><small id="placeLabel">CHLUM</small><strong id="objectiveLabel">Načítání úkolu</strong><span id="objectiveProgress" class="objective-progress">POSTUP 0 %</span></div>
+      </div>
+      <div class="system-panel">
+        <div class="bag-pill" aria-label="Počet kamenů"><span>◆</span><b id="bagValue">0</b></div>
+        <button id="soundButton" class="icon-button" type="button" aria-label="Zvuk">♫</button>
+        <button id="pauseButton" class="icon-button" type="button" aria-label="Pauza">Ⅱ</button>
+      </div>
+    </div>
+    <div id="heatPill" class="danger-meter" aria-label="Pozornost hlídky">
+      <div class="danger-copy"><span>POZORNOST</span><strong id="dangerMeterText">KLID</strong></div>
+      <i><em id="heatFill"></em></i>
+    </div>
+    <div id="bossHud" class="boss-hud hidden">
+      <div><small>HROZBA</small><strong id="bossName">KRYSTALOVÝ KAREL</strong></div>
+      <i><em id="bossFill"></em></i>
+      <span id="bossPhase">STOPUJ HO</span>
+    </div>
+    <div id="dangerBanner" class="danger-banner hidden"><span>⚠</span><strong id="dangerText">VE SVĚTLE</strong></div>
+    <div id="combo" class="combo hidden">KOMBO ×2</div>
+    <div id="hint" class="hint hidden">Rozhlédni se po okolí</div>
+    <div id="toast" class="toast"></div>
+  </section>
+
+  <div id="bossIntro" class="boss-intro hidden" aria-live="assertive">
+    <div class="boss-intro-line"></div>
+    <small id="bossIntroKicker">HROZBA V LOKALITĚ</small>
+    <strong id="bossIntroName">KRYSTALOVÝ KAREL</strong>
+    <span id="bossIntroText">Nenech ho zmizet se vzácným nálezem.</span>
+  </div>
+
+  <section id="controls" class="controls hidden" aria-label="Dotykové ovládání">
+    <div id="moveZone" class="move-zone"><div id="stick" class="stick"></div></div>
+    <button id="actionButton" class="action-button" type="button">
+      <span id="actionIcon">◉</span><small id="actionText">AKCE</small>
+    </button>
+  </section>
+
+  <section id="titleScreen" class="screen visible">
+    <div class="title-art" aria-hidden="true">
+      <div class="moon"></div><div class="ridge r1"></div><div class="ridge r2"></div>
+      <div class="field-lines"></div><div class="title-gem">◆</div>
+    </div>
+    <div class="title-copy">
+      <p class="eyebrow">JIŽNÍ ČECHY · ARKÁDOVÁ VÝPRAVA</p>
+      <h1>Lovec<br>vltavínů</h1>
+      <p class="subtitle">Z pole až na Zelenou vlnu</p>
+      <button id="playButton" class="play-button" type="button"><span>VYRAZIT</span><small>jedním klepnutím</small></button>
+      <div class="title-tools">
+        <button id="howButton" class="text-button" type="button">Jak se hraje</button>
+      </div>
+      <p class="version">v6.2 · Čtyři lokality</p>
+    </div>
+  </section>
+
+  <section id="briefScreen" class="screen">
+    <div class="brief-card">
+      <p id="briefKicker" class="eyebrow">LOKALITA 1 / 4</p>
+      <h2 id="briefTitle">Chlum</h2>
+      <p id="briefText"></p>
+      <div class="brief-goal"><span>ÚKOL</span><strong id="briefGoal"></strong></div>
+      <button id="briefButton" class="primary-button" type="button">JDU NA TO</button>
+    </div>
+  </section>
+
+  <section id="digScreen" class="screen transparent">
+    <div class="dig-card">
+      <p class="eyebrow">KOPÁNÍ</p>
+      <h2 id="digTitle">Drž rytmus lopaty</h2>
+      <p id="digInfo">Klepni, když je ukazatel v zeleném poli.</p>
+      <div class="dig-meter"><div id="sweetZone"></div><div id="digMarker"></div></div>
+      <div id="digHits" class="dig-hits" role="status" aria-live="polite"><span id="digHitCount">ZÁSAHY 0/3</span><span id="digHitSymbols" aria-hidden="true">◇ ◇ ◇</span></div>
+      <button id="digButton" class="primary-button" type="button">KOPNOUT</button>
+    </div>
+  </section>
+
+  <section id="identifyScreen" class="screen transparent">
+    <div class="identify-card">
+      <p class="eyebrow">RYCHLÉ URČENÍ</p>
+      <div id="sampleGem" class="sample-gem">◆</div>
+      <h2 id="sampleTitle">Zelený vzorek</h2>
+      <p id="sampleDescription"></p>
+      <div class="identify-buttons">
+        <button id="realButton" class="primary-button" type="button">VLTAVÍN</button>
+        <button id="glassButton" class="secondary-button" type="button">SKLO</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="dialogScreen" class="screen transparent">
+    <div class="dialog-card">
+      <div id="dialogAvatar" class="avatar">V</div>
+      <div><p id="dialogName" class="eyebrow">VÁCLAV</p><p id="dialogText"></p></div>
+      <button id="dialogButton" class="primary-button" type="button">DOBŘE</button>
+    </div>
+  </section>
+
+  <section id="perkScreen" class="screen">
+    <div class="perk-card">
+      <p class="eyebrow">VÝPRAVA SÍLÍ</p>
+      <h2>Vyber jednu výhodu</h2>
+      <div id="perkList" class="perk-list"></div>
+    </div>
+  </section>
+
+  <section id="juryScreen" class="screen">
+    <div class="jury-card">
+      <p class="eyebrow">KD SLÁVIE · NA ZELENÉ VLNĚ</p>
+      <h2>Vyber tři kameny do vitríny</h2>
+      <p>Vzácnost, stav a doložený původ rozhodnou o výsledku.</p>
+      <div id="juryList" class="jury-list"></div>
+      <div class="jury-footer"><span id="juryCount">0 / 3</span><button id="juryButton" class="primary-button" type="button" disabled>POSTAVIT VITRÍNU</button></div>
+    </div>
+  </section>
+
+  <section id="resultScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="resultTitle" aria-describedby="resultText" aria-live="polite">
+    <div class="result-card">
+      <p id="resultKicker" class="eyebrow">VÝSLEDEK POROTY</p>
+      <h2 id="resultTitle">Výstavní uznání</h2>
+      <div class="score-ring" role="group" aria-label="Výsledné skóre"><strong id="resultScore">0</strong><span>BODŮ</span></div>
+      <p id="resultText"></p>
+      <div id="resultStats" class="result-stats" role="list"></div>
+      <button id="againButton" class="primary-button" type="button">NOVÁ VÝPRAVA</button>
+    </div>
+  </section>
+
+  <section id="pauseScreen" class="screen transparent">
+    <div class="small-card"><p id="pausePlace" class="eyebrow">PAUZA</p><h2>Výprava čeká</h2><p id="pauseObjective" class="pause-objective">Načítání úkolu</p><p id="pauseProgress" class="pause-progress">POSTUP 0 %</p><button id="resumeButton" class="primary-button" type="button">POKRAČOVAT</button><button id="menuButton" class="secondary-button" type="button">ODEJÍT DO MENU</button></div>
+  </section>
+
+  <section id="howScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="howTitle" aria-describedby="howIntro">
+    <div class="how-card">
+      <p id="howIntro" class="eyebrow">JEDEN PALEC, JEDNO TLAČÍTKO</p><h2 id="howTitle">Jak se hraje</h2>
+      <div class="how-grid">
+        <div><b>1</b><strong>Pohyb</strong><p>Táhni palcem vlevo a procházej lokality vlastním tempem.</p></div>
+        <div><b>2</b><strong>Jedna akce</strong><p>Přibliž se k cíli. Když tlačítko vpravo ukáže název akce, můžeš mluvit, hledat, kopat nebo zahrnout profil.</p></div>
+        <div><b>3</b><strong>Kopání</strong><p>V zeleném poli tref tři úspěšné zásahy do rytmu. Stav ukazují drahokamy i počet zásahů.</p></div>
+        <div><b>4</b><strong>Pozornost</strong><p>Sleduj červené varování a drž se mimo hrozbu. Bezpečný postup je důležitější než spěch.</p></div>
+      </div>
+      <button id="closeHowButton" class="primary-button" type="button">ROZUMÍM</button>
+    </div>
+  </section>
+
+  <noscript><div class="noscript">Hra potřebuje zapnutý JavaScript.</div></noscript>
+</main>
+<script type="module" src="./src/bootstrap.js"></script>
+</body>
+</html>
