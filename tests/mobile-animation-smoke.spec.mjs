@@ -19,7 +19,9 @@ async function playerVisual(page) {
 }
 
 test("Nesměň player walk cycle updates real sprite UVs and facing", async ({ page }) => {
-  test.setTimeout(30_000);
+  // Leave room for a cold WebGL startup on the throttled mobile CI worker.
+  // The focused animation assertions below retain their tight 3 s budgets.
+  test.setTimeout(75_000);
   const pageErrors = [];
   page.on("pageerror", error => pageErrors.push(error.message));
 
