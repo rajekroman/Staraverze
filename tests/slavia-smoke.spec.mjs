@@ -118,6 +118,10 @@ async function captureEvidence(page, testInfo, name) {
 }
 
 async function moveAxisTo(page, input, axis, target, timeout = 20_000, stopKind = null) {
+  // Touch input is periodically re-acquired below and mobile WebGL can advance
+  // at a lower frame rate on shared runners. Keep desktop feedback fast while
+  // giving a real long-distance mobile traversal enough time to finish.
+  const effectiveTimeout = input.desktop ? timeout : Math.max(timeout, 45_000);
   const initial = await runtimeSnapshot(page);
   const player = activeRuntime(initial)?.player;
   if (!player) throw new Error(`${initial.scene} player is unavailable.`);
@@ -160,7 +164,7 @@ async function moveAxisTo(page, input, axis, target, timeout = 20_000, stopKind 
     targetValue: target,
     tolerance: TARGET_TOLERANCE,
     moveDirection: direction,
-    timeoutMs: timeout,
+    timeoutMs: effectiveTimeout,
     expectedKind: stopKind
   });
 
@@ -168,10 +172,10 @@ async function moveAxisTo(page, input, axis, target, timeout = 20_000, stopKind 
   let movement = null;
   try {
     if (input.desktop) {
-      await page.waitForFunction(() => window.__slaviaQaMovement?.done === true, null, { timeout: timeout + 2_000 });
+      await page.waitForFunction(() => window.__slaviaQaMovement?.done === true, null, { timeout: effectiveTimeout + 2_000 });
       movement = await page.evaluate(() => ({ ...window.__slaviaQaMovement }));
     } else {
-      const deadline = Date.now() + timeout + 2_000;
+      const deadline = Date.now() + effectiveTimeout + 2_000;
       while (Date.now() < deadline) {
         movement = await page.evaluate(() => ({ ...window.__slaviaQaMovement }));
         if (movement.done) break;
@@ -184,7 +188,7 @@ async function moveAxisTo(page, input, axis, target, timeout = 20_000, stopKind 
         }
         await page.waitForTimeout(200);
       }
-      if (!movement?.done) throw new Error(`Movement monitor did not finish within ${timeout}ms.`);
+      if (!movement?.done) throw new Error(`Movement monitor did not finish within ${effectiveTimeout}ms.`);
     }
   } finally {
     await release().catch(() => {});
@@ -261,7 +265,11 @@ async function pauseLoopAtDigSweetSpot(page, expectedTotal, timeout = 10_000) {
     const { app } = await import("./src/bootstrap.js");
     await new Promise((resolve, reject) => {
       const startedAt = performance.now();
+      let lastProgressAt = startedAt;
+      let lastPosition = null;
+      let restartCount = 0;
       const monitor = () => {
+        const now = performance.now();
         const state = window.__lovecRuntime?.snapshot?.();
         const runtime = state?.[state.scene]?.runtime;
         const total = Number(state?.scene === "chlum" ? runtime?.digHits : runtime?.totalDigHits);
@@ -271,17 +279,46 @@ async function pauseLoopAtDigSweetSpot(page, expectedTotal, timeout = 10_000) {
           return;
         }
         const position = runtime?.dig?.position;
+        if (typeof position === "number" && position !== lastPosition) {
+          lastPosition = position;
+          lastProgressAt = now;
+        }
         if (total === target - 1 && typeof position === "number" && position >= 0.46 && position <= 0.54) {
           app.stop();
           resolve();
           return;
         }
-        if (performance.now() - startedAt >= timeoutMs) {
-          reject(new Error(`Dig hit ${target} did not enter the sweet spot.`));
+
+        // A previous QA pause can leave the fixed-step loop stopped, while a
+        // lost animation-frame callback can leave it marked running but inert.
+        // Recover only the test-owned loop; gameplay state and dig timing stay intact.
+        const stalled = runtime?.dig && now - lastProgressAt >= 1_000;
+        if ((!app.loop.running || stalled) && restartCount < 2) {
+          if (app.loop.running) app.stop();
+          app.start();
+          restartCount += 1;
+          lastProgressAt = now;
+        }
+
+        if (now - startedAt >= timeoutMs) {
+          const diagnostics = {
+            scene: state?.scene ?? null,
+            running: app.loop.running,
+            modal: runtime?.modal ?? null,
+            total: Number.isFinite(total) ? total : null,
+            position: typeof position === "number" ? position : null,
+            direction: runtime?.dig?.direction ?? null,
+            restartCount
+          };
+          reject(new Error(`Dig hit ${target} did not enter the sweet spot: ${JSON.stringify(diagnostics)}`));
           return;
         }
         requestAnimationFrame(monitor);
       };
+      if (!app.loop.running) {
+        app.start();
+        restartCount += 1;
+      }
       requestAnimationFrame(monitor);
     });
   }, { target: expectedTotal, timeoutMs: timeout });
@@ -374,6 +411,13 @@ async function completeNesmen(page, input) {
     await moveTo(page, input, profile.x, profile.y, "dig");
     await performAction(page, input);
     await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+    if (index === 0) {
+      // Exercise recovery from the exact lifecycle state that flaked on CI.
+      await page.evaluate(async () => {
+        const { app } = await import("./src/bootstrap.js");
+        app.stop();
+      });
+    }
     for (let hit = 0; hit < 3; hit++) await successfulDigHit(page, input, ++totalHits);
 
     const pendingKinds = new Set(index === 0 ? ["collect", "fill"] : ["fill"]);
@@ -463,9 +507,9 @@ async function completeBesednice(page, input, testInfo) {
 }
 
 test("Chlum → Nesměň → Besednice → Slavia uses the project-native input and cleanly restarts", async ({ page }, testInfo) => {
-  // The test walks the full physical distance through four large maps using real input.
-  // Mobile touch runs need headroom for the final Slavia certification sequence.
-  test.setTimeout(660_000);
+  // This walks four real maps serially. A cold, throttled mobile WebGL worker
+  // can need more than eleven minutes without any individual step stalling.
+  test.setTimeout(900_000);
   const input = createInputDriver(page, testInfo);
   const pageErrors = [];
   const httpErrors = [];

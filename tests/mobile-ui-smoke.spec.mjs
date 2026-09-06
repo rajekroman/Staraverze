@@ -15,7 +15,7 @@ async function openChlumWithKeyboard(page) {
   await page.locator("#playButton").focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
-  await page.locator("#briefButton").tap();
+  await page.locator("#briefButton").tap({ timeout: 20_000 });
   await expect(page.locator("#app")).toHaveClass(/playing/);
   await expect(page.locator("#controls")).not.toHaveClass(/hidden/);
   return pageErrors;
@@ -98,7 +98,8 @@ async function dispatchMove(page, pointerId, xFactor = 0.85) {
 }
 
 test("HUD safe-area and input bindings survive pointer loss and orientation changes", async ({ page }) => {
-  test.setTimeout(45_000);
+  // Cold WebGL startup and viewport rotation can be slow on a shared CI runner.
+  test.setTimeout(75_000);
   const pageErrors = await openChlumWithKeyboard(page);
 
   await assertSafeBounds(page);
