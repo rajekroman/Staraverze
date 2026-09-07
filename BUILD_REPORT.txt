@@ -1,15 +1,23 @@
-Lovec vltavínů Reborn 5.4.2 — dokončení pokračující větve
+Lovec vltavínů Reborn 5.4.2 — aktuální ověřený stav
 
 OVĚŘENÍ 5.4.2
 - statická validace: PASS
-- desktop Chromium: 5/5 PASS
-- iPhone portrait Chromium: 5/5 PASS
-- iPhone landscape Chromium: 5/5 PASS
+- desktop Chromium smoke: 8/8 PASS
+- iPhone portrait Chromium smoke: 8/8 PASS
+- iPhone landscape Chromium smoke: 8/8 PASS
+- desktop WebKit smoke: 8/8 PASS
+- iPhone portrait WebKit smoke: 8/8 PASS
+- iPhone landscape WebKit smoke: 8/8 PASS
+- offline Chromium PWA smoke: 1/1 PASS
 - všech 5 levelů: spuštěno a vykresleno bez runtime chyby
 - uložený stav: migrace a normalizace PASS
 - uvolnění vstupu při pauze a ztrátě fokusu: PASS
-- noční Besednice: černá vymazaná plocha odstraněna a vizuálně zkontrolována
-- titulní nabídka v landscape: všechna tři hlavní tlačítka uvnitř viewportu a vizuálně zkontrolována
+- PWA cache: online instalace -> aktivní service worker -> offline reload -> start Chlumu PASS
+- Chlum/Ločenice: povrchové nálezy jsou skryté do odhalení radarem PASS
+- Chlum: bez starých obdélníkových výkopů PASS
+- kopání: klávesnice i mobilní pointer vstup, ochrana proti dvojímu úderu a odezva PASS
+- noční Besednice: černá vymazaná plocha odstraněna
+- titulní nabídka v landscape: hlavní ovládací prvky zůstávají uvnitř viewportu
 
 PŮVODNÍ KONTROLA 5.4.1
 
@@ -30,7 +38,7 @@ Provedené opravy:
 - 1,15 s ochranná fáze po nástupu Karla;
 - trail jen během sprintu a svítilna vypnutá při omráčení.
 
-Kontroly:
+Statické kontroly:
 - node --check game.js: OK
 - HTML ID odkazy: OK, 0 chybějících
 - duplicitní HTML ID: 0
@@ -40,11 +48,7 @@ Kontroly:
 - 5 WAV stop: validní
 - ikony a hlavní motiv: validní
 - drawPatrol/drawItem/drawHotspot: každá právě 1 definice
-- DOM/canvas smoke test: všech 5 levelů, 120 snímků každý, bez runtime chyby
-- Besednice flow test: 3 stopy -> profil -> 3 úspěšné kopy -> krádež -> boss start: OK
-- boss test: fáze 1 -> 2 -> 3 -> poražen: OK
-- Malše start: bez okamžité kolize, heat 0: OK
 
-Omezení kontroly:
-- skutečné otevření Chromia bylo v prostředí zablokováno administrátorskou politikou ERR_BLOCKED_BY_ADMINISTRATOR;
-- runtime byl proto ověřen deterministickým DOM/Canvas smoke testem, ne fyzickým Safari testem.
+OMEZENÍ AUTOMATIZACE
+- Playwright WebKit je CI aproximace Safari, nikoli fyzický Safari na konkrétním Macu nebo iPhonu.
+- Haptická odezva přes navigator.vibrate není v Safari/iOS dostupná stejně jako v podporovaných Chromium prohlížečích; hra na ní není funkčně závislá.
