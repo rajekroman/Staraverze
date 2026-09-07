@@ -58,3 +58,10 @@
 - Vltavíny a vzorky dostaly čtyři přirozené barevné a tvarové varianty; profily navíc deterministicky střídají kořeny, kamínky a vrstvené světlé žíly.
 - Kopací karta se v nízkém landscape režimu zhutní bez nutnosti scrollování, respektuje reduced-motion a doplňuje sémantické role a průběžný stav měřidla.
 - Manifest, theme color a PWA zkratky byly sladěny s tmavě zeleným vizuálem; „Vyrazit“ a „Návod“ mají funkční query entrypointy a mobilní viewport už nezakazuje zoom.
+## 5.4.2 — vizuální věrnost po auditu
+
+- Radar při odhalení vyšle krátký lokalizovaný ping přímo na nový nález nebo profil.
+- Vltavíny používají čtyři skutečně odlišné siluety místo jediné ikony s různou barvou.
+- Výkopové profily dostaly materiálové kreslení pro písčitý, tmavý a polní podklad.
+- Traktor odvozuje pružení, otáčení kol a drobný rozstřik zeminy od skutečné rychlosti.
+- Duplicitní základní definice kopací minihry byly odstraněny; výsledné styly jsou soustředěné ve vizuálním passu.
