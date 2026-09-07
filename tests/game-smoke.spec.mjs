@@ -457,3 +457,61 @@ test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async (
   await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
   expect(errors).toEqual([]);
 });
+
+test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) => {
+  const errors = watchErrors(page);
+  const papers = [
+    { x: 760, y: 860, objective: "Dokumenty 1/3" },
+    { x: 1040, y: 560, objective: "Dokumenty 2/3" },
+    { x: 1280, y: 360, objective: "Dokumenty 3/3" }
+  ];
+
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dokumenty 0/3");
+
+  for (const paper of papers) {
+    await page.evaluate(({ x, y }) => window.__lovecDebug.setPlayer(x, y), paper);
+    await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+    await page.keyboard.press("Space");
+    await expect(page.locator("#objectiveLabel")).toHaveText(paper.objective);
+  }
+
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(720, 1060);
+    window.__lovecDebug.setHeat(0);
+  });
+
+  await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot().boss?.name || null),
+    { timeout: 5_000 }
+  ).toBe("franta");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dožeň Frantu");
+  await expect(page.locator("#bossName")).toHaveText("FETÁK FRANTA");
+
+  for (let hit = 1; hit <= 2; hit += 1) {
+    await page.evaluate(() => {
+      const player = window.__lovecDebug.snapshot().player;
+      window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
+    });
+    await expect(page.locator("#actionText")).toHaveText("CHYTIT");
+    await page.keyboard.press("Space");
+
+    if (hit === 1) {
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(1);
+      expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss.active)).toBe(true);
+    }
+  }
+
+  await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot().boss),
+    { timeout: 5_000 }
+  ).toMatchObject({ name: "franta", active: false, hits: 2, maxHits: 2 });
+  await expect(page.locator("#objectiveLabel")).toHaveText("Vstup do Slávie");
+
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
+  await expect(page.locator("#actionText")).toHaveText("ODEJÍT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  expect(errors).toEqual([]);
+});
