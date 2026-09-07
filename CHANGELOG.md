@@ -26,3 +26,4 @@
 - plynulejší idle animace, náklon při pohybu, střídání kroků a jemné vlnění šátku;
 - vyšší kontrast postavy vůči poli, lesu i nočnímu prostředí bez změny kolizí nebo ovládání;
 - postava zůstává při pohybu vzpřímená a podle směru se přirozeně zrcadlí vlevo nebo vpravo.
+- jemné tematické světelné přechody oddělují pole, louku, les, noční Besednici a městskou Malši.
