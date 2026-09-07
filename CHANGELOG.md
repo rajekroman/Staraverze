@@ -2,6 +2,7 @@
 
 ## Vizuální iterace 5.4.2 — radar, Chlum a kopání
 
+- PWA offline cache byla po vizuální iteraci revizována, aby nové `game.js`, `style.css` a `index.html` nahradily starou předcache i u dříve nainstalované aplikace;
 - radar má nově kruhovou čtecí matici, jemné dosahové prstence, směrový sweep a krátké blipy už odhalených nálezů; dosah ani cooldown se nemění;
 - minihra kopání dostala zemní profil, lopatu, materiálový měřák rytmu, čitelnější sweet-zone, časovač a odezvu úderu bez změny obtížnosti;
 - Chlum používá nepravidelné brázdy, mokré stopy, hroudy a vzdálenou mez místo pravidelných horizontálních pásů;
