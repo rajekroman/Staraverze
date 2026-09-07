@@ -219,3 +219,51 @@ test("starý nebo poškozený save se bezpečně obnoví", async ({ page }) => {
   expect(restored.save.perks.boots).toBe(3);
   expect(errors).toEqual([]);
 });
+
+test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => localStorage.clear());
+
+  await page.locator("#playButton").click();
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+
+  for (let index = 0; index < LEVELS.length; index += 1) {
+    await expect(page.locator("#briefKicker")).toHaveText(`LOKALITA ${index + 1} / ${LEVELS.length}`);
+    await page.locator("#briefButton").click();
+
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().level)).toBe(LEVELS[index]);
+    const completed = await page.evaluate(() => window.__lovecDebug.completeGoal());
+    expect(completed).toMatchObject({ level: LEVELS[index], complete: true });
+
+    await page.evaluate(() => window.__lovecDebug.exitCurrentLevel());
+
+    if (index < LEVELS.length - 1) {
+      await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+      const perks = page.locator("#perkList .perk-option");
+      await expect(perks.first()).toBeVisible();
+      await perks.first().click();
+      await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+    }
+  }
+
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryCount")).toHaveText("0 / 3");
+
+  const stones = page.locator("#juryList .stone-card");
+  expect(await stones.count()).toBeGreaterThanOrEqual(3);
+  for (let index = 0; index < 3; index += 1) await stones.nth(index).click();
+
+  await expect(page.locator("#juryCount")).toHaveText("3 / 3");
+  await expect(page.locator("#juryButton")).toBeEnabled();
+  await page.locator("#juryButton").click();
+
+  await expect(page.locator("#resultScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#resultScore")).not.toHaveText("0");
+  expect(await page.evaluate(saveKey => localStorage.getItem(saveKey), SAVE_KEY)).toBeNull();
+
+  await page.locator("#resultRecordsButton").click();
+  await expect(page.locator("#recordsList li").first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
