@@ -141,13 +141,17 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
 
   let previousSpeed = 0;
   for (let hit = 1; hit <= 3; hit += 1) {
-    const before = await page.evaluate(() => window.__lovecDebug.digSnapshot());
-    await page.evaluate(zoneCenter => window.__lovecDebug.setDigMarker(zoneCenter), before.zoneCenter);
+    const before = await page.evaluate(() => {
+      const snapshot = window.__lovecDebug.digSnapshot();
+      window.__lovecDebug.setDigMarker(snapshot.zoneCenter);
+      dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true, cancelable: true }));
+      dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true, cancelable: true }));
+      return snapshot;
+    });
     previousSpeed = before.speed;
-    await page.keyboard.press("Space");
     if (hit < 3) {
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(hit);
       const after = await page.evaluate(() => window.__lovecDebug.digSnapshot());
-      expect(after.hits).toBe(hit);
       expect(after.speed).toBeGreaterThan(previousSpeed);
       if (hit === 1) expect(after.timeLeft).toBeGreaterThan(before.timeLeft);
     }
