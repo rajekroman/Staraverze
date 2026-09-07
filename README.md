@@ -16,7 +16,8 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - protisměrné klávesy se vyhodnocují správně a mezerník neopakuje akci při podržení;
 - staré a poškozené uložené stavy se migrují, omezí na bezpečné hodnoty a neshodí hru;
 - automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu;
-- smoke matrix navíc ověřuje desktop a iPhone portrait ve WebKitu jako CI aproximaci Safari.
+- smoke matrix ověřuje desktop a obě orientace iPhonu v Chromiu i WebKitu jako CI aproximaci Chrome/Safari;
+- samostatný offline smoke ověřuje spuštění PWA z cache bez sítě.
 
 ## Vývoj a ověření
 
@@ -24,4 +25,5 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 npm install
 npm test
 npm run test:smoke
+npm run test:offline
 ```
