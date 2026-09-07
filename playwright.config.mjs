@@ -44,6 +44,11 @@ export default defineConfig({
       use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
     },
     {
+      name: "iphone-landscape-webkit",
+      testIgnore: OFFLINE_TEST,
+      use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
+    },
+    {
       name: "offline-chromium",
       testMatch: OFFLINE_TEST,
       use: {
