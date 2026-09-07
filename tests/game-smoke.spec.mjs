@@ -4,6 +4,113 @@ const LEVELS = ["chlum", "locenice", "nesmen", "besednice", "malse"];
 const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
+test("audit: mezerník aktivuje tlačítko nabídky", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#playButton").focus();
+  await page.keyboard.press("Space");
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+});
+
+test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+  await page.locator("#digPauseButton").click();
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const time = await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft);
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
+  await page.locator("#resumeButton").click();
+  await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  for (let i=0;i<3;i++) {
+    await page.evaluate(() => { window.__lovecDebug.setDigSpeed(0); window.__lovecDebug.setDigMarker(); });
+    await page.keyboard.press("Space");
+    if(i<2) await page.waitForTimeout(120);
+  }
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
+  await page.locator("#resumeButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(1);
+  await page.waitForTimeout(200);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(1);
+});
+
+test("audit: chybně určený vzorek lze dohledat a opravit", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => { window.__lovecDebug.startLevel(1); window.__lovecDebug.setPlayer(420,850); });
+  await page.keyboard.press("Space");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  const real = ["Olivový úlomek","Hnědozelený splash","Drobný celotvar"].includes(await page.locator("#sampleTitle").textContent());
+  await page.locator(real?"#glassButton":"#realButton").click();
+  await page.evaluate(() => window.__lovecDebug.setScanCooldown(0));
+  await page.keyboard.press("Space");
+  await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  await page.locator(real?"#realButton":"#glassButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText(real?"Správně 1/5 · pravé 1/3":"Správně 1/5 · pravé 0/3");
+});
+
+test("audit: skrytí stránky pozastaví kopání a odchod zruší odměnu", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startDigChallenge();
+    Object.defineProperty(document,"hidden",{configurable:true,value:true});
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const time=await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft);
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
+  await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event("visibilitychange")); });
+  await page.locator("#menuButton").click();
+  await page.waitForTimeout(250);
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("menu");
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(0);
+});
+
+test("audit: odložený Franta respektuje pauzu a neopustí svůj level", async ({ page }) => {
+  await openDebug(page);
+  const collectPapers=() => page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    for(const [x,y] of [[760,860],[1040,560],[1280,360]]){
+      window.__lovecDebug.setPlayer(x,y);
+      dispatchEvent(new KeyboardEvent("keydown",{code:"Space"}));
+      dispatchEvent(new KeyboardEvent("keyup",{code:"Space"}));
+    }
+    dispatchEvent(new KeyboardEvent("keydown",{code:"Escape"}));
+  });
+  await collectPapers();
+  await page.waitForTimeout(650);
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
+  await page.locator("#resumeButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss?.name)).toBe("franta");
+  await collectPapers();
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await page.waitForTimeout(650);
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
+});
+
+test("audit: opakovaný úder nepřenačítá stejný zvuk", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.auditAudio={assignments:[],plays:[]};
+    const source=Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype,"src");
+    Object.defineProperty(HTMLMediaElement.prototype,"src",{...source,set(value){window.auditAudio.assignments.push(value);source.set.call(this,value);}});
+    HTMLMediaElement.prototype.play=function(){window.auditAudio.plays.push(this.src);return Promise.resolve();};
+  });
+  await openDebug(page);
+  await page.evaluate(() => {window.__lovecDebug.startDigChallenge();window.auditAudio.assignments=[];});
+  for(let i=0;i<2;i++){
+    await page.evaluate(() => {window.__lovecDebug.setDigSpeed(0);window.__lovecDebug.setDigMarker();});
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(150);
+  }
+  const audio=await page.evaluate(() => window.auditAudio);
+  expect(audio.plays.filter(src=>src.endsWith("/dig-hit.mp3"))).toHaveLength(2);
+  expect(audio.assignments).toEqual([]);
+});
+
 function watchErrors(page) {
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));

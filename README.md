@@ -28,3 +28,11 @@ npm test
 npm run test:smoke
 npm run test:offline
 ```
+
+Aktuální zjištění, skutečně provedené opravy a neuzavřené release podmínky:
+[produkční audit](PRODUCTION_AUDIT.md).
+
+Pro souběžnou práci lze testovacímu serveru zadat vlastní port, například
+`PLAYWRIGHT_PORT=4186 npm run test:smoke`. Testy nepřebírají cizí již běžící server.
+Při změně distribuovaných souborů je nutné zvýšit revizi `CACHE` v `sw.js`:
+základní statické soubory se v rámci jedné revize obsluhují z cache.

@@ -1,8 +1,16 @@
 import { test, expect } from "@playwright/test";
 
-const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-audio-1";
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-1";
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
+  await page.addInitScript(() => {
+    const register = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+    navigator.serviceWorker.register = async (...args) => {
+      await caches.open("another-app-cache");
+      await caches.open("lovec-vltavinu-reborn-v5-4-2-old");
+      return register(...args);
+    };
+  });
   await page.goto("/?debug=1", { waitUntil: "load" });
 
   await expect.poll(
@@ -24,7 +32,14 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
     { timeout: 15_000 }
   ).toHaveLength(1);
 
+  const unknown = await page.evaluate(async () => {
+    const response = await fetch("./not-a-game-asset-audit.txt");
+    return response.status;
+  });
+  expect(unknown).toBe(404);
+  expect(await page.evaluate(async cacheName => Boolean(await (await caches.open(cacheName)).match("./not-a-game-asset-audit.txt")), CACHE_NAME)).toBe(false);
   await context.setOffline(true);
+  expect(await page.evaluate(() => caches.has("another-app-cache"))).toBe(true);
 
   const response = await page.reload({ waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
