@@ -1,8 +1,12 @@
-# Lovec vltavínů 6.2.0
+# Lovec vltavínů Reborn 5.4.1
 
-- Čtyři kanonické kapitoly Chlum, Nesměň, Besednice a KD Slávie v jednom modulárním Three.js runtime.
-- Stabilnější mobilní ovládání, safe-area, změny orientace a návrat z pozadí.
-- Společné assety zůstávají načtené mezi levely; levelové assety se uvolňují podle vlastníka.
-- Service worker přednačítá jen aplikační shell a úspěšné známé assety ukládá průběžně.
-- Úplná Playwright matice zahrnuje desktop, audio, iPhone portrait/landscape, animaci, UI a runtime assety.
-- Opravená přístupnost: uživatelský zoom zůstává dostupný a omezení gest platí jen pro herní ovladače.
+## Kritické opravy
+
+- obnovené chybějící funkce `drawPatrol`, `drawItem` a `drawHotspot`;
+- hra už nespadne při prvním vykreslení levelu;
+- opravené vykreslení traktoru, hlídek, kamenů, dokumentů, stop a profilů;
+- opravené zavírání upozornění o krádeži bez nekonečného vytváření časovačů;
+- boss začne honičku až po přečtení upozornění;
+- přidaná kontrola, aby se boss nespustil po odchodu z Besednice;
+- pohybová stopa bosse se kreslí pouze během sprintu;
+- kužel svítilny se nezobrazuje, když je boss omráčený.

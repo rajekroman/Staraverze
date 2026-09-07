@@ -1,18 +1,37 @@
-Lovec vltavínů Reborn 5.1 — Real Localities
+Lovec vltavínů Reborn 5.4.1 — kontrola a opravy
 
-Static validation:
-- JavaScript syntax: OK (node --check)
-- Missing HTML element IDs: 0
-- Duplicate named functions: 0
-- Required reference environments: 4/4
-- Offline music files: 5
-- Build size: 8,915,731 B
+Nalezené kritické chyby ve v5.4:
+1. Chyběly funkce drawPatrol, drawItem a drawHotspot. Hra spadla při prvním vykreslení levelu chybou ReferenceError.
+2. Upozornění o krádeži vytvářelo nový setTimeout v každém snímku, což vedlo k hromadění časovačů a nespolehlivému skrytí panelu.
+3. Cyklista v Malši začínal téměř na stejné pozici jako hráč a mohl způsobit okamžitou srážku.
+4. Zvětšený traktor měl původní malou kolizní oblast.
+5. Karel mohl hráče osvítit prakticky okamžitě po skončení krádeže.
+6. Pohybová stopa bosse se generovala i mimo sprint a svítilna se vizuálně kreslila také při omráčení.
 
-Environment mapping:
-- Chlum: open agricultural field, distant treeline, large excavation pits, soil heaps, stubble
-- Locenice: sparse pine forest, sandy mounds, sandy pits, fallen trunks
-- Besednice: disturbed mining ground, excavators, crawler tracks, earth banks, mining pits
-- Slavie: historic facade with pediment plus modern white/glass annex and plaza
+Provedené opravy:
+- obnovené a sjednocené vykreslování patrol, předmětů a profilů;
+- bezpečné jednorázové zavření theft alertu;
+- krádež nyní krátce zmrazí hru a boss se spustí až po zavření upozornění;
+- bezpečný start hráče a cyklisty v Malši;
+- zvětšený hitbox traktoru;
+- 1,15 s ochranná fáze po nástupu Karla;
+- trail jen během sprintu a svítilna vypnutá při omráčení.
 
-Limitations:
-- The automated browser in this environment was blocked by administrator policy, so final visual confirmation must be performed after GitHub Pages deployment on the target iPhone.
+Kontroly:
+- node --check game.js: OK
+- HTML ID odkazy: OK, 0 chybějících
+- duplicitní HTML ID: 0
+- odkazy na soubory: OK
+- service worker CORE assety: OK
+- manifest JSON: OK
+- 5 WAV stop: validní
+- ikony a hlavní motiv: validní
+- drawPatrol/drawItem/drawHotspot: každá právě 1 definice
+- DOM/canvas smoke test: všech 5 levelů, 120 snímků každý, bez runtime chyby
+- Besednice flow test: 3 stopy -> profil -> 3 úspěšné kopy -> krádež -> boss start: OK
+- boss test: fáze 1 -> 2 -> 3 -> poražen: OK
+- Malše start: bez okamžité kolize, heat 0: OK
+
+Omezení kontroly:
+- skutečné otevření Chromia bylo v prostředí zablokováno administrátorskou politikou ERR_BLOCKED_BY_ADMINISTRATOR;
+- runtime byl proto ověřen deterministickým DOM/Canvas smoke testem, ne fyzickým Safari testem.

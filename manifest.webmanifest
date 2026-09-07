@@ -1,5 +1,5 @@
 {
-  "name": "Lovec vltavínů: Zelená vlna",
+  "name": "Lovec vltavínů: Na zelené vlně v5.4",
   "short_name": "Lovec vltavínů",
   "description": "Mobilní arkádová výprava s opravenou detekcí svítilen, hlídek a ukazatelem nebezpečí.",
   "lang": "cs",
@@ -7,8 +7,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#07120d",
-  "theme_color": "#07120d",
+  "background_color": "#7fe3bf",
+  "theme_color": "#2f0a67",
   "icons": [
     {
       "src": "icon-180.png",
