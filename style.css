@@ -90,16 +90,7 @@ button{-webkit-tap-highlight-color:transparent}
 }
 @media(prefers-reduced-motion:reduce){.action-button.ready,.danger-meter.detected,.boss-hud.enraged em,#app.danger-state:after{animation:none!important}.boss-intro{transition:none}}
 
-.dig-timer{height:7px;margin:-14px 2px 18px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}
-.dig-timer span{display:block;width:100%;height:100%;transform-origin:left;background:linear-gradient(90deg,#e0b954,#75e7a0);transition:transform .08s linear}
-.dig-action{min-height:58px;font-size:18px;letter-spacing:.08em}
-.dig-action.pressed{transform:scale(.965);filter:brightness(1.16)}
-.dig-feedback{min-height:20px;margin:-4px 0 12px;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
-.dig-feedback.good{color:#8ee7ac}.dig-feedback.bad{color:#ff958b}
-.dig-meter.in-zone #digMarker{background:#eaffef;box-shadow:0 0 5px #fff,0 0 18px #75e7a0}
-.dig-meter.in-zone #sweetZone{filter:brightness(1.18)}
-.dig-card.hit{animation:digImpact .18s ease-out}
-@keyframes digImpact{50%{transform:scale(1.018);box-shadow:0 0 0 2px rgba(117,231,160,.3),0 26px 80px rgba(0,0,0,.42)}}
+/* Dig controls are defined once in the v5.4.2 visual pass below. */
 
 
 /* v5.2 — Na Zelené Vlně branding + clearer brief */
@@ -212,13 +203,14 @@ button{-webkit-tap-highlight-color:transparent}
 .dig-meter.in-zone #sweetZone{filter:brightness(1.08);box-shadow:inset 0 1px rgba(255,255,255,.16),0 0 20px rgba(99,154,86,.2)}
 
 .dig-timer{height:9px;margin:7px 3px 17px;border:1px solid rgba(210,189,154,.12);background:#111610;box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
-.dig-timer span{background:linear-gradient(90deg,#a45b3f 0%,#d0a456 40%,#7fa66e 75%,#a9c98c 100%);box-shadow:0 0 12px rgba(170,199,137,.14)}
+.dig-timer span{display:block;width:100%;height:100%;transform-origin:left;background:linear-gradient(90deg,#a45b3f 0%,#d0a456 40%,#7fa66e 75%,#a9c98c 100%);box-shadow:0 0 12px rgba(170,199,137,.14);transition:transform .08s linear}
 .dig-hits{display:flex;justify-content:center;gap:14px;letter-spacing:0;margin:3px 0 12px;color:#aa8e58;text-shadow:0 3px 8px rgba(0,0,0,.4)}
-.dig-feedback{min-height:22px;margin:0 0 13px;padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.045)}
+.dig-feedback{min-height:22px;margin:0 0 13px;padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.045);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
 .dig-feedback.good{color:#a9d49a;border-color:rgba(139,188,120,.18);background:rgba(93,134,78,.08)}
 .dig-feedback.bad{color:#e59a82;border-color:rgba(192,103,79,.18);background:rgba(132,64,48,.08)}
-.dig-action{min-height:62px;border:1px solid rgba(220,216,182,.24);background:linear-gradient(145deg,#9a8153,#5e704f);color:#f7f3e8;text-shadow:0 1px 1px rgba(0,0,0,.25);box-shadow:inset 0 1px rgba(255,255,255,.12),0 13px 30px rgba(0,0,0,.28)}
-.dig-card.hit{box-shadow:0 0 0 2px rgba(164,190,129,.18),0 26px 82px rgba(0,0,0,.58)}
+.dig-action{min-height:62px;border:1px solid rgba(220,216,182,.24);background:linear-gradient(145deg,#9a8153,#5e704f);color:#f7f3e8;text-shadow:0 1px 1px rgba(0,0,0,.25);box-shadow:inset 0 1px rgba(255,255,255,.12),0 13px 30px rgba(0,0,0,.28);font-size:18px;letter-spacing:.08em}.dig-action.pressed{transform:scale(.965);filter:brightness(1.16)}
+.dig-card.hit{animation:digImpact .18s ease-out;box-shadow:0 0 0 2px rgba(164,190,129,.18),0 26px 82px rgba(0,0,0,.58)}
+@keyframes digImpact{50%{transform:scale(1.018);box-shadow:0 0 0 2px rgba(117,231,160,.3),0 26px 80px rgba(0,0,0,.42)}}
 
 @media(max-width:520px){
   .dig-illustration{height:88px;margin-top:11px}
