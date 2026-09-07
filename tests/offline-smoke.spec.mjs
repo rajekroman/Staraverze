@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-visual-1";
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-visual-2";
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
   await page.goto("/?debug=1", { waitUntil: "load" });
@@ -19,10 +19,25 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
     { timeout: 15_000 }
   ).toBe(true);
 
+  await expect.poll(
+    () => page.evaluate(async cacheName => (await caches.keys()).filter(name => name.startsWith("lovec-vltavinu-reborn-v5-4-2") && name !== cacheName)),
+    { timeout: 15_000 }
+  ).toEqual([]);
+
   await context.setOffline(true);
 
   const response = await page.reload({ waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
+
+  for (const asset of ["/game.js", "/style.css", "/manifest.webmanifest"]) {
+    const cached = await page.evaluate(async path => {
+      const response = await fetch(path);
+      return { ok: response.ok, status: response.status, length: (await response.text()).length };
+    }, asset);
+    expect(cached.ok, asset).toBe(true);
+    expect(cached.status, asset).toBe(200);
+    expect(cached.length, asset).toBeGreaterThan(50);
+  }
 
   await expect(page.locator("#playButton")).toBeVisible();
   await expect.poll(() => page.evaluate(() => Boolean(window.__lovecDebug))).toBe(true);
