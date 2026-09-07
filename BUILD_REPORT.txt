@@ -9,7 +9,8 @@ OVĚŘENÍ 5.4.2
 - iPhone portrait WebKit smoke: 9/9 PASS
 - iPhone landscape WebKit smoke: 9/9 PASS
 - offline Chromium PWA smoke: 1/1 PASS
-- všech 5 levelů: spuštěno a vykresleno bez runtime chyby\n- full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
+- všech 5 levelů: spuštěno a vykresleno bez runtime chyby
+- full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
 - uložený stav: migrace a normalizace PASS
 - uvolnění vstupu při pauze a ztrátě fokusu: PASS
 - PWA cache: online instalace -> aktivní service worker -> offline reload -> start Chlumu PASS
