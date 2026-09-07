@@ -58,3 +58,8 @@
 - Vltavíny a vzorky dostaly čtyři přirozené barevné a tvarové varianty; profily navíc deterministicky střídají kořeny, kamínky a vrstvené světlé žíly.
 - Kopací karta se v nízkém landscape režimu zhutní bez nutnosti scrollování, respektuje reduced-motion a doplňuje sémantické role a průběžný stav měřidla.
 - Manifest, theme color a PWA zkratky byly sladěny s tmavě zeleným vizuálem; „Vyrazit“ a „Návod“ mají funkční query entrypointy a mobilní viewport už nezakazuje zoom.
+## 5.4.2 — instrumentální soundtrack
+
+- Nahrazeny ostré syntetické 8bitové hudební smyčky měkkými instrumentálními motivy s pianovým pluckem, dlouhým padem a basovou linkou.
+- Každá lokalita má vlastní harmonickou variantu stejného hudebního jazyka, takže přechody zůstávají soudržné a přitom se neopakují identicky.
+- Service-worker cache byla povýšena na `music-1`, aby se nová hudba dostala i do offline režimu.
