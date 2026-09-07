@@ -252,7 +252,7 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
-  let player = {x:0,y:0,r:17,angle:0,facing:1,step:0,animTime:0,moving:false,invuln:0};
+  let player = {x:0,y:0,r:17,angle:0,facing:1,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
   let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };
@@ -697,7 +697,7 @@
       camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
       updateHUD();return;
     }
-    const len=Math.hypot(input.x,input.y);player.animTime+=dt;player.moving=len>.04;if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);if(Math.abs(nx)>.15)player.facing=nx<0?-1:1;const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
+    const len=Math.hypot(input.x,input.y);player.animTime+=dt;player.moving=len>.04;if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);if(Math.abs(nx)>.15)player.facing=nx<0?-1:1;const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);const footstepCycle=Math.floor(player.step/Math.PI);if(footstepCycle!==player.footstepCycle){player.footstepCycle=footstepCycle;emitFootstep();}if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
     updateHotspots(dt);updatePatrols(dt);updateRival(dt);resolveDanger(dt);if((dangerActive||state.heat>=68)&&dangerBeatTimer<=0){audio.sfx("heartbeat");dangerBeatTimer=state.heat>=88?.42:.68;}updateParticles(dt);findNearest();
     camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
     if(scanPulse>0){scanPulse+=dt*1.4;if(scanPulse>1)scanPulse=0;}
@@ -762,6 +762,12 @@
   }
 
   function burst(x,y,color,count=14){for(let i=0;i<count;i++)world.particles.push({x,y,vx:rand(-90,90),vy:rand(-120,-30),life:rand(.45,.9),color,r:rand(2,5)});}
+  function emitFootstep(){
+    if(!world)return;
+    const colors={field:"rgba(225,198,151,.42)",meadow:"rgba(211,195,153,.38)",forest:"rgba(128,105,73,.42)",night:"rgba(169,203,178,.28)",city:"rgba(214,220,212,.34)"};
+    const backX=player.x-Math.cos(player.angle)*5,backY=player.y-Math.sin(player.angle)*5;
+    for(let i=0;i<2;i++)world.particles.push({x:backX+rand(-6,6),y:backY+rand(-3,3),vx:rand(-13,13),vy:rand(-23,-8),life:rand(.2,.34),color:colors[world.theme]||colors.field,r:rand(1.6,3.2)});
+  }
 
   function render(){
     ctx.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);ctx.clearRect(0,0,viewport.w,viewport.h);
