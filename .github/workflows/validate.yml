@@ -58,6 +58,33 @@ jobs:
             test-results/
           retention-days: 7
 
+
+  visual:
+    name: Visual regression - ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - visual-desktop
+          - visual-iphone-portrait
+          - visual-iphone-landscape
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:visual -- --project=${{ matrix.project }}
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: visual-${{ matrix.project }}
+          path: test-results/visual/
+          retention-days: 7
+
   offline:
     name: Playwright - offline-chromium
     runs-on: ubuntu-latest
