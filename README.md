@@ -22,4 +22,5 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 ```sh
 npm install
 npm test
+npm run test:smoke
 ```
