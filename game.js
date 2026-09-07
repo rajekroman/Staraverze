@@ -1066,6 +1066,21 @@
     const alpha=world.theme==="night"?.13:.045;
     ctx.fillStyle=`rgba(${palette[world.theme]||palette.field},${alpha})`;
     ctx.fillRect(0,0,viewport.w,viewport.h);
+    const glow={
+      field:{x:viewport.w*.18,y:viewport.h*.08,color:"255,224,164",strength:.16},
+      meadow:{x:viewport.w*.24,y:viewport.h*.12,color:"242,232,184",strength:.12},
+      forest:{x:viewport.w*.72,y:viewport.h*.1,color:"190,224,177",strength:.08},
+      night:{x:viewport.w*.82,y:viewport.h*.12,color:"174,215,226",strength:.16},
+      city:{x:viewport.w*.78,y:viewport.h*.18,color:"206,235,229",strength:.1}
+    }[world.theme]||null;
+    if(glow){
+      const radius=Math.max(viewport.w,viewport.h)*.82;
+      const light=ctx.createRadialGradient(glow.x,glow.y,0,glow.x,glow.y,radius);
+      light.addColorStop(0,`rgba(${glow.color},${glow.strength})`);
+      light.addColorStop(.36,`rgba(${glow.color},${glow.strength*.34})`);
+      light.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.fillStyle=light;ctx.fillRect(0,0,viewport.w,viewport.h);
+    }
     const edge=ctx.createRadialGradient(viewport.w/2,viewport.h/2,Math.min(viewport.w,viewport.h)*.18,viewport.w/2,viewport.h/2,Math.max(viewport.w,viewport.h)*.74);
     edge.addColorStop(0,"rgba(0,0,0,0)"); edge.addColorStop(.72,"rgba(0,0,0,.06)"); edge.addColorStop(1,"rgba(0,0,0,.42)");
     ctx.fillStyle=edge;ctx.fillRect(0,0,viewport.w,viewport.h);
