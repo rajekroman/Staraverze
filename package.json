@@ -8,6 +8,7 @@
     "test:browser": "playwright test",
     "test:smoke": "playwright test tests/game-smoke.spec.mjs",
     "test:offline": "playwright test --project=offline-chromium",
+    "test:visual": "playwright test tests/visual-regression.spec.mjs",
     "test": "npm run validate && npm run test:browser"
   },
   "devDependencies": {
