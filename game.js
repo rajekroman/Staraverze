@@ -285,7 +285,7 @@
   let dangerWarned = false;
   let dangerBeatTimer = 0;
   let bossIntroTimer = 0;
-  let theftAlertTimer = 0;
+  let theftAlertUntil = 0;
   let theftAlertShown = false;
 
   function save() { storage.set(SAVE_KEY, JSON.stringify(state)); refreshContinue(); }
@@ -307,7 +307,7 @@
   function haptic(pattern=12){try{navigator.vibrate?.(pattern);}catch{}}
   function toast(text,type="",duration=1500){clearTimeout(toastTimer);ui.toast.textContent=text;ui.toast.className=`toast show ${type}`;toastTimer=setTimeout(()=>ui.toast.className="toast",duration);}
   function showTheftAlert(){
-    theftAlertTimer=2.15;
+    theftAlertUntil=performance.now()+2150;
     theftAlertShown=true;
     ui.theftAlert?.classList.remove("hidden");
     requestAnimationFrame(()=>{if(theftAlertShown)ui.theftAlert?.classList.add("show");});
@@ -316,6 +316,7 @@
   function hideTheftAlert(){
     if(!theftAlertShown)return;
     theftAlertShown=false;
+    theftAlertUntil=0;
     ui.theftAlert?.classList.remove("show");
     setTimeout(()=>{if(!theftAlertShown)ui.theftAlert?.classList.add("hidden");},180);
     const pending=world?.runtime?.pendingBoss;
@@ -736,7 +737,7 @@
     }
     if(mode!=="playing"||!world)return;
     scanCooldown=Math.max(0,scanCooldown-dt);player.invuln=Math.max(0,player.invuln-dt);shake=Math.max(0,shake-dt*24);flash=Math.max(0,flash-dt*.9);dangerActive=false;dangerSource="";dangerRate=0;dangerCatchAfter=Infinity;bossIntroTimer=Math.max(0,bossIntroTimer-dt);if(bossIntroTimer<=0){ui.bossIntro?.classList.remove("show");ui.bossIntro?.classList.add("hidden");}
-    if(theftAlertTimer>0){theftAlertTimer=Math.max(0,theftAlertTimer-dt);if(theftAlertTimer<=0)hideTheftAlert();}dangerBeatTimer=Math.max(0,dangerBeatTimer-dt);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0&&state.combo>1){state.combo--;state.comboTimer=5;}
+    if(theftAlertShown&&performance.now()>=theftAlertUntil)hideTheftAlert();dangerBeatTimer=Math.max(0,dangerBeatTimer-dt);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0&&state.combo>1){state.combo--;state.comboTimer=5;}
     if(theftAlertShown){
       input.x=input.y=0;stopPlayerMotion();updateParticles(dt);
       camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));

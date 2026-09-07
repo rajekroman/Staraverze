@@ -267,3 +267,52 @@ test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }
   expect(errors).toEqual([]);
 });
 
+test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknech", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(3));
+
+  const triggered = await page.evaluate(() => window.__lovecDebug.triggerTheft());
+  expect(triggered).toEqual({ shown: true, boss: "karel" });
+
+  await page.keyboard.down("KeyD");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({ x: 0, y: 0, pressed: false });
+  await page.keyboard.up("KeyD");
+  await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot().theftAlertShown),
+    { timeout: 5_000 }
+  ).toBe(false);
+
+  await page.evaluate(() => {
+    const player = window.__lovecDebug.snapshot().player;
+    window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
+    window.__lovecDebug.setBossStun(0);
+  });
+  await expect(page.locator("#actionText")).toHaveText("CHYTIT");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(0);
+
+  for (let hit = 1; hit <= 3; hit += 1) {
+    await page.evaluate(() => {
+      const player = window.__lovecDebug.snapshot().player;
+      window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
+      window.__lovecDebug.setBossStun(5);
+    });
+    await expect(page.locator("#actionButton")).toHaveClass(/boss-ready/);
+    await page.keyboard.press("Space");
+
+    if (hit < 3) {
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(hit);
+      expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss.active)).toBe(true);
+    }
+  }
+
+  const defeated = await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot()),
+    { timeout: 5_000 }
+  ).toMatchObject({
+    boss: { name: "karel", active: false, hits: 3, maxHits: 3 },
+    state: { stones: 1 }
+  });
+  expect(errors).toEqual([]);
+});
