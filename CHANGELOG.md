@@ -6,8 +6,11 @@
 - chůze mění směr okamžitě podle hráče, takže postava při otáčení neopisuje oblouk jako auto;
 - kroky, práce nohou a výbava reagují na skutečnou rychlost pohybu;
 - povrch jednotlivých map dostal vlastní kameny, rostliny, kořeny, cesty a městské detaily;
-- Chlum je čistě sběračská lokalita s viditelnými vltavíny na povrchu a bez minihry kopání;
+- Chlum je čistě sběračská lokalita s vltavíny na povrchu a bez minihry kopání;
+- povrchové vltavíny na Chlumu i vzorky v Ločenicích jsou nejdřív skryté a hráč je musí odhalit radarem;
+- Chlum už neobsahuje staré obdélníkové výkopy a profily v ostatních mapách mají nepravidelné okraje, vrstvy zeminy a přirozenější hloubku;
 - kopání v dalších lokalitách je rychlejší časovaná výzva s pohyblivou zónou, zrychlováním a podporou mezerníku.
+- mobilní úder reaguje už při dotyku, má ochranu proti dvojímu spuštění a okamžitou světelnou, textovou i haptickou odezvu.
 
 ## Dokončení 5.4.2
 

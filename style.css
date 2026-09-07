@@ -93,6 +93,11 @@ button{-webkit-tap-highlight-color:transparent}
 .dig-timer{height:7px;margin:-14px 2px 18px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}
 .dig-timer span{display:block;width:100%;height:100%;transform-origin:left;background:linear-gradient(90deg,#e0b954,#75e7a0);transition:transform .08s linear}
 .dig-action{min-height:58px;font-size:18px;letter-spacing:.08em}
+.dig-action.pressed{transform:scale(.965);filter:brightness(1.16)}
+.dig-feedback{min-height:20px;margin:-4px 0 12px;color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.dig-feedback.good{color:#8ee7ac}.dig-feedback.bad{color:#ff958b}
+.dig-meter.in-zone #digMarker{background:#eaffef;box-shadow:0 0 5px #fff,0 0 18px #75e7a0}
+.dig-meter.in-zone #sweetZone{filter:brightness(1.18)}
 .dig-card.hit{animation:digImpact .18s ease-out}
 @keyframes digImpact{50%{transform:scale(1.018);box-shadow:0 0 0 2px rgba(117,231,160,.3),0 26px 80px rgba(0,0,0,.42)}}
 

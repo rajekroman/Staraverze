@@ -70,12 +70,29 @@ test("noční Besednice nemá černou vymazanou plochu", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("Chlum je čistý povrchový sběr bez kopacích míst", async ({ page }) => {
+test("povrchové nálezy odhalí až radar a Chlum nemá kopací místa", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(0));
-  const snapshot = await page.evaluate(() => window.__lovecDebug.snapshot());
-  expect(snapshot.world).toEqual({ hotspots: 0, stones: 9 });
+  let snapshot = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(snapshot.world).toEqual({ hotspots: 0, stones: 9, surfaceHidden: 9, surfaceVisible: 0 });
+
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(500, 840);
+    dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true, cancelable: true }));
+    dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true, cancelable: true }));
+  });
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().world.surfaceVisible)).toBeGreaterThan(0);
+
+  await page.evaluate(() => window.__lovecDebug.startLevel(1));
+  snapshot = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(snapshot.world).toMatchObject({ surfaceHidden: 9, surfaceVisible: 0 });
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(420, 850);
+    dispatchEvent(new KeyboardEvent("keydown", { code: "Space", bubbles: true, cancelable: true }));
+    dispatchEvent(new KeyboardEvent("keyup", { code: "Space", bubbles: true, cancelable: true }));
+  });
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().world.surfaceVisible)).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
 
@@ -138,6 +155,7 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
   await expect(page.locator("#digScreen")).toHaveClass(/visible/);
   await expect(page.locator("#digTimerFill")).toBeVisible();
   await page.evaluate(() => window.__lovecDebug.setDigTime(4));
+  await page.evaluate(() => window.__lovecDebug.setDigSpeed(0));
 
   let previousSpeed = 0;
   for (let hit = 1; hit <= 3; hit += 1) {
@@ -153,10 +171,21 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
       await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(hit);
       const after = await page.evaluate(() => window.__lovecDebug.digSnapshot());
       expect(after.speed).toBeGreaterThan(previousSpeed);
-      if (hit === 1) expect(after.timeLeft).toBeGreaterThan(before.timeLeft);
+      if (hit === 1) {
+        await expect(page.locator("#digFeedback")).toContainText("Přesně · tempo 1/3 · +0,5 s");
+      }
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().inputLocked)).toBe(false);
     }
   }
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startDigChallenge(2);
+    window.__lovecDebug.setDigSpeed(0);
+    window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+  });
+  await page.locator("#digButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(1);
   expect(errors).toEqual([]);
 });
 
