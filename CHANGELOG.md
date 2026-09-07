@@ -50,3 +50,11 @@
 - postava zůstává při pohybu vzpřímená a podle směru se přirozeně zrcadlí vlevo nebo vpravo.
 - jemné tematické světelné přechody oddělují pole, louku, les, noční Besednici a městskou Malši.
 - lesem a noční Besednicí se pohybují tlumené světelné částice; při omezení pohybu systému zůstávají statické.
+## 5.4.2 — další polish radaru, terénu a kopání
+
+- Offline cache byla po této iteraci revizována na `visual-2` a test ověřuje odstranění staré cache i dostupnost hlavních assetů bez sítě.
+- Přidána deterministická screenshot regresní brána pro všech pět lokalit a mobilní kopací obrazovku v portrétu i krajině.
+- Statický terén Chlumu, Ločenic, Nesměně a Besednice se rasterizuje jednou do pomocného canvasu a v dalších snímcích se pouze kopíruje; dynamická voda v Malši zůstává živá.
+- Vltavíny a vzorky dostaly čtyři přirozené barevné a tvarové varianty; profily navíc deterministicky střídají kořeny, kamínky a vrstvené světlé žíly.
+- Kopací karta se v nízkém landscape režimu zhutní bez nutnosti scrollování, respektuje reduced-motion a doplňuje sémantické role a průběžný stav měřidla.
+- Manifest, theme color a PWA zkratky byly sladěny s tmavě zeleným vizuálem; „Vyrazit“ a „Návod“ mají funkční query entrypointy a mobilní viewport už nezakazuje zoom.

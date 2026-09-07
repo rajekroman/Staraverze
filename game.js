@@ -3,7 +3,8 @@
 
   const $ = id => document.getElementById(id);
   const canvas = $("game");
-  const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  const screenCtx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  let ctx = screenCtx;
   const app = $("app");
   const hud = $("hud");
   const controls = $("controls");
@@ -254,6 +255,9 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
+  // Static non-city terrain is rasterized once per level and reused by every frame.
+  // City water remains dynamic, so Malše continues to render live.
+  let terrainCache = {key:"", canvas:null, scale:1, generated:0};
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
@@ -339,13 +343,14 @@
     const dpr=Math.max(1,Math.min(native,2,budgetDpr));
     viewport={w,h,dpr};
     canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width="100%";canvas.style.height="100%";
-    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=true;
+    screenCtx.setTransform(dpr,0,0,dpr,0,0);screenCtx.imageSmoothingEnabled=true;
+    if(world&&world.theme!=="city")buildTerrainCache(world);
   }
 
   function addProp(type,x,y,o={}){world.props.push({type,x,y,...o});}
   function addObstacle(x,y,w,h,o={}){world.obstacles.push({x,y,w,h,...o});}
   function addHotspot(x,y,o={}){const profile=Boolean(o.needsFill||o.special==="hedgehog");world.hotspots.push({x,y,r:profile?42:24,w:profile?74:0,h:profile?42:0,angle:profile?rand(-.22,.22):0,revealed:Boolean(o.revealed),active:true,ttl:0,...o});}
-  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,...o});}
+  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,visualVariant:Math.abs(Math.round((x*17+y*31)%4)),...o});}
   function addPatrol(type,points,o={}){const p=points[0];world.patrols.push({type,x:p.x,y:p.y,points,index:1,speed:o.speed||80,vision:o.vision||180,angle:0,active:true,...o});}
 
   function generateLevel(index){
@@ -356,9 +361,32 @@
     if(level.id==="nesmen") generateNesmen();
     if(level.id==="besednice") generateBesednice();
     if(level.id==="malse") generateMalse();
+    buildTerrainCache(world);
     stopPlayerMotion();player.footstepCycle=-1;
     camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;nearest=null;scanCooldown=0;scanPulse=0;
     state.heat=0;state.combo=1;state.comboTimer=0;audio.setTheme(level.music);updateHUD(true);
+  }
+
+  function buildTerrainCache(nextWorld){
+    const previousCount=terrainCache.generated||0;
+    if(!nextWorld||nextWorld.theme==="city"){terrainCache={key:"",canvas:null,scale:1,generated:previousCount};return;}
+    const scale=Math.max(1,Math.min(viewport.dpr||1,1.5));
+    const key=`${nextWorld.id}:${nextWorld.w}x${nextWorld.h}@${scale.toFixed(2)}`;
+    if(terrainCache.key===key&&terrainCache.canvas)return;
+    const surface=document.createElement("canvas");
+    surface.width=Math.max(1,Math.round(nextWorld.w*scale));
+    surface.height=Math.max(1,Math.round(nextWorld.h*scale));
+    const cacheCtx=surface.getContext("2d",{alpha:false});
+    if(!cacheCtx){terrainCache={key:"",canvas:null,scale:1,generated:previousCount};return;}
+    const previousCtx=ctx;
+    try{
+      ctx=cacheCtx;
+      ctx.setTransform(scale,0,0,scale,0,0);
+      ctx.imageSmoothingEnabled=true;
+      drawGround();
+      drawGroundDetails();
+    }finally{ctx=previousCtx;}
+    terrainCache={key,canvas:surface,scale,generated:previousCount+1};
   }
 
   function generateChlum(){
@@ -733,7 +761,7 @@
     if(mode==="dig"){
       digMarker+=digDir*dt*digSpeed;digTimeLeft=Math.max(0,digTimeLeft-dt);
       if(digMarker>=1){digMarker=1;digDir=-1;}if(digMarker<=0){digMarker=0;digDir=1;}
-      const width=.26+state.perks.shovel*.055;$("digMeter").classList.toggle("in-zone",Math.abs(digMarker-digZoneCenter)<=width/2);$("digMarker").style.left=`calc(${digMarker*100}% - 5px)`;$("digTimerFill").style.transform=`scaleX(${digTimeLeft/7})`;
+      const width=.26+state.perks.shovel*.055,inZone=Math.abs(digMarker-digZoneCenter)<=width/2,meter=$("digMeter");meter.classList.toggle("in-zone",inZone);meter.setAttribute("aria-valuemin","0");meter.setAttribute("aria-valuemax","100");meter.setAttribute("aria-valuenow",String(Math.round(digMarker*100)));meter.setAttribute("aria-valuetext",inZone?"V zeleném poli":"Mimo zelené pole");$("digMarker").style.left=`calc(${digMarker*100}% - 5px)`;$("digTimerFill").style.transform=`scaleX(${digTimeLeft/7})`;
       if(digTimeLeft<=0)failDig();return;
     }
     if(mode!=="playing"||!world)return;
@@ -804,8 +832,9 @@
     for(const i of world.items)if(i.active&&!i.hidden)check(i.type==="hole"?"hole":"item",i,i.x,i.y,i.type==="hole"?98:68);
     if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.stunTimer>0?92:66);
     if(world.exit)check("exit",world.exit,world.exit.x,world.exit.y,88);
-    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=map[nearest.kind]||["◎","AKCE"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];$("actionButton").classList.add("ready");$("actionButton").classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
-    else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";$("actionButton").classList.remove("ready","boss-ready");hideHint();}
+    const actionButton=$("actionButton");
+    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=map[nearest.kind]||["◎","AKCE"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);actionButton.setAttribute("aria-label",nearest.kind==="exit"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
+    else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";actionButton.classList.remove("ready","boss-ready");actionButton.setAttribute("aria-label",scanCooldown>0?`Radar připraven za ${Math.ceil(scanCooldown)} s`:"Spustit radar");hideHint();}
   }
 
   function burst(x,y,color,count=14){for(let i=0;i<count;i++)world.particles.push({x,y,vx:rand(-90,90),vy:rand(-120,-30),life:rand(.45,.9),color,r:rand(2,5)});}
@@ -819,7 +848,7 @@
   function render(){
     ctx.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);ctx.clearRect(0,0,viewport.w,viewport.h);
     if(!world){drawMenuBackdrop();return;}
-    ctx.save();const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;ctx.translate(sx-camera.x,sy-camera.y);drawGround();drawGroundDetails();drawWorldObjects();drawEffects();ctx.restore();drawScreenVignette();drawAtmosphereOverlay();drawObjectiveArrow();
+    ctx.save();const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;ctx.translate(sx-camera.x,sy-camera.y);if(terrainCache.canvas){ctx.drawImage(terrainCache.canvas,0,0,terrainCache.canvas.width,terrainCache.canvas.height,0,0,world.w,world.h);}else{drawGround();drawGroundDetails();}drawWorldObjects();drawEffects();ctx.restore();drawScreenVignette();drawAtmosphereOverlay();drawObjectiveArrow();
   }
 
   function drawMenuBackdrop(){const g=ctx.createLinearGradient(0,0,0,viewport.h);g.addColorStop(0,"#142a35");g.addColorStop(.52,"#2b4633");g.addColorStop(1,"#3b2d22");ctx.fillStyle=g;ctx.fillRect(0,0,viewport.w,viewport.h);}
@@ -1167,10 +1196,16 @@
       const isSample=i.type==="sample",pulse=.5+.5*Math.sin(performance.now()*.004+i.x*.013);
       ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(1,10,17,6,0,0,Math.PI*2);ctx.fill();
       const aura=ctx.createRadialGradient(0,0,3,0,0,25);aura.addColorStop(0,isSample?"rgba(132,188,137,.18)":"rgba(114,180,133,.22)");aura.addColorStop(1,"rgba(74,142,97,0)");ctx.fillStyle=aura;ctx.beginPath();ctx.arc(0,0,25,0,Math.PI*2);ctx.fill();
-      const gem=ctx.createLinearGradient(-10,-12,11,12);gem.addColorStop(0,isSample?"#a2bb82":"#8fb56e");gem.addColorStop(.28,isSample?"#668a62":"#4e8458");gem.addColorStop(.68,isSample?"#3e654c":"#316244");gem.addColorStop(1,"#193c2f");
+      const variant=i.visualVariant||0;
+      const samplePalettes=[["#b5c98e","#6f9568","#41644e"],["#c6b681","#8a8652","#4a5c3d"],["#9bb7a0","#5f8d78","#315646"],["#a8bf78","#688554","#344f3e"]];
+      const stonePalettes=[["#8fb56e","#4e8458","#316244"],["#b7a56e","#7c8150","#42583c"],["#7fb39b","#4a836a","#285844"],["#9aaa61","#5f7847","#304f39"]];
+      const palette=(isSample?samplePalettes:stonePalettes)[variant];
+      const gem=ctx.createLinearGradient(-10,-12,11,12);gem.addColorStop(0,palette[0]);gem.addColorStop(.28,palette[1]);gem.addColorStop(.68,palette[2]);gem.addColorStop(1,"#193c2f");
+      const shapeScale=[[1,.92],[.84,1.08],[1.12,.82],[.94,1.02]][variant],shapeAngle=[-.12,.08,.18,-.04][variant];
+      ctx.save();ctx.rotate(shapeAngle);ctx.scale(shapeScale[0],shapeScale[1]);
       ctx.fillStyle=gem;gemPath(0,0,14);ctx.fill();
-      ctx.strokeStyle=isSample?"rgba(211,224,170,.7)":"rgba(189,222,170,.7)";ctx.lineWidth=1.4;gemPath(0,0,14);ctx.stroke();
-      ctx.fillStyle=`rgba(235,248,206,${.34+pulse*.24})`;ctx.beginPath();ctx.moveTo(-5,-9);ctx.lineTo(2,-11);ctx.lineTo(-1,-3);ctx.closePath();ctx.fill();
+      ctx.strokeStyle=isSample?"rgba(211,224,170,.7)":"rgba(189,222,170,.7)";ctx.lineWidth=1.4;gemPath(0,0,14);ctx.stroke();ctx.restore();
+      ctx.fillStyle=`rgba(235,248,206,${.28+pulse*.24})`;ctx.beginPath();ctx.moveTo(-5+variant,-9);ctx.lineTo(2,-11+variant*.5);ctx.lineTo(-1,-3);ctx.closePath();ctx.fill();
       ctx.strokeStyle=`rgba(164,215,155,${.25+pulse*.25})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,19+pulse*3,0,Math.PI*2);ctx.stroke();
     }else if(i.type==="clue"){
       ctx.fillStyle="#74adff";ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d6e7ff";ctx.lineWidth=3;ctx.stroke();
@@ -1301,6 +1336,10 @@
     ctx.strokeStyle="rgba(255,235,198,.14)";ctx.lineWidth=1.2;organicPitPath(ctx,w*.54,h*.36,seed+149,.08);ctx.stroke();
 
     for(let n=0;n<12;n++){const angle=n/12*Math.PI*2+seed*.013,spread=.5+(n%3)*.05,x=Math.cos(angle)*w*spread,y=Math.sin(angle)*h*(.43+(n%2)*.04);ctx.fillStyle=n%3?palette.wall:palette.lip;ctx.beginPath();ctx.ellipse(x,y,2.5+n%4,1.6+n%3,angle,0,Math.PI*2);ctx.fill();}
+    const profileVariant=Math.abs(Math.floor(seed))%3;
+    if(profileVariant===0){ctx.strokeStyle="rgba(79,55,35,.42)";ctx.lineWidth=1.6;for(let n=0;n<4;n++){const x=-w*.34+n*w*.22;ctx.beginPath();ctx.moveTo(x,-h*.28);ctx.quadraticCurveTo(x+8,h*.02,x-3,h*.27);ctx.stroke();}}
+    else if(profileVariant===1){ctx.fillStyle="rgba(214,190,145,.42)";for(let n=0;n<7;n++){const a=n/7*Math.PI*2+.35;ctx.beginPath();ctx.ellipse(Math.cos(a)*w*.36,Math.sin(a)*h*.31,2+n%3,1.4+n%2,a,0,Math.PI*2);ctx.fill();}}
+    else{ctx.strokeStyle="rgba(241,216,164,.18)";ctx.lineWidth=2;for(let n=-1;n<=1;n++){ctx.beginPath();ctx.moveTo(-w*.34,n*h*.09);ctx.quadraticCurveTo(0,n*h*.09+3,w*.34,n*h*.06);ctx.stroke();}}
     if(showFill){ctx.fillStyle=palette.line;ctx.font="bold 17px sans-serif";ctx.textAlign="center";ctx.fillText("↶",0,6);}
   }
   function ellipse(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
@@ -1346,7 +1385,10 @@
 
   function boot(){
     resize();lockPageGestures();setupControls();bindUI();migrateLegacySave();refreshContinue();
-    if(new URLSearchParams(location.search).has("debug")){
+    const params=new URLSearchParams(location.search);
+    if(params.has("new"))startNew();
+    else if(params.has("help"))showOnly(screens.how);
+    if(params.has("debug")){
       window.__lovecDebug={
         startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
         spawnBoss(name="karel"){if(!world)return null;startRival(name,player.x+240,player.y-120);return world.rival;},
@@ -1383,7 +1425,7 @@
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));

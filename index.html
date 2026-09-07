@@ -2,8 +2,8 @@
 <html lang="cs">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#2f0a67">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#173727">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Lovec vltavínů">
@@ -60,8 +60,8 @@
   </div>
 
   <section id="controls" class="controls hidden" aria-label="Dotykové ovládání">
-    <div id="moveZone" class="move-zone"><div id="stick" class="stick"></div></div>
-    <button id="actionButton" class="action-button" type="button">
+    <div id="moveZone" class="move-zone" role="application" aria-label="Virtuální joystick pro pohyb"><div id="stick" class="stick"></div></div>
+    <button id="actionButton" class="action-button" type="button" aria-label="Spustit radar">
       <span id="actionIcon">◉</span><small id="actionText">RADAR</small>
     </button>
   </section>
@@ -97,7 +97,7 @@
     </div>
   </section>
 
-  <section id="digScreen" class="screen transparent">
+  <section id="digScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="digTitle" aria-describedby="digInfo">
     <div class="dig-card">
       <p class="eyebrow">KOPÁNÍ</p>
       <h2 id="digTitle">Drž rytmus lopaty</h2>
@@ -110,7 +110,7 @@
       </div>
       <div class="dig-meter-wrap">
         <span class="dig-meter-label">RYTMUS ÚDERU</span>
-        <div id="digMeter" class="dig-meter"><div id="sweetZone"></div><div id="digMarker"></div></div>
+      <div id="digMeter" class="dig-meter" role="meter" aria-label="Rytmus úderu" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><div id="sweetZone"></div><div id="digMarker"></div></div>
       </div>
       <div class="dig-timer" aria-label="Zbývající čas"><span id="digTimerFill"></span></div>
       <div id="digHits" class="dig-hits">◇ ◇ ◇</div>
@@ -119,7 +119,7 @@
     </div>
   </section>
 
-  <section id="identifyScreen" class="screen transparent">
+  <section id="identifyScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="sampleTitle">
     <div class="identify-card">
       <p class="eyebrow">RYCHLÉ URČENÍ</p>
       <div id="sampleGem" class="sample-gem">◆</div>
@@ -132,7 +132,7 @@
     </div>
   </section>
 
-  <section id="dialogScreen" class="screen transparent">
+  <section id="dialogScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="dialogName" aria-describedby="dialogText">
     <div class="dialog-card">
       <div id="dialogAvatar" class="avatar">V</div>
       <div><p id="dialogName" class="eyebrow">VÁCLAV</p><p id="dialogText"></p></div>
@@ -170,7 +170,7 @@
     </div>
   </section>
 
-  <section id="pauseScreen" class="screen transparent">
+  <section id="pauseScreen" class="screen transparent" role="dialog" aria-modal="true" aria-label="Pauza">
     <div class="small-card"><p class="eyebrow">PAUZA</p><h2>Výprava čeká</h2><button id="resumeButton" class="primary-button" type="button">POKRAČOVAT</button><button id="menuButton" class="secondary-button" type="button">ULOŽIT A ODEJÍT</button></div>
   </section>
 
@@ -179,7 +179,7 @@
       <p class="eyebrow">JEDEN PALEC, JEDNO TLAČÍTKO</p><h2>Jak se hraje</h2>
       <div class="how-grid">
         <div><b>1</b><strong>Pohyb</strong><p>Táhni palcem vlevo. Na okraji joysticku běžíš automaticky.</p></div>
-        <div><b>2</b><strong>Jedna akce</strong><p>Tlačítko vpravo slouží k rozhlédnutí, kopání, sbírání, rozhovoru i zahrabání profilu.</p></div>
+        <div><b>2</b><strong>Radar a akce</strong><p>Radar nejdřív odhalí skryté nálezy. U odhaleného cíle stejné tlačítko automaticky přepne na sběr, kopání, rozhovor nebo zahrabání.</p></div>
         <div><b>3</b><strong>Risk</strong><p>Hluk a pohled hlídky plní červenou pozornost. Při dopadení ztratíš slabý kámen.</p></div>
         <div><b>4</b><strong>Kombo</strong><p>Rychlé správné nálezy násobí skóre. Vzácný kus kombo prodlouží.</p></div>
       </div>
