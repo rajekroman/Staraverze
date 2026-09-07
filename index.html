@@ -60,8 +60,8 @@
   </div>
 
   <section id="controls" class="controls hidden" aria-label="Dotykové ovládání">
-    <div id="moveZone" class="move-zone"><div id="stick" class="stick"></div></div>
-    <button id="actionButton" class="action-button" type="button">
+    <div id="moveZone" class="move-zone" role="application" aria-label="Virtuální joystick pro pohyb"><div id="stick" class="stick"></div></div>
+    <button id="actionButton" class="action-button" type="button" aria-label="Spustit radar">
       <span id="actionIcon">◉</span><small id="actionText">RADAR</small>
     </button>
   </section>
@@ -97,7 +97,7 @@
     </div>
   </section>
 
-  <section id="digScreen" class="screen transparent">
+  <section id="digScreen" class="screen transparent" role="dialog" aria-labelledby="digTitle" aria-describedby="digInfo">
     <div class="dig-card">
       <p class="eyebrow">KOPÁNÍ</p>
       <h2 id="digTitle">Drž rytmus lopaty</h2>
@@ -110,7 +110,7 @@
       </div>
       <div class="dig-meter-wrap">
         <span class="dig-meter-label">RYTMUS ÚDERU</span>
-        <div id="digMeter" class="dig-meter"><div id="sweetZone"></div><div id="digMarker"></div></div>
+      <div id="digMeter" class="dig-meter" role="meter" aria-label="Rytmus úderu"><div id="sweetZone"></div><div id="digMarker"></div></div>
       </div>
       <div class="dig-timer" aria-label="Zbývající čas"><span id="digTimerFill"></span></div>
       <div id="digHits" class="dig-hits">◇ ◇ ◇</div>

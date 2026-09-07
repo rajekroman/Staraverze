@@ -50,3 +50,10 @@
 - postava zůstává při pohybu vzpřímená a podle směru se přirozeně zrcadlí vlevo nebo vpravo.
 - jemné tematické světelné přechody oddělují pole, louku, les, noční Besednici a městskou Malši.
 - lesem a noční Besednicí se pohybují tlumené světelné částice; při omezení pohybu systému zůstávají statické.
+## 5.4.2 — další polish radaru, terénu a kopání
+
+- Přidána deterministická screenshot regresní brána pro všech pět lokalit a mobilní kopací obrazovku v portrétu i krajině.
+- Statické prvky polí (brázdy, hrudy a strniště) se připravují jednou na level místo opakovaného generování v každém snímku.
+- Vltavíny dostaly tři přirozené barevné varianty a profily zůstávají organické, bez obdélníkových jam.
+- Kopací karta se lépe vejde do nízkých landscape viewportů, respektuje reduced-motion a doplňuje sémantické role.
+- Manifest doplněn o popis prvního spuštění, kategorie a zkratky „Vyrazit“ / „Návod“.

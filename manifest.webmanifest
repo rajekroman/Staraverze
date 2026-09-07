@@ -1,7 +1,7 @@
 {
   "name": "Lovec vltavínů: Na zelené vlně v5.4.2",
   "short_name": "Lovec vltavínů",
-  "description": "Mobilní arkádová výprava s opravenou detekcí svítilen, hlídek a ukazatelem nebezpečí.",
+  "description": "Přístupná mobilní arkádová výprava: radar odhalí skryté vltavíny, Chlum nabídne sběr z povrchu a profily čekají na přesné kopání.",
   "lang": "cs",
   "start_url": "./",
   "scope": "./",
@@ -9,6 +9,12 @@
   "orientation": "any",
   "background_color": "#7fe3bf",
   "theme_color": "#2f0a67",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {"name": "Nová výprava", "short_name": "Vyrazit", "url": "./?new=1", "icons": [{"src": "icon-192.png", "sizes": "192x192"}]},
+    {"name": "Jak se hraje", "short_name": "Návod", "url": "./?help=1", "icons": [{"src": "icon-192.png", "sizes": "192x192"}]}
+  ],
   "icons": [
     {
       "src": "icon-180.png",

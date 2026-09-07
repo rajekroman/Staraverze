@@ -230,3 +230,7 @@ button{-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){
   .action-button:not(.ready)::before,.action-button:not(.ready)::after{animation:none!important}
 }
+/* Responsive digging affordance and reduced-motion safety. */
+@media (max-width:760px) and (orientation:portrait){.dig-card{width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:17px}.dig-card h2{font-size:clamp(25px,8vw,38px)}.dig-action{min-height:56px;min-width:160px}}
+@media (max-height:490px) and (orientation:landscape){.dig-card{width:min(700px,calc(100vw - 28px));max-height:calc(100dvh - 16px);overflow:auto}.dig-illustration{height:72px}.dig-meter-wrap{margin-top:9px}.dig-action{min-height:48px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.001ms!important}}

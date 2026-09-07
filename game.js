@@ -254,6 +254,9 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
+  // Static terrain geometry is generated once per level and reused by every frame.
+  // This keeps the illustrated field deterministic without changing gameplay or camera behavior.
+  let terrainCache = {key:"", fieldClods:[], fieldStubble:[], fieldFurrows:[], generated:0};
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
@@ -345,7 +348,7 @@
   function addProp(type,x,y,o={}){world.props.push({type,x,y,...o});}
   function addObstacle(x,y,w,h,o={}){world.obstacles.push({x,y,w,h,...o});}
   function addHotspot(x,y,o={}){const profile=Boolean(o.needsFill||o.special==="hedgehog");world.hotspots.push({x,y,r:profile?42:24,w:profile?74:0,h:profile?42:0,angle:profile?rand(-.22,.22):0,revealed:Boolean(o.revealed),active:true,ttl:0,...o});}
-  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,...o});}
+  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,visualVariant:Math.abs(Math.round((x*17+y*31)%3)),...o});}
   function addPatrol(type,points,o={}){const p=points[0];world.patrols.push({type,x:p.x,y:p.y,points,index:1,speed:o.speed||80,vision:o.vision||180,angle:0,active:true,...o});}
 
   function generateLevel(index){
@@ -356,9 +359,20 @@
     if(level.id==="nesmen") generateNesmen();
     if(level.id==="besednice") generateBesednice();
     if(level.id==="malse") generateMalse();
+    buildTerrainCache(world);
     stopPlayerMotion();player.footstepCycle=-1;
     camera.x=player.x-viewport.w/2;camera.y=player.y-viewport.h/2;nearest=null;scanCooldown=0;scanPulse=0;
     state.heat=0;state.combo=1;state.comboTimer=0;audio.setTheme(level.music);updateHUD(true);
+  }
+
+  function buildTerrainCache(nextWorld){
+    const key=`${nextWorld.id}:${nextWorld.w}x${nextWorld.h}`;
+    if(terrainCache.key===key)return;
+    terrainCache={key,fieldClods:[],fieldStubble:[],fieldFurrows:[],generated:terrainCache.generated+1};
+    if(nextWorld.theme!=="field")return;
+    for(let i=0;i<210;i++)terrainCache.fieldClods.push({x:(i*127+37)%nextWorld.w,y:226+((i*83+i*i*3)%950),r:1.5+(i%4)*.8,kind:i%5===0?"light":i%3===0?"dark":"mid"});
+    for(let i=0;i<22;i++)terrainCache.fieldStubble.push({x:70+(i*179)%1660,y:260+(i*137)%870});
+    for(let row=0;row<12;row++)terrainCache.fieldFurrows.push({y:238+row*82+(row%3)*7,row});
   }
 
   function generateChlum(){
@@ -861,8 +875,7 @@
     ctx.strokeStyle="rgba(214,226,190,.13)";ctx.lineWidth=2;for(let x=18;x<world.w;x+=43){ctx.beginPath();ctx.moveTo(x,135);ctx.lineTo(x+7,184);ctx.stroke();}
 
     // Irregular furrows replace the former horizontal stripes; deterministic curves avoid visual flicker.
-    for(let row=0;row<12;row++){
-      const y=238+row*82+(row%3)*7;
+    for(const {y,row} of terrainCache.fieldFurrows){
       const band=ctx.createLinearGradient(0,y-10,0,y+62);band.addColorStop(0,row%2?"#806248":"#76583f");band.addColorStop(.48,row%2?"#664a37":"#604431");band.addColorStop(1,row%2?"#826449":"#795a42");
       ctx.fillStyle=band;ctx.beginPath();ctx.moveTo(0,y-15);ctx.bezierCurveTo(420,y-28+(row%2)*8,920,y+10,world.w,y-10);ctx.lineTo(world.w,y+58);ctx.bezierCurveTo(1230,y+42,620,y+78,0,y+55);ctx.closePath();ctx.fill();
 
@@ -872,8 +885,8 @@
     }
 
     // Mud clods, stones, stubble and shallow rain sheen break up the broad field shapes.
-    for(let i=0;i<210;i++){const x=(i*127+37)%world.w,y=226+((i*83+i*i*3)%950),r=1.5+(i%4)*.8;ctx.fillStyle=i%5===0?"rgba(196,160,108,.27)":i%3===0?"rgba(45,31,24,.32)":"rgba(92,68,49,.36)";ctx.beginPath();ctx.ellipse(x,y,r*1.5,r,(i%7)*.31,0,Math.PI*2);ctx.fill();}
-    for(let i=0;i<22;i++){const x=70+(i*179)%1660,y=260+(i*137)%870;ctx.strokeStyle="rgba(182,159,112,.34)";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y+5);ctx.lineTo(x-2,y-10);ctx.moveTo(x+4,y+5);ctx.lineTo(x+7,y-8);ctx.stroke();}
+    for(const clod of terrainCache.fieldClods){const {x,y,r}=clod;ctx.fillStyle=clod.kind==="light"?"rgba(196,160,108,.27)":clod.kind==="dark"?"rgba(45,31,24,.32)":"rgba(92,68,49,.36)";ctx.beginPath();ctx.ellipse(x,y,r*1.5,r,(x+y)%7*.31,0,Math.PI*2);ctx.fill();}
+    for(const {x,y} of terrainCache.fieldStubble){ctx.strokeStyle="rgba(182,159,112,.34)";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y+5);ctx.lineTo(x-2,y-10);ctx.moveTo(x+4,y+5);ctx.lineTo(x+7,y-8);ctx.stroke();}
     ctx.strokeStyle="rgba(58,43,31,.42)";ctx.lineWidth=7;ctx.lineCap="round";
     for(const off of [-12,12]){ctx.beginPath();ctx.moveTo(290,320+off);ctx.bezierCurveTo(650,350+off,1020,430+off,1570,455+off);ctx.stroke();}
     ctx.strokeStyle="rgba(215,202,169,.08)";ctx.lineWidth=2;for(let i=0;i<7;i++){const x=180+i*245,y=320+(i%3)*190;ctx.beginPath();ctx.ellipse(x,y,65,12,(i%4)*.12,0,Math.PI*2);ctx.stroke();}
@@ -1167,10 +1180,12 @@
       const isSample=i.type==="sample",pulse=.5+.5*Math.sin(performance.now()*.004+i.x*.013);
       ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(1,10,17,6,0,0,Math.PI*2);ctx.fill();
       const aura=ctx.createRadialGradient(0,0,3,0,0,25);aura.addColorStop(0,isSample?"rgba(132,188,137,.18)":"rgba(114,180,133,.22)");aura.addColorStop(1,"rgba(74,142,97,0)");ctx.fillStyle=aura;ctx.beginPath();ctx.arc(0,0,25,0,Math.PI*2);ctx.fill();
-      const gem=ctx.createLinearGradient(-10,-12,11,12);gem.addColorStop(0,isSample?"#a2bb82":"#8fb56e");gem.addColorStop(.28,isSample?"#668a62":"#4e8458");gem.addColorStop(.68,isSample?"#3e654c":"#316244");gem.addColorStop(1,"#193c2f");
+      const variant=i.visualVariant||0;
+      const palette=isSample?[["#b5c98e","#6f9568","#41644e"],["#c6b681","#8a8652","#4a5c3d"],["#9bb7a0","#5f8d78","#315646"]][variant]:[["#8fb56e","#4e8458","#316244"],["#b7a56e","#7c8150","#42583c"],["#7fb39b","#4a836a","#285844"]][variant];
+      const gem=ctx.createLinearGradient(-10,-12,11,12);gem.addColorStop(0,palette[0]);gem.addColorStop(.28,palette[1]);gem.addColorStop(.68,palette[2]);gem.addColorStop(1,"#193c2f");
       ctx.fillStyle=gem;gemPath(0,0,14);ctx.fill();
       ctx.strokeStyle=isSample?"rgba(211,224,170,.7)":"rgba(189,222,170,.7)";ctx.lineWidth=1.4;gemPath(0,0,14);ctx.stroke();
-      ctx.fillStyle=`rgba(235,248,206,${.34+pulse*.24})`;ctx.beginPath();ctx.moveTo(-5,-9);ctx.lineTo(2,-11);ctx.lineTo(-1,-3);ctx.closePath();ctx.fill();
+      ctx.fillStyle=`rgba(235,248,206,${.28+pulse*.24})`;ctx.beginPath();ctx.moveTo(-5+variant*2,-9);ctx.lineTo(2,-11+variant);ctx.lineTo(-1,-3);ctx.closePath();ctx.fill();
       ctx.strokeStyle=`rgba(164,215,155,${.25+pulse*.25})`;ctx.lineWidth=1;ctx.beginPath();ctx.arc(0,0,19+pulse*3,0,Math.PI*2);ctx.stroke();
     }else if(i.type==="clue"){
       ctx.fillStyle="#74adff";ctx.beginPath();ctx.arc(0,0,12,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#d6e7ff";ctx.lineWidth=3;ctx.stroke();
@@ -1382,7 +1397,7 @@
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,primitives:terrainCache.fieldClods.length+terrainCache.fieldStubble.length+terrainCache.fieldFurrows.length},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
