@@ -1,5 +1,13 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## 5.4.2 — dodaná instrumentální hudba a zvuky
+
+- Původní WAV soundtrack byl nahrazen dodanými MP3 ambienty pro Chlum, Nesměň, Besednici a Slávii; hudba se při přechodu lokality plynule zeslabí a znovu spustí.
+- Radar, kopání, nálezy, dokumenty, nebezpečí, zásahy a výsledek používají dodané hudební/produkční efekty místo Web Audio 8bitových oscilátorů.
+- Kopací minihra rozlišuje úder, přesný zásah, chybu a zahrabání podle dodaných variant dopadu; kroky zůstávají záměrně velmi tiché jako prostorový fallback.
+- Service worker dostal novou audio cache a offline smoke ověřuje načtení skutečného ambientu i efektu.
+- Přiložené licenční a auditní soubory zachovávají původ dodaných bytes; neregistrované alternativy nejsou aktivní součástí buildu.
+
 ## Vizuální iterace 5.4.2 — radar, Chlum a kopání
 
 - PWA offline cache byla po vizuální iteraci revizována, aby nové `game.js`, `style.css` a `index.html` nahradily starou předcache i u dříve nainstalované aplikace;
