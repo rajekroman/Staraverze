@@ -1,0 +1,46 @@
+import { test, expect } from "@playwright/test";
+
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2";
+
+test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
+  await page.goto("/?debug=1", { waitUntil: "load" });
+
+  await expect.poll(
+    () => page.evaluate(async () => {
+      if (!("serviceWorker" in navigator)) return false;
+      await navigator.serviceWorker.ready;
+      return Boolean(navigator.serviceWorker.controller);
+    }),
+    { timeout: 15_000 }
+  ).toBe(true);
+
+  await expect.poll(
+    () => page.evaluate(async cacheName => (await caches.keys()).includes(cacheName), CACHE_NAME),
+    { timeout: 15_000 }
+  ).toBe(true);
+
+  await context.setOffline(true);
+
+  const response = await page.reload({ waitUntil: "domcontentloaded" });
+  expect(response?.status()).toBe(200);
+
+  await expect(page.locator("#playButton")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => Boolean(window.__lovecDebug))).toBe(true);
+
+  const started = await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  expect(started.level).toBe("chlum");
+
+  const snapshot = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(snapshot).toMatchObject({
+    version: "5.4.2",
+    mode: "playing",
+    level: "chlum"
+  });
+
+  const canvas = await page.locator("#game").evaluate(element => ({
+    width: element.width,
+    height: element.height
+  }));
+  expect(canvas.width).toBeGreaterThan(300);
+  expect(canvas.height).toBeGreaterThan(300);
+});
