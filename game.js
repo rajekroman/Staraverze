@@ -1263,6 +1263,26 @@
         setDigMarker(value=digZoneCenter){digMarker=clamp(value,0,1);return digMarker;},
         setDigSpeed(value=0){digSpeed=Math.max(0,Number(value)||0);return digSpeed;},
         setDigTime(value=4){digTimeLeft=clamp(value,0,7);return digTimeLeft;},
+        completeGoal(){
+          if(!world)return null;
+          const r=world.runtime;
+          if(world.id==="chlum"){
+            r.collected=6;
+            while(state.stones.length<6)state.stones.push(makeStone("Chlum",state.stones.length===5?"good":"common",true));
+          }else if(world.id==="locenice"){
+            r.correct=5;r.real=3;r.identified=Math.max(r.identified||0,5);
+          }else if(world.id==="nesmen"){
+            r.permit=true;r.dug=3;r.filled=3;r.open=0;
+          }else if(world.id==="besednice"){
+            r.clues=3;r.hedgehog=true;r.bossStarted=true;r.bossDefeated=true;
+            if(!state.stones.some(stone=>stone.rarity==="hedgehog"))state.stones.push(makeStone("Besednice","hedgehog",true,8));
+          }else if(world.id==="malse"){
+            r.papers=3;r.bossStarted=true;r.bossDefeated=true;
+          }
+          updateHUD(true);save();
+          return {level:world.id,complete:goalComplete(),stones:state.stones.length};
+        },
+        exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:digInputLock>0};},
         snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
