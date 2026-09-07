@@ -1,8 +1,9 @@
 # Audio asset provenance and license
 
 The canonical v7.3 production audio set is the 21 files listed in
-`assets/audio/v73-audio-build-audit.json` and registered in
-`assets/manifests/assets.json`.
+`v73-audio-build-audit.json` beside this document. The audit records each
+active file's byte size, SHA-256, provenance declaration and, where verified,
+technical metadata.
 
 This directory now contains **mixed provenance**. A blanket CC0 statement no
 longer applies to every MP3 after the direct production-audio replacements.
