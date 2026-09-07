@@ -271,7 +271,7 @@
   let digSpeed = 1.25;
   let digTimeLeft = 7;
   let digZoneCenter = .5;
-  let digInputLock = 0;
+  let digInputLockUntil = 0;
   let jurySelection = new Set();
   let dialogueCallback = null;
   let shake = 0;
@@ -555,14 +555,14 @@
   function startDig(h){
     if(!h.active||world.id==="chlum")return;
     if(world.id==="nesmen"&&!world.runtime.permit){toast("Nejdřív získej souhlas lesníka","bad",1200);return;}
-    currentDig=h;digMarker=rand(.08,.92);digDir=Math.random()<.5?-1:1;digHits=0;digSpeed=1.25;digTimeLeft=7;digZoneCenter=.5;digInputLock=0;mode="dig";setPlaying(false);$("digHits").textContent="◇ ◇ ◇";$("digTitle").textContent=h.special==="hedgehog"?"Ježkový profil":"Rychlé kopání";
+    currentDig=h;digMarker=rand(.08,.92);digDir=Math.random()<.5?-1:1;digHits=0;digSpeed=1.25;digTimeLeft=7;digZoneCenter=.5;digInputLockUntil=0;mode="dig";setPlaying(false);$("digHits").textContent="◇ ◇ ◇";$("digTitle").textContent=h.special==="hedgehog"?"Ježkový profil":"Rychlé kopání";
     setDigFeedback("Čekám na první úder");
     updateDigZone();$("digTimerFill").style.transform="scaleX(1)";showOnly(screens.dig);
   }
   function setDigFeedback(text,tone=""){$("digFeedback").textContent=text;$("digFeedback").className=`dig-feedback ${tone}`.trim();}
   function updateDigZone(){const width=.26+state.perks.shovel*.055;digZoneCenter=clamp(digZoneCenter,width/2+.04,1-width/2-.04);$("sweetZone").style.left=`${(digZoneCenter-width/2)*100}%`;$("sweetZone").style.width=`${width*100}%`;}
   function digAttempt(){
-    if(mode!=="dig"||digInputLock>0)return;digInputLock=.11;audio.sfx("dig");const width=.26+state.perks.shovel*.055;const good=Math.abs(digMarker-digZoneCenter)<=width/2;
+    const now=performance.now();if(mode!=="dig"||now<digInputLockUntil)return;digInputLockUntil=now+110;audio.sfx("dig");const width=.26+state.perks.shovel*.055;const good=Math.abs(digMarker-digZoneCenter)<=width/2;
     if(good){
       shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("good");haptic([12,28,16]);$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");setDigFeedback(`Přesně · tempo ${digHits}/3 · +0,5 s`,"good");
       const card=$("digScreen").querySelector(".dig-card");card.classList.remove("hit");void card.offsetWidth;card.classList.add("hit");
@@ -731,7 +731,7 @@
   function update(dt){
     audio.update(dt,mode==="playing");
     if(mode==="dig"){
-      digInputLock=Math.max(0,digInputLock-dt);digMarker+=digDir*dt*digSpeed;digTimeLeft=Math.max(0,digTimeLeft-dt);
+      digMarker+=digDir*dt*digSpeed;digTimeLeft=Math.max(0,digTimeLeft-dt);
       if(digMarker>=1){digMarker=1;digDir=-1;}if(digMarker<=0){digMarker=0;digDir=1;}
       const width=.26+state.perks.shovel*.055;$("digMeter").classList.toggle("in-zone",Math.abs(digMarker-digZoneCenter)<=width/2);$("digMarker").style.left=`calc(${digMarker*100}% - 5px)`;$("digTimerFill").style.transform=`scaleX(${digTimeLeft/7})`;
       if(digTimeLeft<=0)failDig();return;
@@ -1381,7 +1381,7 @@
           return {level:world.id,complete:goalComplete(),stones:state.stones.length};
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
-        digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:digInputLock>0};},
+        digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
         snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
