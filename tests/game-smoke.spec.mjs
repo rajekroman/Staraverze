@@ -341,7 +341,7 @@ test("Ločenice projdou reálným radarem a určením pravého i chybně označe
   const beforeCorrect = await page.evaluate(() => window.__lovecDebug.snapshot());
   await page.locator(correctSample.real ? "#realButton" : "#glassButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
-  await expect(page.locator("#objective")).toHaveText(
+  await expect(page.locator("#objectiveLabel")).toHaveText(
     correctSample.real ? "Správně 1/5 · pravé 1/3" : "Správně 1/5 · pravé 0/3"
   );
   const afterCorrect = await page.evaluate(() => window.__lovecDebug.snapshot());
@@ -352,7 +352,7 @@ test("Ločenice projdou reálným radarem a určením pravého i chybně označe
   const beforeWrong = await page.evaluate(() => window.__lovecDebug.snapshot());
   await page.locator(wrongSample.real ? "#glassButton" : "#realButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
-  await expect(page.locator("#objective")).toHaveText("Správně 0/5 · pravé 0/3");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Správně 0/5 · pravé 0/3");
   const afterWrong = await page.evaluate(() => window.__lovecDebug.snapshot());
   expect(afterWrong.heat).toBeGreaterThan(beforeWrong.heat);
   expect(afterWrong.state.stones).toBe(0);
