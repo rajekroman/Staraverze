@@ -3,7 +3,8 @@
 
   const $ = id => document.getElementById(id);
   const canvas = $("game");
-  const ctx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  const screenCtx = canvas.getContext("2d", { alpha: false, desynchronized: true });
+  let ctx = screenCtx;
   const app = $("app");
   const hud = $("hud");
   const controls = $("controls");
@@ -254,9 +255,9 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
-  // Static terrain geometry is generated once per level and reused by every frame.
-  // This keeps the illustrated field deterministic without changing gameplay or camera behavior.
-  let terrainCache = {key:"", fieldClods:[], fieldStubble:[], fieldFurrows:[], generated:0};
+  // Static non-city terrain is rasterized once per level and reused by every frame.
+  // City water remains dynamic, so Malše continues to render live.
+  let terrainCache = {key:"", canvas:null, scale:1, generated:0};
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
@@ -342,13 +343,14 @@
     const dpr=Math.max(1,Math.min(native,2,budgetDpr));
     viewport={w,h,dpr};
     canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width="100%";canvas.style.height="100%";
-    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.imageSmoothingEnabled=true;
+    screenCtx.setTransform(dpr,0,0,dpr,0,0);screenCtx.imageSmoothingEnabled=true;
+    if(world&&world.theme!=="city")buildTerrainCache(world);
   }
 
   function addProp(type,x,y,o={}){world.props.push({type,x,y,...o});}
   function addObstacle(x,y,w,h,o={}){world.obstacles.push({x,y,w,h,...o});}
   function addHotspot(x,y,o={}){const profile=Boolean(o.needsFill||o.special==="hedgehog");world.hotspots.push({x,y,r:profile?42:24,w:profile?74:0,h:profile?42:0,angle:profile?rand(-.22,.22):0,revealed:Boolean(o.revealed),active:true,ttl:0,...o});}
-  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,visualVariant:Math.abs(Math.round((x*17+y*31)%3)),...o});}
+  function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,visualVariant:Math.abs(Math.round((x*17+y*31)%4)),...o});}
   function addPatrol(type,points,o={}){const p=points[0];world.patrols.push({type,x:p.x,y:p.y,points,index:1,speed:o.speed||80,vision:o.vision||180,angle:0,active:true,...o});}
 
   function generateLevel(index){
@@ -366,13 +368,25 @@
   }
 
   function buildTerrainCache(nextWorld){
-    const key=`${nextWorld.id}:${nextWorld.w}x${nextWorld.h}`;
-    if(terrainCache.key===key)return;
-    terrainCache={key,fieldClods:[],fieldStubble:[],fieldFurrows:[],generated:terrainCache.generated+1};
-    if(nextWorld.theme!=="field")return;
-    for(let i=0;i<210;i++)terrainCache.fieldClods.push({x:(i*127+37)%nextWorld.w,y:226+((i*83+i*i*3)%950),r:1.5+(i%4)*.8,kind:i%5===0?"light":i%3===0?"dark":"mid"});
-    for(let i=0;i<22;i++)terrainCache.fieldStubble.push({x:70+(i*179)%1660,y:260+(i*137)%870});
-    for(let row=0;row<12;row++)terrainCache.fieldFurrows.push({y:238+row*82+(row%3)*7,row});
+    const previousCount=terrainCache.generated||0;
+    if(!nextWorld||nextWorld.theme==="city"){terrainCache={key:"",canvas:null,scale:1,generated:previousCount};return;}
+    const scale=Math.max(1,Math.min(viewport.dpr||1,1.5));
+    const key=`${nextWorld.id}:${nextWorld.w}x${nextWorld.h}@${scale.toFixed(2)}`;
+    if(terrainCache.key===key&&terrainCache.canvas)return;
+    const surface=document.createElement("canvas");
+    surface.width=Math.max(1,Math.round(nextWorld.w*scale));
+    surface.height=Math.max(1,Math.round(nextWorld.h*scale));
+    const cacheCtx=surface.getContext("2d",{alpha:false});
+    if(!cacheCtx){terrainCache={key:"",canvas:null,scale:1,generated:previousCount};return;}
+    const previousCtx=ctx;
+    try{
+      ctx=cacheCtx;
+      ctx.setTransform(scale,0,0,scale,0,0);
+      ctx.imageSmoothingEnabled=true;
+      drawGround();
+      drawGroundDetails();
+    }finally{ctx=previousCtx;}
+    terrainCache={key,canvas:surface,scale,generated:previousCount+1};
   }
 
   function generateChlum(){
@@ -833,7 +847,7 @@
   function render(){
     ctx.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);ctx.clearRect(0,0,viewport.w,viewport.h);
     if(!world){drawMenuBackdrop();return;}
-    ctx.save();const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;ctx.translate(sx-camera.x,sy-camera.y);drawGround();drawGroundDetails();drawWorldObjects();drawEffects();ctx.restore();drawScreenVignette();drawAtmosphereOverlay();drawObjectiveArrow();
+    ctx.save();const sx=shake?(Math.random()-.5)*shake:0,sy=shake?(Math.random()-.5)*shake:0;ctx.translate(sx-camera.x,sy-camera.y);if(terrainCache.canvas){ctx.drawImage(terrainCache.canvas,0,0,terrainCache.canvas.width,terrainCache.canvas.height,0,0,world.w,world.h);}else{drawGround();drawGroundDetails();}drawWorldObjects();drawEffects();ctx.restore();drawScreenVignette();drawAtmosphereOverlay();drawObjectiveArrow();
   }
 
   function drawMenuBackdrop(){const g=ctx.createLinearGradient(0,0,0,viewport.h);g.addColorStop(0,"#142a35");g.addColorStop(.52,"#2b4633");g.addColorStop(1,"#3b2d22");ctx.fillStyle=g;ctx.fillRect(0,0,viewport.w,viewport.h);}
@@ -875,7 +889,8 @@
     ctx.strokeStyle="rgba(214,226,190,.13)";ctx.lineWidth=2;for(let x=18;x<world.w;x+=43){ctx.beginPath();ctx.moveTo(x,135);ctx.lineTo(x+7,184);ctx.stroke();}
 
     // Irregular furrows replace the former horizontal stripes; deterministic curves avoid visual flicker.
-    for(const {y,row} of terrainCache.fieldFurrows){
+    for(let row=0;row<12;row++){
+      const y=238+row*82+(row%3)*7;
       const band=ctx.createLinearGradient(0,y-10,0,y+62);band.addColorStop(0,row%2?"#806248":"#76583f");band.addColorStop(.48,row%2?"#664a37":"#604431");band.addColorStop(1,row%2?"#826449":"#795a42");
       ctx.fillStyle=band;ctx.beginPath();ctx.moveTo(0,y-15);ctx.bezierCurveTo(420,y-28+(row%2)*8,920,y+10,world.w,y-10);ctx.lineTo(world.w,y+58);ctx.bezierCurveTo(1230,y+42,620,y+78,0,y+55);ctx.closePath();ctx.fill();
 
@@ -885,8 +900,8 @@
     }
 
     // Mud clods, stones, stubble and shallow rain sheen break up the broad field shapes.
-    for(const clod of terrainCache.fieldClods){const {x,y,r}=clod;ctx.fillStyle=clod.kind==="light"?"rgba(196,160,108,.27)":clod.kind==="dark"?"rgba(45,31,24,.32)":"rgba(92,68,49,.36)";ctx.beginPath();ctx.ellipse(x,y,r*1.5,r,(x+y)%7*.31,0,Math.PI*2);ctx.fill();}
-    for(const {x,y} of terrainCache.fieldStubble){ctx.strokeStyle="rgba(182,159,112,.34)";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y+5);ctx.lineTo(x-2,y-10);ctx.moveTo(x+4,y+5);ctx.lineTo(x+7,y-8);ctx.stroke();}
+    for(let i=0;i<210;i++){const x=(i*127+37)%world.w,y=226+((i*83+i*i*3)%950),r=1.5+(i%4)*.8;ctx.fillStyle=i%5===0?"rgba(196,160,108,.27)":i%3===0?"rgba(45,31,24,.32)":"rgba(92,68,49,.36)";ctx.beginPath();ctx.ellipse(x,y,r*1.5,r,(i%7)*.31,0,Math.PI*2);ctx.fill();}
+    for(let i=0;i<22;i++){const x=70+(i*179)%1660,y=260+(i*137)%870;ctx.strokeStyle="rgba(182,159,112,.34)";ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(x,y+5);ctx.lineTo(x-2,y-10);ctx.moveTo(x+4,y+5);ctx.lineTo(x+7,y-8);ctx.stroke();}
     ctx.strokeStyle="rgba(58,43,31,.42)";ctx.lineWidth=7;ctx.lineCap="round";
     for(const off of [-12,12]){ctx.beginPath();ctx.moveTo(290,320+off);ctx.bezierCurveTo(650,350+off,1020,430+off,1570,455+off);ctx.stroke();}
     ctx.strokeStyle="rgba(215,202,169,.08)";ctx.lineWidth=2;for(let i=0;i<7;i++){const x=180+i*245,y=320+(i%3)*190;ctx.beginPath();ctx.ellipse(x,y,65,12,(i%4)*.12,0,Math.PI*2);ctx.stroke();}
