@@ -252,7 +252,7 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
-  let player = {x:0,y:0,r:17,angle:0,step:0,invuln:0};
+  let player = {x:0,y:0,r:17,angle:0,step:0,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
   let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };
@@ -697,7 +697,7 @@
       camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
       updateHUD();return;
     }
-    const len=Math.hypot(input.x,input.y);if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
+    const len=Math.hypot(input.x,input.y);player.animTime+=dt;player.moving=len>.04;if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
     updateHotspots(dt);updatePatrols(dt);updateRival(dt);resolveDanger(dt);if((dangerActive||state.heat>=68)&&dangerBeatTimer<=0){audio.sfx("heartbeat");dangerBeatTimer=state.heat>=88?.42:.68;}updateParticles(dt);findNearest();
     camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
     if(scanPulse>0){scanPulse+=dt*1.4;if(scanPulse>1)scanPulse=0;}
@@ -903,9 +903,63 @@
   }
   function drawPlayer(){
     ctx.save();ctx.translate(player.x,player.y);const blink=player.invuln>0&&Math.floor(player.invuln*10)%2===0;ctx.globalAlpha=blink?.4:1;
-    if(world?.theme==="night"){const glow=ctx.createRadialGradient(0,-10,7,0,-10,58);glow.addColorStop(0,"rgba(210,255,228,.36)");glow.addColorStop(1,"rgba(210,255,228,0)");ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,-10,58,0,Math.PI*2);ctx.fill();}
-    drawActor(0,0,"player",player.angle||0,"",true);
-    ctx.strokeStyle=world?.theme==="night"?"rgba(229,255,239,.72)":"rgba(255,255,255,.12)";ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(0,-12,25,0,Math.PI*2);ctx.stroke();ctx.restore();
+    if(world?.theme==="night"){const glow=ctx.createRadialGradient(0,-18,7,0,-18,70);glow.addColorStop(0,"rgba(210,255,228,.42)");glow.addColorStop(1,"rgba(210,255,228,0)");ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,-18,70,0,Math.PI*2);ctx.fill();}
+    ctx.rotate(player.angle||0);
+    drawHeroVisual();
+    ctx.restore();
+  }
+
+  // The player gets a bespoke silhouette so the collector reads clearly against every biome.
+  function drawHeroVisual(){
+    const moving=player.moving;const phase=moving?player.step*1.1:player.animTime*2.1;
+    const stride=moving?Math.sin(phase):Math.sin(phase)*.08;
+    const breathe=Math.sin(player.animTime*2.2)*.8;
+    const lean=moving?stride*.018:0;
+    ctx.save();ctx.transform(1,0,lean,1,0,0);
+    ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,17,23+Math.abs(stride)*1.5,9,0,0,Math.PI*2);ctx.fill();
+
+    // Canvas backpack and rolled field jacket.
+    ctx.fillStyle="#254f40";roundRect(ctx,-20,-28,13,29,5);ctx.fill();
+    ctx.fillStyle="#3f765b";roundRect(ctx,-18,-23,9,14,3);ctx.fill();
+    ctx.strokeStyle="#93c7a0";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-18,-20);ctx.lineTo(-9,-20);ctx.stroke();
+
+    // Boots and trousers use an eased stride rather than rigid limb swapping.
+    const leftX=-7+stride*5,rightX=7-stride*5;
+    ctx.strokeStyle="#33474c";ctx.lineWidth=8;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-5,1);ctx.lineTo(leftX,21);ctx.moveTo(5,1);ctx.lineTo(rightX,21);ctx.stroke();
+    ctx.strokeStyle="#17262b";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(leftX,21);ctx.lineTo(leftX+4,24);ctx.moveTo(rightX,21);ctx.lineTo(rightX-4,24);ctx.stroke();
+    ctx.strokeStyle="#75a58d";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(leftX-3,19);ctx.lineTo(leftX+3,19);ctx.moveTo(rightX-3,19);ctx.lineTo(rightX+3,19);ctx.stroke();
+
+    // Teal field jacket, high-contrast trim and satchel strap.
+    ctx.fillStyle="#3f8a70";roundRect(ctx,-17,-30+breathe*.15,34,35,11);ctx.fill();
+    ctx.fillStyle="#245d4f";roundRect(ctx,-13,-25+breathe*.15,26,26,8);ctx.fill();
+    ctx.fillStyle="#b7e7b7";roundRect(ctx,-3,-25+breathe*.15,6,29,3);ctx.fill();
+    ctx.strokeStyle="#b7e7b7";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,-25);ctx.lineTo(13,5);ctx.stroke();
+    ctx.fillStyle="#d7efcb";roundRect(ctx,7,-11+breathe,8,9,2);ctx.fill();
+    ctx.strokeStyle="#172e2b";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(12,-10);ctx.lineTo(12,-3);ctx.stroke();
+
+    // Arms swing opposite the feet; the detector remains readable during movement.
+    const arm= stride*7;
+    ctx.strokeStyle="#3f8a70";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(-14,-20);ctx.lineTo(-20-arm,-3);ctx.stroke();
+    ctx.fillStyle="#d49d78";ctx.beginPath();ctx.arc(-20-arm,-3,3.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#3f8a70";ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(14,-20);ctx.lineTo(20+arm,-6);ctx.stroke();
+    ctx.fillStyle="#d49d78";ctx.beginPath();ctx.arc(20+arm,-6,3.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#8aa08a";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(20+arm,-6);ctx.lineTo(31+arm,18);ctx.stroke();
+    ctx.fillStyle="#bcd9c2";ctx.beginPath();ctx.arc(31+arm,18,4,0,Math.PI*2);ctx.fill();
+
+    // Scarf has a small wind response even while standing still.
+    const scarfWave=Math.sin(player.animTime*3.4)*2+(moving?stride*3:0);
+    ctx.fillStyle="#e7bd66";ctx.beginPath();ctx.moveTo(-12,-30);ctx.lineTo(12,-30);ctx.lineTo(10,-23);ctx.lineTo(-9,-23);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(7,-26);ctx.quadraticCurveTo(17+scarfWave,-21,13+scarfWave,-10);ctx.lineTo(7,-14);ctx.closePath();ctx.fill();
+
+    // Face, hair and wide brim make the hero legible at small mobile sizes.
+    ctx.fillStyle="#d49d78";ctx.fillRect(-3,-35,6,7);ctx.beginPath();ctx.arc(0,-44,12.5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#183526";ctx.beginPath();ctx.arc(0,-48,12.5,Math.PI,0);ctx.fill();ctx.fillRect(-12,-47,5,8);ctx.fillRect(7,-47,5,8);
+    ctx.fillStyle="#f0c981";ctx.beginPath();ctx.ellipse(0,-55,18,5,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#356b51";roundRect(ctx,-12,-64,24,10,5);ctx.fill();
+    ctx.strokeStyle="#1f493a";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-12,-55);ctx.lineTo(12,-55);ctx.stroke();
+    ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(-4.5,-43,2,0,Math.PI*2);ctx.arc(4.5,-43,2,0,Math.PI*2);ctx.fill();ctx.fillStyle="#1a2420";ctx.beginPath();ctx.arc(-4.5,-43,1,0,Math.PI*2);ctx.arc(4.5,-43,1,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle="#70452f";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-4,-36);ctx.quadraticCurveTo(0,-33,4,-36);ctx.stroke();
+    ctx.restore();
+    ctx.strokeStyle=world?.theme==="night"?"rgba(229,255,239,.72)":"rgba(255,255,255,.16)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-15,29,0,Math.PI*2);ctx.stroke();
   }
   function drawVisionCone(observer,vision,halfAngle=.57,active=false,boss=false){
     if(!vision)return; ctx.save();ctx.translate(observer.x,observer.y);ctx.rotate(observer.angle); const gradient=ctx.createRadialGradient(0,0,8,0,0,vision);

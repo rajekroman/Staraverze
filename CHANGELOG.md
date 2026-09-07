@@ -20,3 +20,8 @@
 - přidaná kontrola, aby se boss nespustil po odchodu z Besednice;
 - pohybová stopa bosse se kreslí pouze během sprintu;
 - kužel svítilny se nezobrazuje, když je boss omráčený.
+## 5.4.2 — hlavní postava
+
+- přepracovaná silueta sběratele vltavínů s kloboukem, šátkem, batohem a detektorem;
+- plynulejší idle animace, náklon při pohybu, střídání kroků a jemné vlnění šátku;
+- vyšší kontrast postavy vůči poli, lesu i nočnímu prostředí bez změny kolizí nebo ovládání.
