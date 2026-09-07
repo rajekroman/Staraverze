@@ -27,6 +27,14 @@ export default defineConfig({
     {
       name: "iphone-landscape",
       use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
+    },
+    {
+      name: "desktop-webkit",
+      use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 720 } }
+    },
+    {
+      name: "iphone-portrait-webkit",
+      use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
     }
   ],
   webServer: {
