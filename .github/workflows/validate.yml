@@ -38,6 +38,8 @@ jobs:
             browser: webkit
           - project: iphone-portrait-webkit
             browser: webkit
+          - project: iphone-landscape-webkit
+            browser: webkit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
