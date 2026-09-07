@@ -50,7 +50,6 @@ export default defineConfig({
       testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
     },
-,
     {
       name: "visual-desktop",
       testMatch: VISUAL_TEST,
