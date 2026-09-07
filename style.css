@@ -165,3 +165,70 @@ button{-webkit-tap-highlight-color:transparent}
   #titleScreen .title-copy{gap:5px;padding-top:14px;padding-bottom:14px}
   #titleScreen .title-copy h1{font-size:clamp(52px,10vh,72px);line-height:.82}
 }
+
+
+/* v5.4.2 — radar + digging visual pass */
+.action-button{position:relative;isolation:isolate;overflow:hidden}
+.action-button>span,.action-button>small{position:relative;z-index:3}
+.action-button:not(.ready)::before{content:"";position:absolute;z-index:1;inset:10px;border:1px solid rgba(191,239,204,.32);border-radius:50%;box-shadow:0 0 0 11px rgba(125,196,145,.055),0 0 0 23px rgba(125,196,145,.035);animation:radarButtonPulse 1.8s ease-out infinite}
+.action-button:not(.ready)::after{content:"";position:absolute;z-index:2;inset:8px;border-radius:50%;background:conic-gradient(from 205deg,transparent 0 67%,rgba(196,247,209,.4) 76%,rgba(106,195,132,.14) 84%,transparent 91%);animation:radarButtonSweep 1.55s linear infinite;mix-blend-mode:screen}
+@keyframes radarButtonPulse{0%{transform:scale(.72);opacity:.18}45%{opacity:.62}100%{transform:scale(1.15);opacity:0}}
+@keyframes radarButtonSweep{to{transform:rotate(1turn)}}
+
+.dig-card{position:relative;max-width:560px;overflow:hidden;background:
+  radial-gradient(circle at 72% 10%,rgba(185,142,82,.11),transparent 33%),
+  linear-gradient(160deg,rgba(31,34,25,.985),rgba(15,18,14,.995) 46%,rgba(24,17,12,.995));
+  border-color:rgba(211,183,137,.2);box-shadow:0 30px 90px rgba(0,0,0,.6),inset 0 1px rgba(255,255,255,.04)}
+.dig-card::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.34;background:
+  radial-gradient(circle at 12% 24%,rgba(205,169,111,.12) 0 2px,transparent 3px),
+  radial-gradient(circle at 83% 68%,rgba(112,82,53,.16) 0 3px,transparent 4px),
+  radial-gradient(circle at 42% 78%,rgba(230,202,157,.08) 0 1px,transparent 2px);
+  background-size:79px 67px,111px 93px,61px 53px}
+.dig-card>*{position:relative;z-index:1}
+.dig-card .eyebrow{color:#c9b17f}
+#digInfo{max-width:42ch;margin:0 auto;color:#c7cec5;line-height:1.45}
+
+.dig-illustration{position:relative;height:112px;margin:16px auto 10px;border-radius:18px;overflow:hidden;border:1px solid rgba(215,189,143,.13);background:
+  linear-gradient(180deg,rgba(111,137,94,.16) 0 27%,rgba(99,76,54,.35) 28% 100%),
+  linear-gradient(135deg,#263128,#171b16)}
+.dig-illustration::before{content:"";position:absolute;left:0;right:0;top:29px;height:2px;background:linear-gradient(90deg,transparent,rgba(220,195,151,.3),transparent)}
+.dig-ground{position:absolute;left:-6%;width:112%;border-radius:50% 50% 0 0/65% 65% 0 0;transform:rotate(-1deg)}
+.dig-ground-back{height:58px;bottom:-4px;background:linear-gradient(180deg,#8a6848,#5a402e 44%,#35271e);clip-path:polygon(0 22%,13% 15%,25% 25%,39% 10%,55% 22%,68% 13%,82% 26%,100% 16%,100% 100%,0 100%)}
+.dig-ground-front{height:35px;bottom:-6px;background:linear-gradient(180deg,rgba(196,151,91,.32),#3d2d22 35%,#211a15);clip-path:polygon(0 36%,12% 18%,25% 35%,38% 21%,52% 40%,64% 14%,80% 34%,91% 20%,100% 32%,100% 100%,0 100%)}
+.dig-shovel-art{position:absolute;left:30%;top:6px;width:7px;height:72px;border-radius:999px;background:linear-gradient(90deg,#63492f,#a77b49 46%,#6f5134);transform:rotate(22deg);transform-origin:50% 95%;box-shadow:0 5px 10px rgba(0,0,0,.28)}
+.dig-shovel-art::before{content:"";position:absolute;left:-10px;top:-5px;width:27px;height:10px;border:4px solid #8f6a43;border-bottom:0;border-radius:14px 14px 0 0}
+.dig-shovel-art::after{content:"";position:absolute;left:-8px;bottom:-13px;width:23px;height:26px;background:linear-gradient(145deg,#8d9690,#4d5552);clip-path:polygon(10% 0,90% 0,78% 74%,50% 100%,22% 74%);box-shadow:inset 4px 0 rgba(255,255,255,.11)}
+.dig-stone-art{position:absolute;right:27%;bottom:16px;color:#759a67;font-size:30px;line-height:1;text-shadow:0 2px 1px #1b291f,0 0 15px rgba(130,181,111,.28);transform:rotate(-8deg);animation:digStoneGlimmer 2.2s ease-in-out infinite}
+@keyframes digStoneGlimmer{50%{filter:brightness(1.25);transform:translateY(-2px) rotate(-4deg)}}
+
+.dig-meter-wrap{margin:17px 0 8px;text-align:left}
+.dig-meter-label{display:block;margin:0 8px 8px;color:#8f9b91;font-size:8px;font-weight:1000;letter-spacing:.18em}
+.dig-meter{height:32px;margin:0 3px 16px;overflow:visible;border-radius:10px;border:1px solid rgba(220,199,161,.18);background:
+  repeating-linear-gradient(90deg,transparent 0 9.5%,rgba(255,255,255,.045) 10%,transparent 10.5%),
+  linear-gradient(180deg,#0d1610,#182019);box-shadow:inset 0 5px 13px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.18)}
+#sweetZone{top:3px;bottom:3px;border-radius:7px;background:linear-gradient(90deg,rgba(71,117,67,.9),rgba(109,157,88,.96),rgba(70,119,70,.9));border:1px solid rgba(190,222,162,.36);box-shadow:inset 0 1px rgba(255,255,255,.13),0 0 16px rgba(99,154,86,.13)}
+#sweetZone::after{content:"";position:absolute;left:50%;top:2px;bottom:2px;width:1px;background:rgba(229,244,204,.42);box-shadow:-12px 0 rgba(229,244,204,.11),12px 0 rgba(229,244,204,.11)}
+#digMarker{top:-6px;bottom:auto;width:12px;height:44px;border-radius:5px 5px 8px 8px;background:linear-gradient(90deg,#e8eee8,#9ea8a2 48%,#f0f4ef);box-shadow:0 6px 16px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.42);clip-path:polygon(28% 0,72% 0,72% 42%,100% 55%,78% 100%,22% 100%,0 55%,28% 42%)}
+.dig-meter.in-zone #digMarker{background:linear-gradient(90deg,#f5fff2,#b8d4ad 48%,#f6fff1);box-shadow:0 0 0 1px rgba(238,255,230,.65),0 0 24px rgba(128,188,105,.42),0 7px 15px rgba(0,0,0,.34)}
+.dig-meter.in-zone #sweetZone{filter:brightness(1.08);box-shadow:inset 0 1px rgba(255,255,255,.16),0 0 20px rgba(99,154,86,.2)}
+
+.dig-timer{height:9px;margin:7px 3px 17px;border:1px solid rgba(210,189,154,.12);background:#111610;box-shadow:inset 0 2px 5px rgba(0,0,0,.45)}
+.dig-timer span{background:linear-gradient(90deg,#a45b3f 0%,#d0a456 40%,#7fa66e 75%,#a9c98c 100%);box-shadow:0 0 12px rgba(170,199,137,.14)}
+.dig-hits{display:flex;justify-content:center;gap:14px;letter-spacing:0;margin:3px 0 12px;color:#aa8e58;text-shadow:0 3px 8px rgba(0,0,0,.4)}
+.dig-feedback{min-height:22px;margin:0 0 13px;padding:7px 10px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.045)}
+.dig-feedback.good{color:#a9d49a;border-color:rgba(139,188,120,.18);background:rgba(93,134,78,.08)}
+.dig-feedback.bad{color:#e59a82;border-color:rgba(192,103,79,.18);background:rgba(132,64,48,.08)}
+.dig-action{min-height:62px;border:1px solid rgba(220,216,182,.24);background:linear-gradient(145deg,#9a8153,#5e704f);color:#f7f3e8;text-shadow:0 1px 1px rgba(0,0,0,.25);box-shadow:inset 0 1px rgba(255,255,255,.12),0 13px 30px rgba(0,0,0,.28)}
+.dig-card.hit{animation:digImpactEarth .18s ease-out}
+@keyframes digImpactEarth{45%{transform:translateY(2px) scale(1.012);box-shadow:0 0 0 2px rgba(164,190,129,.2),0 22px 75px rgba(0,0,0,.55)}}
+
+@media(max-width:520px){
+  .dig-illustration{height:88px;margin-top:11px}
+  .dig-shovel-art{left:28%;top:2px;transform:scale(.82) rotate(22deg);transform-origin:50% 100%}
+  .dig-stone-art{right:24%;bottom:12px;font-size:25px}
+  .dig-meter{height:28px}
+  #digMarker{height:39px}
+}
+@media(prefers-reduced-motion:reduce){
+  .action-button:not(.ready)::before,.action-button:not(.ready)::after,.dig-stone-art{animation:none!important}
+}
