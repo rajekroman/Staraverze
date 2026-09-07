@@ -2,12 +2,12 @@ Lovec vltavínů Reborn 5.4.2 — aktuální ověřený stav
 
 OVĚŘENÍ 5.4.2
 - statická validace: PASS
-- desktop Chromium smoke: 13/13 PASS
-- iPhone portrait Chromium smoke: 13/13 PASS
-- iPhone landscape Chromium smoke: 13/13 PASS
-- desktop WebKit smoke: 13/13 PASS
-- iPhone portrait WebKit smoke: 13/13 PASS
-- iPhone landscape WebKit smoke: 13/13 PASS
+- desktop Chromium smoke: 14/14 PASS
+- iPhone portrait Chromium smoke: 14/14 PASS
+- iPhone landscape Chromium smoke: 14/14 PASS
+- desktop WebKit smoke: 14/14 PASS
+- iPhone portrait WebKit smoke: 14/14 PASS
+- iPhone landscape WebKit smoke: 14/14 PASS
 - offline Chromium PWA smoke: 1/1 PASS
 - všech 5 levelů: spuštěno a vykresleno bez runtime chyby
 - full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
@@ -17,6 +17,7 @@ OVĚŘENÍ 5.4.2
 - Chlum/Ločenice: povrchové nálezy jsou skryté do odhalení radarem PASS
 - Ločenice: reálné otevření identifikačního modalu, správné určení a penalizace chybné volby PASS
 - Chlum: bez starých obdélníkových výkopů PASS
+- Chlum: radar → 6 skutečných povrchových pickupů → odchod do další lokality PASS
 - kopání: klávesnice i mobilní pointer vstup, ochrana proti dvojímu úderu a odezva PASS
 - Nesměň: bez souhlasu lesníka nelze kopat; souhlas → 3 profily → 3× zahrabat → odchod PASS
 - Besednice: theft alert blokuje vstup, Karel nejde zasáhnout mimo stun okno a po 3 zásazích vrátí ježka PASS

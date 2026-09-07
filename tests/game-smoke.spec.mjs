@@ -515,3 +515,44 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
   expect(errors).toEqual([]);
 });
+
+test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ page }) => {
+  const errors = watchErrors(page);
+  const stones = [
+    { x: 500, y: 840 },
+    { x: 820, y: 910 },
+    { x: 1120, y: 760 },
+    { x: 1440, y: 900 },
+    { x: 620, y: 480 },
+    { x: 1500, y: 500 }
+  ];
+
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await expect(page.locator("#objectiveLabel")).toHaveText("Sběr z povrchu 0/6");
+
+  for (let index = 0; index < stones.length; index += 1) {
+    const stone = stones[index];
+    await page.evaluate(({ x, y }) => {
+      window.__lovecDebug.setPlayer(x, y);
+      window.__lovecDebug.setHeat(0);
+      window.__lovecDebug.setScanCooldown(0);
+    }, stone);
+
+    await page.keyboard.press("Space");
+    await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+    await page.keyboard.press("Space");
+
+    await expect(page.locator("#objectiveLabel")).toHaveText(`Sběr z povrchu ${index + 1}/6`);
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(index + 1);
+  }
+
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(1650, 150);
+    window.__lovecDebug.setHeat(0);
+  });
+  await expect(page.locator("#actionText")).toHaveText("ODEJÍT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  expect(errors).toEqual([]);
+});
