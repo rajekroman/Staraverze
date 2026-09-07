@@ -252,7 +252,7 @@
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
-  let player = {x:0,y:0,r:17,angle:0,step:0,animTime:0,moving:false,invuln:0};
+  let player = {x:0,y:0,r:17,angle:0,facing:1,step:0,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
   let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };
@@ -697,7 +697,7 @@
       camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
       updateHUD();return;
     }
-    const len=Math.hypot(input.x,input.y);player.animTime+=dt;player.moving=len>.04;if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
+    const len=Math.hypot(input.x,input.y);player.animTime+=dt;player.moving=len>.04;if(len>.04){const nx=input.x/Math.max(1,len),ny=input.y/Math.max(1,len);if(Math.abs(nx)>.15)player.facing=nx<0?-1:1;const speed=playerSpeed()*(len>.78?1.28:1);const x=player.x+nx*speed*dt,y=player.y+ny*speed*dt;if(!blocked(x,player.y))player.x=x;if(!blocked(player.x,y))player.y=y;player.angle=Math.atan2(ny,nx);player.step+=dt*(len>.78?13:9);if(Math.floor(player.step*2)%4===0&&Math.random()<.08)audio.sfx("step");}
     updateHotspots(dt);updatePatrols(dt);updateRival(dt);resolveDanger(dt);if((dangerActive||state.heat>=68)&&dangerBeatTimer<=0){audio.sfx("heartbeat");dangerBeatTimer=state.heat>=88?.42:.68;}updateParticles(dt);findNearest();
     camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
     if(scanPulse>0){scanPulse+=dt*1.4;if(scanPulse>1)scanPulse=0;}
@@ -904,7 +904,7 @@
   function drawPlayer(){
     ctx.save();ctx.translate(player.x,player.y);const blink=player.invuln>0&&Math.floor(player.invuln*10)%2===0;ctx.globalAlpha=blink?.4:1;
     if(world?.theme==="night"){const glow=ctx.createRadialGradient(0,-18,7,0,-18,70);glow.addColorStop(0,"rgba(210,255,228,.42)");glow.addColorStop(1,"rgba(210,255,228,0)");ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,-18,70,0,Math.PI*2);ctx.fill();}
-    ctx.rotate(player.angle||0);
+    ctx.scale(player.facing,1);
     drawHeroVisual();
     ctx.restore();
   }
@@ -1124,7 +1124,7 @@
         setHeat(value){state.heat=clamp(value,0,100);return state.heat;},
         setBossStun(value=1){if(!world?.rival)return null;world.rival.stunTimer=value;return world.rival.stunTimer;},
         triggerTheft(){if(!world)return null;showTheftAlert();startRival("karel",player.x+180,player.y-100);return {shown:theftAlertShown,boss:world.rival?.name};},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y},state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing},state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));

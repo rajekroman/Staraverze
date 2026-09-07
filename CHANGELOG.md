@@ -24,4 +24,5 @@
 
 - přepracovaná silueta sběratele vltavínů s kloboukem, šátkem, batohem a detektorem;
 - plynulejší idle animace, náklon při pohybu, střídání kroků a jemné vlnění šátku;
-- vyšší kontrast postavy vůči poli, lesu i nočnímu prostředí bez změny kolizí nebo ovládání.
+- vyšší kontrast postavy vůči poli, lesu i nočnímu prostředí bez změny kolizí nebo ovládání;
+- postava zůstává při pohybu vzpřímená a podle směru se přirozeně zrcadlí vlevo nebo vpravo.
