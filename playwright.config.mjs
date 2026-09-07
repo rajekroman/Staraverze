@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const OFFLINE_TEST = /offline-smoke\.spec\.mjs/;
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
@@ -18,23 +20,37 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-chromium",
+      testIgnore: OFFLINE_TEST,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
     },
     {
       name: "iphone-portrait",
+      testIgnore: OFFLINE_TEST,
       use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
     },
     {
       name: "iphone-landscape",
+      testIgnore: OFFLINE_TEST,
       use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
     },
     {
       name: "desktop-webkit",
+      testIgnore: OFFLINE_TEST,
       use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 720 } }
     },
     {
       name: "iphone-portrait-webkit",
+      testIgnore: OFFLINE_TEST,
       use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
+    },
+    {
+      name: "offline-chromium",
+      testMatch: OFFLINE_TEST,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        serviceWorkers: "allow"
+      }
     }
   ],
   webServer: {
