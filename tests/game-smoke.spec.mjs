@@ -372,3 +372,88 @@ test("Ločenice projdou reálným radarem a určením pravého i chybně označe
   expect(afterWrong.state.stones).toBe(0);
   expect(errors).toEqual([]);
 });
+
+test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async ({ page }) => {
+  const errors = watchErrors(page);
+  const profiles = [
+    { x: 520, y: 880, alreadyRevealed: true },
+    { x: 930, y: 860, alreadyRevealed: false },
+    { x: 1290, y: 740, alreadyRevealed: false }
+  ];
+
+  async function completeDig() {
+    await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigTime(4);
+      window.__lovecDebug.setDigSpeed(0);
+    });
+
+    for (let hit = 1; hit <= 3; hit += 1) {
+      await page.evaluate(() => {
+        const snapshot = window.__lovecDebug.digSnapshot();
+        window.__lovecDebug.setDigSpeed(0);
+        window.__lovecDebug.setDigMarker(snapshot.zoneCenter);
+      });
+      await page.keyboard.press("Space");
+      if (hit < 3) {
+        await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(hit);
+        await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().inputLocked)).toBe(false);
+      }
+    }
+
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+    await expect(page.locator("#actionText")).toHaveText("ZAHRABAT");
+    await page.keyboard.press("Space");
+  }
+
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.setPlayer(520, 880);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await expect(page.locator("#objectiveLabel")).toHaveText("Získej souhlas lesníka");
+
+  await page.keyboard.press("Space");
+  await expect(page.locator("#actionText")).toHaveText("KOPAT");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#digScreen")).not.toHaveClass(/visible/);
+  await expect(page.locator("#toast")).toContainText("souhlas lesníka");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Získej souhlas lesníka");
+
+  await page.evaluate(() => window.__lovecDebug.setPlayer(300, 990));
+  await expect(page.locator("#actionText")).toHaveText("MLUVIT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#dialogScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#dialogName")).toHaveText("LESNÍK");
+  await page.locator("#dialogButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Profily 0/3 · zahrabáno 0/3");
+
+  for (let index = 0; index < profiles.length; index += 1) {
+    const profile = profiles[index];
+    await page.evaluate(({ x, y }) => {
+      window.__lovecDebug.setPlayer(x, y);
+      window.__lovecDebug.setScanCooldown(0);
+    }, profile);
+
+    if (!profile.alreadyRevealed) {
+      await page.keyboard.press("Space");
+      await expect(page.locator("#actionText")).toHaveText("KOPAT");
+    } else {
+      await expect(page.locator("#actionText")).toHaveText("KOPAT");
+    }
+
+    await page.keyboard.press("Space");
+    await completeDig();
+    await expect(page.locator("#objectiveLabel")).toHaveText(
+      `Profily ${index + 1}/3 · zahrabáno ${index + 1}/3`
+    );
+  }
+
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1650, 150));
+  await expect(page.locator("#actionText")).toHaveText("ODEJÍT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  expect(errors).toEqual([]);
+});
