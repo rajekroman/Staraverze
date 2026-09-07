@@ -15,7 +15,7 @@ Vlastník výslovně rozhodl nahradit v6.2.0 opravenou v5.4.1 a pokračovat v je
 
 - `main` je jediná zveřejnitelná větev.
 - Každá změna vzniká z aktuálního `main` ve větvi `agent/<jedno-tema>` a končí kontrolovatelným PR.
-- Žádné přímé commity do `main` a žádné sloučení bez výslovného souhlasu vlastníka pro konkrétní PR a aktuální head SHA.
+- Žádné přímé commity do `main`; vlastník může výslovně povolit automatickou koordinaci a dokončování PR, ale vždy se musí použít ověřený aktuální head SHA.
 - ZIP je vstup nebo archiv; po importu rozhodují soubory, commity, testy a PR v tomto repozitáři.
 
 ## Cílový rozsah v5.4
@@ -30,7 +30,8 @@ Vlastník výslovně rozhodl nahradit v6.2.0 opravenou v5.4.1 a pokračovat v je
 ## Povinné ověření změny
 
 - `npm run validate`;
-- `npm run test:browser` pro desktop, iPhone portrait a iPhone landscape;
+- `npm run test:smoke` v desktop Chromium, iPhone portrait/landscape Chromium a desktop/iPhone portrait/landscape WebKit;
+- `npm run test:offline` v samostatném Chromium projektu se service workerem;
 - všech pět levelů se spustí bez runtime chyby;
 - pauza, ztráta fokusu a změna obrazovky uvolní ovládání;
 - starý nebo poškozený save nesmí shodit hru;
