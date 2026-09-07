@@ -25,6 +25,7 @@
   const RECORD_KEY = "lovecVltavinuRebornRecordsV5_2";
   const LEGACY_SAVE_KEYS = ["lovecVltavinuRebornSaveV5_2","lovecVltavinuRebornSaveV5_1","lovecVltavinuRebornSaveV5_0","lovecVltavinuRebornSaveV4_9","lovecVltavinuRebornSaveV4_8","lovecVltavinuRebornSaveV4_7","lovecVltavinuRebornSaveV4_6","lovecVltavinuRebornSaveV4_5"];
   const isTouch = navigator.maxTouchPoints > 0 || "ontouchstart" in window || matchMedia("(pointer: coarse)").matches;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const storage = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
@@ -1089,6 +1090,18 @@
       light.addColorStop(.36,`rgba(${glow.color},${glow.strength*.34})`);
       light.addColorStop(1,"rgba(0,0,0,0)");
       ctx.fillStyle=light;ctx.fillRect(0,0,viewport.w,viewport.h);
+    }
+    if(world.theme==="forest"||world.theme==="night"){
+      const moteTime=reducedMotion?0:performance.now()*.00036;
+      const core=world.theme==="night"?"221,246,158":"244,221,154";
+      const count=Math.max(8,Math.min(14,Math.round(viewport.w/92)));
+      for(let i=0;i<count;i++){
+        const x=(i*173+Math.sin(moteTime*(1+i%3)+i*1.7)*44+viewport.w)%viewport.w;
+        const y=(i*97+Math.cos(moteTime*(.72+i%2)+i)*28+viewport.h)%viewport.h;
+        const pulse=.35+.65*(.5+.5*Math.sin(moteTime*4+i*2.2));
+        ctx.fillStyle=`rgba(${core},${.035+pulse*.055})`;ctx.beginPath();ctx.arc(x,y,4+pulse*3,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle=`rgba(${core},${.18+pulse*.26})`;ctx.beginPath();ctx.arc(x,y,1+pulse*.65,0,Math.PI*2);ctx.fill();
+      }
     }
     const edge=ctx.createRadialGradient(viewport.w/2,viewport.h/2,Math.min(viewport.w,viewport.h)*.18,viewport.w/2,viewport.h/2,Math.max(viewport.w,viewport.h)*.74);
     edge.addColorStop(0,"rgba(0,0,0,0)"); edge.addColorStop(.72,"rgba(0,0,0,.06)"); edge.addColorStop(1,"rgba(0,0,0,.42)");
