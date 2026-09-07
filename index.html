@@ -62,7 +62,7 @@
   <section id="controls" class="controls hidden" aria-label="Dotykové ovládání">
     <div id="moveZone" class="move-zone"><div id="stick" class="stick"></div></div>
     <button id="actionButton" class="action-button" type="button">
-      <span id="actionIcon">◉</span><small id="actionText">ROZHLÉDNOUT</small>
+      <span id="actionIcon">◉</span><small id="actionText">RADAR</small>
     </button>
   </section>
 
@@ -102,9 +102,10 @@
       <p class="eyebrow">KOPÁNÍ</p>
       <h2 id="digTitle">Drž rytmus lopaty</h2>
       <p id="digInfo">Tref tři přesné údery. Klepni nebo stiskni mezerník v zeleném poli.</p>
-      <div class="dig-meter"><div id="sweetZone"></div><div id="digMarker"></div></div>
+      <div id="digMeter" class="dig-meter"><div id="sweetZone"></div><div id="digMarker"></div></div>
       <div class="dig-timer"><span id="digTimerFill"></span></div>
       <div id="digHits" class="dig-hits">◇ ◇ ◇</div>
+      <div id="digFeedback" class="dig-feedback" role="status" aria-live="polite">Čekám na první úder</div>
       <button id="digButton" class="primary-button dig-action" type="button">ÚDER!</button>
     </div>
   </section>

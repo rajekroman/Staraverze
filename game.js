@@ -51,9 +51,9 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Projdi čerstvě rozorané pole a sbírej vltavíny přímo z povrchu brázd, než pole znovu projede technika.",
+      text: "Projdi čerstvě rozorané pole, radarem odhal vltavíny ukryté v brázdách a seber je dřív, než pole znovu projede technika.",
       why: "Bez silného začátku nebudeš mít co vystavit. Tahle lokalita má odstartovat tvou sbírku pro akci Na zelené vlně.",
-      goal: "Sesbírej 6 vltavínů z povrchu pole.", music: "field"
+      goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
     {
       id: "locenice", name: "Ločenice", title: "Písčitá hrana", theme: "meadow",
@@ -63,7 +63,7 @@
     },
     {
       id: "nesmen", name: "Nesměň", title: "Lesní profily", theme: "forest",
-      text: "V lese jsou povolené jen čisté obdélníkové profily. Vykopej je, seber nález a po sobě vše zase pečlivě zahrab.",
+      text: "V lese jsou povolené jen malé vyznačené průzkumné profily. Vykopej je, seber nález a po sobě vše zase pečlivě zahrab.",
       why: "Na výstavu nestačí jen nálezy. Musíš ukázat, že umíš kopat rozumně a nenecháváš po sobě rozbité místo.",
       goal: "Vykopej a zasyp 3 profily bez zbytečného hluku.", music: "forest"
     },
@@ -271,6 +271,7 @@
   let digSpeed = 1.25;
   let digTimeLeft = 7;
   let digZoneCenter = .5;
+  let digInputLock = 0;
   let jurySelection = new Set();
   let dialogueCallback = null;
   let shake = 0;
@@ -362,13 +363,9 @@
   function generateChlum(){
     world.runtime={permit:true,collected:0}; player.x=360;player.y=1070;
     addProp("farm",135,1080,{scale:.82}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
-    addProp("fieldpit",520,900,{w:190,h:72,angle:-.08});
-    addProp("fieldpit",930,760,{w:245,h:88,angle:.06});
-    addProp("fieldpit",1310,610,{w:210,h:76,angle:-.12});
-    addProp("fieldpit",770,420,{w:170,h:64,angle:.1});
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
-    for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{rarity:i===8?"good":i===6?"rare":"common",documented:true});
+    for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
     addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.25});
     addPatrol("farmer",[{x:1580,y:920},{x:1480,y:650},{x:1660,y:520}],{speed:65,vision:140,requires:"permit"});
     world.exit={x:1650,y:150,r:54,label:"Odjezd"};
@@ -386,7 +383,7 @@
     addProp("sign",220,1010,{text:"Ločenice"});
     const samples=[...SAMPLES,...SAMPLES].sort(()=>Math.random()-.5).slice(0,9);
     const pts=[[420,850],[660,950],[910,820],[1210,950],[1480,820],[520,520],[840,410],[1180,560],[1510,390]];
-    samples.forEach((s,i)=>addItem("sample",pts[i][0],pts[i][1],{sample:s}));
+    samples.forEach((s,i)=>addItem("sample",pts[i][0],pts[i][1],{hidden:true,sample:s}));
     addPatrol("farmer",[{x:400,y:250},{x:1500,y:250},{x:1500,y:690},{x:400,y:690}],{speed:72,vision:150});
     world.exit={x:1650,y:150,r:54,label:"Pokračovat"};
   }
@@ -530,7 +527,7 @@
     let count=0;
     for(const h of world.hotspots){if(h.active&&dist(player,h)<=radius){h.revealed=true;h.ttl=9;count++;}}
     for(const item of world.items){if(item.active&&item.hidden&&dist(player,item)<=radius){item.hidden=false;count++;}}
-    toast(count?`Rozhlédnutí odhalilo ${count} stop${count===1?"u":"y"}`:"Tady nic není",count?"good":"",900);
+    toast(count?`Radar odhalil ${count} ${count===1?"nález":"nálezy"}`:"Radar tady nic nezachytil",count?"good":"",900);
   }
 
   function performAction(){
@@ -547,8 +544,8 @@
   }
 
   function talkNpc(npc){
-    if(world.id==="chlum"){showDialog("Václav","V","Všechny kameny leží po bouřce přímo v brázdách. Stačí je sesbírat z povrchu.");return;}
-    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři obdélníkové profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");});return;}
+    if(world.id==="chlum"){showDialog("Václav","V","Vltavíny leží po bouřce v brázdách, ale splývají s hlínou. Projdi pole s radarem a odhalené kameny seber z povrchu.");return;}
+    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři vyznačené průzkumné profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");});return;}
     showDialog(npc.name,npc.avatar,"Drž se úkolu a sleduj okolí.");
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
@@ -556,18 +553,20 @@
 
   function startDig(h){
     if(!h.active||world.id==="chlum")return;
-    currentDig=h;digMarker=rand(.08,.92);digDir=Math.random()<.5?-1:1;digHits=0;digSpeed=1.25;digTimeLeft=7;digZoneCenter=.5;mode="dig";setPlaying(false);$("digHits").textContent="◇ ◇ ◇";$("digTitle").textContent=h.special==="hedgehog"?"Ježkový profil":"Rychlé kopání";
+    currentDig=h;digMarker=rand(.08,.92);digDir=Math.random()<.5?-1:1;digHits=0;digSpeed=1.25;digTimeLeft=7;digZoneCenter=.5;digInputLock=0;mode="dig";setPlaying(false);$("digHits").textContent="◇ ◇ ◇";$("digTitle").textContent=h.special==="hedgehog"?"Ježkový profil":"Rychlé kopání";
+    setDigFeedback("Čekám na první úder");
     updateDigZone();$("digTimerFill").style.transform="scaleX(1)";showOnly(screens.dig);
   }
+  function setDigFeedback(text,tone=""){$("digFeedback").textContent=text;$("digFeedback").className=`dig-feedback ${tone}`.trim();}
   function updateDigZone(){const width=.26+state.perks.shovel*.055;digZoneCenter=clamp(digZoneCenter,width/2+.04,1-width/2-.04);$("sweetZone").style.left=`${(digZoneCenter-width/2)*100}%`;$("sweetZone").style.width=`${width*100}%`;}
   function digAttempt(){
-    if(mode!=="dig")return;audio.sfx("dig");const width=.26+state.perks.shovel*.055;const good=Math.abs(digMarker-digZoneCenter)<=width/2;
+    if(mode!=="dig"||digInputLock>0)return;digInputLock=.11;audio.sfx("dig");const width=.26+state.perks.shovel*.055;const good=Math.abs(digMarker-digZoneCenter)<=width/2;
     if(good){
-      shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("good");$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");
+      shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("good");haptic([12,28,16]);$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");setDigFeedback(`Přesně · tempo ${digHits}/3 · +0,5 s`,"good");
       const card=$("digScreen").querySelector(".dig-card");card.classList.remove("hit");void card.offsetWidth;card.classList.add("hit");
       digZoneCenter=rand(.28,.72);updateDigZone();if(digHits>=3)setTimeout(finishDig,150);
     }else{
-      shake=Math.max(shake,6);flash=.1;flashColor="255,105,96";digTimeLeft=Math.max(.3,digTimeLeft-.6);state.stats.misses++;state.heat=clamp(state.heat+Math.max(3,7-state.perks.quiet*1.5),0,100);audio.sfx("bad");toast("Vedle – drž rytmus!","bad",520);
+      shake=Math.max(shake,6);flash=.1;flashColor="255,105,96";digTimeLeft=Math.max(.3,digTimeLeft-.6);state.stats.misses++;state.heat=clamp(state.heat+Math.max(3,7-state.perks.quiet*1.5),0,100);audio.sfx("bad");haptic([28,35,28]);setDigFeedback("Vedle · −0,6 s · sleduj zelené pole","bad");toast("Vedle – drž rytmus!","bad",520);
     }
   }
   function failDig(){if(mode!=="dig")return;currentDig=null;screens.dig.classList.remove("visible");mode="playing";setPlaying(true);state.heat=clamp(state.heat+4,0,100);audio.sfx("bad");toast("Rytmus se rozpadl – zkus profil znovu","bad",1100);}
@@ -730,9 +729,9 @@
   function update(dt){
     audio.update(dt,mode==="playing");
     if(mode==="dig"){
-      digMarker+=digDir*dt*digSpeed;digTimeLeft=Math.max(0,digTimeLeft-dt);
+      digInputLock=Math.max(0,digInputLock-dt);digMarker+=digDir*dt*digSpeed;digTimeLeft=Math.max(0,digTimeLeft-dt);
       if(digMarker>=1){digMarker=1;digDir=-1;}if(digMarker<=0){digMarker=0;digDir=1;}
-      $("digMarker").style.left=`calc(${digMarker*100}% - 5px)`;$("digTimerFill").style.transform=`scaleX(${digTimeLeft/7})`;
+      const width=.26+state.perks.shovel*.055;$("digMeter").classList.toggle("in-zone",Math.abs(digMarker-digZoneCenter)<=width/2);$("digMarker").style.left=`calc(${digMarker*100}% - 5px)`;$("digTimerFill").style.transform=`scaleX(${digTimeLeft/7})`;
       if(digTimeLeft<=0)failDig();return;
     }
     if(mode!=="playing"||!world)return;
@@ -804,7 +803,7 @@
     if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.stunTimer>0?92:66);
     if(world.exit)check("exit",world.exit,world.exit.x,world.exit.y,88);
     if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=map[nearest.kind]||["◎","AKCE"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];$("actionButton").classList.add("ready");$("actionButton").classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
-    else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"ROZHLÉDNOUT";$("actionButton").classList.remove("ready","boss-ready");hideHint();}
+    else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";$("actionButton").classList.remove("ready","boss-ready");hideHint();}
   }
 
   function burst(x,y,color,count=14){for(let i=0;i<count;i++)world.particles.push({x,y,vx:rand(-90,90),vy:rand(-120,-30),life:rand(.45,.9),color,r:rand(2,5)});}
@@ -914,19 +913,18 @@
     else if(p.type==="puddle"){ctx.fillStyle="rgba(99,151,153,.46)";ellipse(0,0,p.r||28,(p.r||28)*.45);ctx.strokeStyle="rgba(214,242,238,.25)";ctx.stroke();}
     else if(p.type==="rock"){ctx.fillStyle="rgba(0,0,0,.22)";ellipse(0,12,20,8);ctx.fillStyle="#767465";ctx.beginPath();ctx.moveTo(-18,10);ctx.lineTo(-12,-11);ctx.lineTo(5,-18);ctx.lineTo(21,1);ctx.lineTo(12,16);ctx.closePath();ctx.fill();}
     else if(p.type==="farm"||p.type==="hut"){ctx.fillStyle="rgba(0,0,0,.25)";ellipse(0,22,58,15);ctx.fillStyle=p.type==="farm"?"#d7c7a7":"#74543a";roundRect(ctx,-47,-38,94,60,5);ctx.fill();ctx.fillStyle="#7c392f";ctx.beginPath();ctx.moveTo(-57,-38);ctx.lineTo(0,-78);ctx.lineTo(57,-38);ctx.closePath();ctx.fill();ctx.fillStyle="#49342a";ctx.fillRect(-12,-12,24,34);}
-    else if(p.type==="fieldpit"){ctx.rotate(p.angle||0);const w=(p.w||180),h=(p.h||70);ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(0,16,w*.58,h*.42,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#9d7248";roundRect(ctx,-w/2-16,-h/2-10,w+32,h+20,16);ctx.fill();ctx.fillStyle="#c59663";roundRect(ctx,-w/2-8,-h/2-4,w+16,h+8,11);ctx.fill();ctx.fillStyle="#241a13";ctx.beginPath();ctx.moveTo(-w/2,-h/2);ctx.lineTo(w/2,-h/2);ctx.lineTo(w/2-18,h/2);ctx.lineTo(-w/2+18,h/2);ctx.closePath();ctx.fill();ctx.strokeStyle="#e2bb88";ctx.lineWidth=4;ctx.stroke();ctx.fillStyle="rgba(255,255,255,.08)";ctx.fillRect(-w/2+10,-h/2+6,w-20,6);}
+    else if(p.type==="fieldpit"||p.type==="sandpit"||p.type==="minepit"){ctx.rotate(p.angle||0);const w=p.w||110,h=p.h||58;const palette=p.type==="sandpit"?{lip:"#d8c39a",wall:"#9d8861",deep:"#574d40",line:"#f2debb"}:p.type==="minepit"?{lip:"#956c4a",wall:"#694a33",deep:"#241a13",line:"#c7986a"}:{lip:"#b48858",wall:"#805a3a",deep:"#2a1d14",line:"#d9ad76"};drawExcavationProfile(w,h,p.x+p.y,palette);}
     else if(p.type==="soilheap"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,12,35,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#886747";ctx.beginPath();ctx.moveTo(-36,12);ctx.quadraticCurveTo(-12,-22,0,-12);ctx.quadraticCurveTo(18,-28,39,12);ctx.closePath();ctx.fill();ctx.fillStyle="rgba(188,151,100,.26)";ctx.beginPath();ctx.arc(-8,-4,5,0,Math.PI*2);ctx.arc(12,-7,4,0,Math.PI*2);ctx.fill();}
     else if(p.type==="stubble"){ctx.strokeStyle="#b7a271";ctx.lineWidth=2;for(let i=-4;i<=4;i+=2){ctx.beginPath();ctx.moveTo(i,9);ctx.lineTo(i-2,-9-(i%3));ctx.stroke();}}
     else if(p.type==="realpine"){ctx.rotate(p.lean||0);ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,16,18,7,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#8a5738";roundRect(ctx,-4,-58,8,78,3);ctx.fill();ctx.fillStyle="#b36d42";ctx.fillRect(-3,-54,2,60);ctx.fillStyle=world.id==="locenice"?"#49634a":"#2d5236";for(const q of [[0,-72,20],[0,-55,24],[0,-38,21]]){ctx.beginPath();ctx.moveTo(0,q[1]-q[2]);ctx.lineTo(-q[2],q[1]+q[2]);ctx.lineTo(q[2],q[1]+q[2]);ctx.closePath();ctx.fill();}}
     else if(p.type==="sandmound"||p.type==="earthbank"){ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.18)";ctx.beginPath();ctx.ellipse(0,15,52,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=p.type==="sandmound"?"#c7b38a":"#9b7858";ctx.beginPath();ctx.moveTo(-55,15);ctx.quadraticCurveTo(-20,-25,0,-15);ctx.quadraticCurveTo(30,-32,58,15);ctx.closePath();ctx.fill();ctx.strokeStyle=p.type==="sandmound"?"rgba(238,220,177,.45)":"rgba(190,148,102,.35)";ctx.lineWidth=3;ctx.stroke();}
-    else if(p.type==="sandpit"||p.type==="minepit"){ctx.rotate(p.angle||0);const w=(p.w||100),h=(p.h||52);const lip=p.type==="sandpit"?"#d8c39a":"#956c4a";const wall=p.type==="sandpit"?"#9d8861":"#694a33";const deep=p.type==="sandpit"?"#62584b":"#241a13";ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,12,w*.58,h*.45,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=lip;roundRect(ctx,-w/2-10,-h/2-8,w+20,h+16,12);ctx.fill();ctx.fillStyle=wall;ctx.beginPath();ctx.moveTo(-w/2,-h/2);ctx.lineTo(w/2,-h/2);ctx.lineTo(w/2-14,h/2);ctx.lineTo(-w/2+14,h/2);ctx.closePath();ctx.fill();ctx.fillStyle=deep;ctx.beginPath();ctx.moveTo(-w/2+10,-h/2+9);ctx.lineTo(w/2-10,-h/2+9);ctx.lineTo(w/2-22,h/2-7);ctx.lineTo(-w/2+22,h/2-7);ctx.closePath();ctx.fill();ctx.strokeStyle=p.type==="sandpit"?"#f2debb":"#c7986a";ctx.lineWidth=3;ctx.stroke();}
     else if(p.type==="fallenpine"){ctx.rotate(p.angle||0);ctx.fillStyle="#8b5737";roundRect(ctx,-50,-5,100,10,5);ctx.fill();ctx.strokeStyle="#385b3f";ctx.lineWidth=3;for(let x=-35;x<45;x+=16){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x-8,-15);ctx.moveTo(x+5,0);ctx.lineTo(x+12,13);ctx.stroke();}}
     else if(p.type==="trackscar"){ctx.rotate(p.angle||0);ctx.strokeStyle="rgba(68,48,34,.55)";ctx.lineWidth=5;for(const y of [-10,10]){ctx.beginPath();ctx.moveTo(-55,y);ctx.lineTo(55,y);ctx.stroke();for(let x=-48;x<50;x+=14){ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+7,y+4);ctx.stroke();}}}
     else if(p.type==="excavator"){ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,22,58,16,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#36322d";roundRect(ctx,-42,8,74,18,8);ctx.fill();ctx.strokeStyle="#5a554d";ctx.lineWidth=4;for(let x=-34;x<28;x+=14){ctx.beginPath();ctx.moveTo(x,10);ctx.lineTo(x+8,24);ctx.stroke();}ctx.fillStyle="#d6a52e";roundRect(ctx,-26,-18,48,32,7);ctx.fill();ctx.fillStyle="#35434a";roundRect(ctx,-14,-34,28,22,4);ctx.fill();ctx.fillStyle="rgba(194,225,235,.35)";ctx.fillRect(-10,-31,11,12);ctx.strokeStyle="#d6a52e";ctx.lineWidth=10;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(20,-12);ctx.lineTo(50,-40);ctx.lineTo(78,-18);ctx.stroke();ctx.fillStyle="#6e5432";ctx.beginPath();ctx.moveTo(70,-25);ctx.lineTo(91,-16);ctx.lineTo(75,-3);ctx.closePath();ctx.fill();}
     else if(p.type==="plazatree"){ctx.fillStyle="rgba(0,0,0,.16)";ctx.beginPath();ctx.ellipse(0,15,24,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#6a5140";ctx.fillRect(-4,-32,8,50);ctx.fillStyle="#507044";for(const q of [[-12,-35,18],[12,-38,20],[0,-55,22]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,Math.PI*2);ctx.fill();}}
     else if(p.type==="plaza"){ctx.fillStyle="rgba(232,233,228,.5)";roundRect(ctx,-190,-70,380,140,16);ctx.fill();for(let i=-160;i<=160;i+=40){ctx.strokeStyle="rgba(110,115,112,.18)";ctx.beginPath();ctx.moveTo(i,-70);ctx.lineTo(i,70);ctx.stroke();}for(let i=0;i<8;i++){const x=-140+i*40;ctx.fillStyle=i%2?"#48535c":"#7a6a5d";ctx.beginPath();ctx.arc(x,5+(i%3)*10,5,0,Math.PI*2);ctx.fill();}}
     else if(p.type==="npc")drawActor(0,0,p.role==="owner"?"ranger":"farmer",0,p.name,true);
-    else if(p.type==="pit"){const r=p.r||28;ctx.fillStyle="rgba(0,0,0,.25)";ellipse(0,12,r*1.1,r*.55);ctx.fill();ctx.fillStyle="#a27a4f";roundRect(ctx,-r-8,-r*.55,r*2+16,r*1.15,9);ctx.fill();ctx.fillStyle="#251b14";ctx.beginPath();ctx.moveTo(-r,-r*.38);ctx.lineTo(r,-r*.38);ctx.lineTo(r-10,r*.38);ctx.lineTo(-r+10,r*.38);ctx.closePath();ctx.fill();ctx.strokeStyle="#d0ad7d";ctx.lineWidth=4;ctx.stroke();}
+    else if(p.type==="pit"){const r=p.r||28;drawExcavationProfile(r*2,r*1.1,p.x+p.y,{lip:"#a27a4f",wall:"#775035",deep:"#251b14",line:"#d0ad7d"});}
     else if(p.type==="sign"){ctx.fillStyle="#744e2f";ctx.fillRect(-4,-30,8,50);ctx.fillStyle="#d5c49d";roundRect(ctx,-42,-52,84,28,5);ctx.fill();ctx.fillStyle="#3f3427";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText(p.text||"",0,-34);}
     else if(p.type==="lamp"){ctx.fillStyle="#3c4344";ctx.fillRect(-3,-55,6,70);ctx.fillStyle="#ffe6a0";ctx.beginPath();ctx.arc(0,-57,8,0,Math.PI*2);ctx.fill();}
     else if(p.type==="bridge"){ctx.fillStyle="#4f6f78";roundRect(ctx,-115,-28,230,56,16);ctx.fill();ctx.strokeStyle="#a8cad0";ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,25,105,Math.PI,0);ctx.stroke();}
@@ -1120,11 +1118,7 @@
       ctx.fillStyle="#e7dfbd";ctx.rotate(-.12);ctx.fillRect(-14,-18,28,36);ctx.strokeStyle="#607b8f";ctx.strokeRect(-14,-18,28,36);ctx.fillStyle="#6f8798";ctx.fillRect(-8,-8,16,3);ctx.fillRect(-8,0,14,3);
     }else if(i.type==="hole"){
       ctx.rotate(i.angle||0);const w=i.w||82,h=i.h||44;
-      ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(0,10,w*.56,h*.43,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#b08052";roundRect(ctx,-w/2-9,-h/2-8,w+18,h+16,9);ctx.fill();
-      ctx.fillStyle="#6d4a31";ctx.beginPath();ctx.moveTo(-w/2,-h/2);ctx.lineTo(w/2,-h/2);ctx.lineTo(w/2-11,h/2);ctx.lineTo(-w/2+11,h/2);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#17120e";ctx.beginPath();ctx.moveTo(-w/2+9,-h/2+8);ctx.lineTo(w/2-9,-h/2+8);ctx.lineTo(w/2-20,h/2-7);ctx.lineTo(-w/2+20,h/2-7);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="#e1bd88";ctx.lineWidth=3;ctx.stroke();ctx.fillStyle="#f0c88f";ctx.font="bold 18px sans-serif";ctx.textAlign="center";ctx.fillText("↶",0,6);
+      drawExcavationProfile(w,h,i.x+i.y,{lip:"#a97b4d",wall:"#704a31",deep:"#17120e",line:"#dab17b"},true);
     }
     ctx.restore();
   }
@@ -1134,10 +1128,9 @@
     ctx.strokeStyle=h.special?"#f2cb72":"#72e5a1";ctx.lineWidth=3;ctx.setLineDash([7,6]);
     if(h.needsFill||h.special==="hedgehog"){
       const w=h.w||82,hh=h.h||44;
-      ctx.fillStyle="rgba(0,0,0,.18)";ctx.beginPath();ctx.ellipse(0,10,w*.56,hh*.43,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle=h.special?"rgba(242,203,114,.22)":"rgba(114,229,161,.16)";roundRect(ctx,-w/2-6,-hh/2-6,w+12,hh+12,8);ctx.fill();ctx.stroke();ctx.setLineDash([]);
-      ctx.fillStyle="rgba(25,18,14,.78)";ctx.beginPath();ctx.moveTo(-w/2,-hh/2);ctx.lineTo(w/2,-hh/2);ctx.lineTo(w/2-11,hh/2);ctx.lineTo(-w/2+11,hh/2);ctx.closePath();ctx.fill();
-      ctx.strokeStyle=h.special?"rgba(255,231,164,.96)":"rgba(177,245,205,.96)";ctx.lineWidth=2.5;ctx.stroke();
+      ctx.fillStyle=h.special?"rgba(242,203,114,.15)":"rgba(114,229,161,.11)";organicPitPath(ctx,w+16,hh+13,h.x+h.y,.1);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle=h.special?"rgba(255,231,164,.72)":"rgba(177,245,205,.72)";ctx.lineWidth=1.7;organicPitPath(ctx,w*.72,hh*.58,h.x-h.y,.08);ctx.stroke();
+      ctx.fillStyle=h.special?"rgba(255,222,132,.32)":"rgba(151,228,177,.25)";for(let n=0;n<6;n++){const a=n/6*Math.PI*2+(h.x%19)*.03;ctx.beginPath();ctx.arc(Math.cos(a)*w*.42,Math.sin(a)*hh*.4,1.7+n%2,0,Math.PI*2);ctx.fill();}
       if(h.special){ctx.fillStyle="#f4d37f";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("JEŽKOVÝ PROFIL",0,-hh/2-12);}
     }else{
       ctx.beginPath();ctx.arc(0,0,27,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=h.special?"rgba(242,203,114,.12)":"rgba(114,229,161,.1)";ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();
@@ -1197,6 +1190,22 @@
   function drawObjectiveArrow(){if(!world||!world.exit)return;let target=world.exit;if(!goalComplete()){const candidates=[];for(const h of world.hotspots)if(h.active&&h.revealed)candidates.push(h);for(const i of world.items)if(i.active&&!i.hidden)candidates.push(i);if(candidates.length)target=candidates.sort((a,b)=>dist(player,a)-dist(player,b))[0];}const sx=target.x-camera.x,sy=target.y-camera.y;if(sx>40&&sy>70&&sx<viewport.w-40&&sy<viewport.h-100)return;const cx=viewport.w/2,cy=viewport.h/2,ang=Math.atan2(sy-cy,sx-cx),rad=Math.min(viewport.w,viewport.h)*.38;ctx.save();ctx.translate(cx+Math.cos(ang)*rad,cy+Math.sin(ang)*rad);ctx.rotate(ang);ctx.fillStyle=goalComplete()?"#63e49b":"#f2cb72";ctx.beginPath();ctx.moveTo(15,0);ctx.lineTo(-10,-9);ctx.lineTo(-10,9);ctx.closePath();ctx.fill();ctx.restore();}
 
   function roundRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);}
+  function organicPitPath(c,w,h,seed=0,roughness=.12){
+    const points=[];const count=14;
+    for(let n=0;n<count;n++){const angle=n/count*Math.PI*2;const wobble=1+Math.sin(seed*.017+n*2.37)*roughness+Math.cos(seed*.011+n*1.41)*roughness*.45;points.push({x:Math.cos(angle)*w*.5*wobble,y:Math.sin(angle)*h*.5*wobble});}
+    const first=points[0],last=points[points.length-1];c.beginPath();c.moveTo((last.x+first.x)/2,(last.y+first.y)/2);
+    for(let n=0;n<points.length;n++){const point=points[n],next=points[(n+1)%points.length];c.quadraticCurveTo(point.x,point.y,(point.x+next.x)/2,(point.y+next.y)/2);}c.closePath();
+  }
+  function drawExcavationProfile(w,h,seed,palette,showFill=false){
+    ctx.fillStyle="rgba(0,0,0,.23)";ctx.beginPath();ctx.ellipse(3,h*.22,w*.58,h*.48,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=palette.lip;organicPitPath(ctx,w+24,h+18,seed,.15);ctx.fill();
+    ctx.fillStyle=palette.wall;organicPitPath(ctx,w,h,seed+31,.11);ctx.fill();
+    ctx.strokeStyle=palette.line;ctx.lineWidth=2.4;organicPitPath(ctx,w*.88,h*.78,seed+67,.09);ctx.stroke();
+    ctx.fillStyle=palette.deep;organicPitPath(ctx,w*.7,h*.54,seed+103,.13);ctx.fill();
+    ctx.strokeStyle="rgba(255,235,198,.16)";ctx.lineWidth=1.3;organicPitPath(ctx,w*.55,h*.38,seed+149,.08);ctx.stroke();
+    for(let n=0;n<8;n++){const angle=n/8*Math.PI*2+seed*.013;const x=Math.cos(angle)*w*.54,y=Math.sin(angle)*h*.48;ctx.fillStyle=n%2?palette.wall:palette.lip;ctx.beginPath();ctx.ellipse(x,y,3+n%3,2+n%2,angle,0,Math.PI*2);ctx.fill();}
+    if(showFill){ctx.fillStyle=palette.line;ctx.font="bold 17px sans-serif";ctx.textAlign="center";ctx.fillText("↶",0,6);}
+  }
   function ellipse(x,y,rx,ry){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
   function gemPath(x,y,r){ctx.beginPath();ctx.moveTo(x,y-r);ctx.lineTo(x+r*.8,y-r*.35);ctx.lineTo(x+r*.65,y+r*.7);ctx.lineTo(x,y+r);ctx.lineTo(x-r*.75,y+r*.35);ctx.lineTo(x-r*.8,y-r*.4);ctx.closePath();}
 
@@ -1222,7 +1231,7 @@
 
   function bindUI(){
     $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
-    $("digButton").addEventListener("click",digAttempt);$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
+    const digButton=$("digButton");digButton.addEventListener("pointerdown",event=>{event.preventDefault();digButton.classList.add("pressed");digAttempt();});const releaseDigButton=()=>digButton.classList.remove("pressed");digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("pointerleave",releaseDigButton);digButton.addEventListener("click",event=>{if(event.detail===0)digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();$("soundButton").textContent=state.sound?"♫":"×";save();});
@@ -1252,9 +1261,10 @@
         triggerTheft(){if(!world)return null;showTheftAlert();startRival("karel",player.x+180,player.y-100);return {shown:theftAlertShown,boss:world.rival?.name};},
         startDigChallenge(index=2){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);const hotspot=world.hotspots.find(item=>item.active);if(!hotspot)return null;hotspot.revealed=true;startDig(hotspot);return {mode,level:world.id};},
         setDigMarker(value=digZoneCenter){digMarker=clamp(value,0,1);return digMarker;},
+        setDigSpeed(value=0){digSpeed=Math.max(0,Number(value)||0);return digSpeed;},
         setDigTime(value=4){digTimeLeft=clamp(value,0,7);return digTimeLeft;},
-        digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter};},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        digSnapshot(){return {mode,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:digInputLock>0};},
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
