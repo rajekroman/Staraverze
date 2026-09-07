@@ -27,3 +27,4 @@
 - vyšší kontrast postavy vůči poli, lesu i nočnímu prostředí bez změny kolizí nebo ovládání;
 - postava zůstává při pohybu vzpřímená a podle směru se přirozeně zrcadlí vlevo nebo vpravo.
 - při chůzi vzniká jemný prachový otisk přizpůsobený poli, lesu, noci i městskému prostředí.
+- hladina Malše dostala jemné animované odlesky, které přidávají městské scéně pohyb a hloubku.
