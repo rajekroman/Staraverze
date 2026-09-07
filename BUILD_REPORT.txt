@@ -2,14 +2,15 @@ Lovec vltavínů Reborn 5.4.2 — aktuální ověřený stav
 
 OVĚŘENÍ 5.4.2
 - statická validace: PASS
-- desktop Chromium smoke: 8/8 PASS
-- iPhone portrait Chromium smoke: 8/8 PASS
-- iPhone landscape Chromium smoke: 8/8 PASS
-- desktop WebKit smoke: 8/8 PASS
-- iPhone portrait WebKit smoke: 8/8 PASS
-- iPhone landscape WebKit smoke: 8/8 PASS
+- desktop Chromium smoke: 9/9 PASS
+- iPhone portrait Chromium smoke: 9/9 PASS
+- iPhone landscape Chromium smoke: 9/9 PASS
+- desktop WebKit smoke: 9/9 PASS
+- iPhone portrait WebKit smoke: 9/9 PASS
+- iPhone landscape WebKit smoke: 9/9 PASS
 - offline Chromium PWA smoke: 1/1 PASS
 - všech 5 levelů: spuštěno a vykresleno bez runtime chyby
+- full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
 - uložený stav: migrace a normalizace PASS
 - uvolnění vstupu při pauze a ztrátě fokusu: PASS
 - PWA cache: online instalace -> aktivní service worker -> offline reload -> start Chlumu PASS
