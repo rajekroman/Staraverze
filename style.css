@@ -90,6 +90,12 @@ button{-webkit-tap-highlight-color:transparent}
 }
 @media(prefers-reduced-motion:reduce){.action-button.ready,.danger-meter.detected,.boss-hud.enraged em,#app.danger-state:after{animation:none!important}.boss-intro{transition:none}}
 
+.dig-timer{height:7px;margin:-14px 2px 18px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.08)}
+.dig-timer span{display:block;width:100%;height:100%;transform-origin:left;background:linear-gradient(90deg,#e0b954,#75e7a0);transition:transform .08s linear}
+.dig-action{min-height:58px;font-size:18px;letter-spacing:.08em}
+.dig-card.hit{animation:digImpact .18s ease-out}
+@keyframes digImpact{50%{transform:scale(1.018);box-shadow:0 0 0 2px rgba(117,231,160,.3),0 26px 80px rgba(0,0,0,.42)}}
+
 
 /* v5.2 — Na Zelené Vlně branding + clearer brief */
 :root{--brandPurple:#32036b;--brandPurple2:#4b1488;--brandMint:#7fe3bf;--brandMint2:#bdf3dd}

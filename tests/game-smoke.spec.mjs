@@ -70,6 +70,15 @@ test("noční Besednice nemá černou vymazanou plochu", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("Chlum je čistý povrchový sběr bez kopacích míst", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  const snapshot = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(snapshot.world).toEqual({ hotspots: 0, stones: 9 });
+  expect(errors).toEqual([]);
+});
+
 test("pauza a ztráta fokusu vždy uvolní pohyb", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
@@ -80,12 +89,14 @@ test("pauza a ztráta fokusu vždy uvolní pohyb", async ({ page }) => {
   await page.locator("#pauseButton").click();
   await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({ x: 0, y: 0, pressed: false });
+  await expect.poll(() => page.evaluate(() => ({ vx: window.__lovecDebug.snapshot().player.vx, vy: window.__lovecDebug.snapshot().player.vy }))).toEqual({ vx: 0, vy: 0 });
 
   await page.locator("#resumeButton").click();
   await page.keyboard.down("KeyW");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.y)).toBe(-1);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({ x: 0, y: 0, pressed: false });
+  await expect.poll(() => page.evaluate(() => ({ vx: window.__lovecDebug.snapshot().player.vx, vy: window.__lovecDebug.snapshot().player.vy }))).toEqual({ vx: 0, vy: 0 });
   expect(errors).toEqual([]);
 });
 
@@ -96,17 +107,52 @@ test("hlavní postava drží svislou siluetu a zrcadlí se jen do stran", async 
 
   await page.keyboard.down("KeyA");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(-1);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.pose)).toBe("side");
   await page.keyboard.up("KeyA");
 
   const beforeUp = await page.evaluate(() => window.__lovecDebug.snapshot().player.y);
   await page.keyboard.down("KeyW");
   await expect.poll(() => page.evaluate(y => window.__lovecDebug.snapshot().player.y < y, beforeUp)).toBe(true);
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(-1);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.pose)).toBe("back");
+  await expect.poll(() => page.evaluate(() => Math.abs(window.__lovecDebug.snapshot().player.vx))).toBeLessThan(1);
   await page.keyboard.up("KeyW");
 
   await page.keyboard.down("KeyD");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.pose)).toBe("side");
   await page.keyboard.up("KeyD");
+
+  await page.keyboard.down("KeyS");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.pose)).toBe("front");
+  await expect.poll(() => page.evaluate(() => Math.abs(window.__lovecDebug.snapshot().player.vx))).toBeLessThan(1);
+  await page.keyboard.up("KeyS");
+  expect(errors).toEqual([]);
+});
+
+test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  const started = await page.evaluate(() => window.__lovecDebug.startDigChallenge(2));
+  expect(started).toEqual({ mode: "dig", level: "nesmen" });
+  await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#digTimerFill")).toBeVisible();
+  await page.evaluate(() => window.__lovecDebug.setDigTime(4));
+
+  let previousSpeed = 0;
+  for (let hit = 1; hit <= 3; hit += 1) {
+    const before = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+    await page.evaluate(zoneCenter => window.__lovecDebug.setDigMarker(zoneCenter), before.zoneCenter);
+    previousSpeed = before.speed;
+    await page.keyboard.press("Space");
+    if (hit < 3) {
+      const after = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+      expect(after.hits).toBe(hit);
+      expect(after.speed).toBeGreaterThan(previousSpeed);
+      if (hit === 1) expect(after.timeLeft).toBeGreaterThan(before.timeLeft);
+    }
+  }
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
   expect(errors).toEqual([]);
 });
 
