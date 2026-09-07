@@ -20,9 +20,9 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
   ).toBe(true);
 
   await expect.poll(
-    () => page.evaluate(async cacheName => (await caches.keys()).filter(name => name.startsWith("lovec-vltavinu-reborn-v5-4-2") && name !== cacheName)),
+    () => page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith("lovec-vltavinu-reborn-v5-4-2"))),
     { timeout: 15_000 }
-  ).toEqual([]);
+  ).toHaveLength(1);
 
   await context.setOffline(true);
 
