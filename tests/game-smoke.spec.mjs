@@ -316,3 +316,45 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
   });
   expect(errors).toEqual([]);
 });
+
+test("Ločenice projdou reálným radarem a určením pravého i chybně označeného vzorku", async ({ page }) => {
+  const errors = watchErrors(page);
+  const realTitles = new Set(["Olivový úlomek", "Hnědozelený splash", "Drobný celotvar"]);
+
+  async function openFirstSample() {
+    await page.evaluate(() => {
+      window.__lovecDebug.startLevel(1);
+      window.__lovecDebug.setPlayer(420, 850);
+    });
+    await page.keyboard.press("Space");
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().world.surfaceVisible)).toBeGreaterThan(0);
+    await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+    await page.keyboard.press("Space");
+    await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+    const title = await page.locator("#sampleTitle").textContent();
+    return { title, real: realTitles.has(title || "") };
+  }
+
+  await openDebug(page);
+
+  const correctSample = await openFirstSample();
+  const beforeCorrect = await page.evaluate(() => window.__lovecDebug.snapshot());
+  await page.locator(correctSample.real ? "#realButton" : "#glassButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#objective")).toHaveText(
+    correctSample.real ? "Správně 1/5 · pravé 1/3" : "Správně 1/5 · pravé 0/3"
+  );
+  const afterCorrect = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(afterCorrect.state.stones).toBe(beforeCorrect.state.stones + (correctSample.real ? 1 : 0));
+  expect(afterCorrect.heat).toBeLessThanOrEqual(beforeCorrect.heat + 0.1);
+
+  const wrongSample = await openFirstSample();
+  const beforeWrong = await page.evaluate(() => window.__lovecDebug.snapshot());
+  await page.locator(wrongSample.real ? "#glassButton" : "#realButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#objective")).toHaveText("Správně 0/5 · pravé 0/3");
+  const afterWrong = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(afterWrong.heat).toBeGreaterThan(beforeWrong.heat);
+  expect(afterWrong.state.stones).toBe(0);
+  expect(errors).toEqual([]);
+});
