@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Vizuální iterace 5.4.2 — radar, Chlum a kopání
+
+- radar má nově kruhovou čtecí matici, jemné dosahové prstence, směrový sweep a krátké blipy už odhalených nálezů; dosah ani cooldown se nemění;
+- minihra kopání dostala zemní profil, lopatu, materiálový měřák rytmu, čitelnější sweet-zone, časovač a odezvu úderu bez změny obtížnosti;
+- Chlum používá nepravidelné brázdy, mokré stopy, hroudy a vzdálenou mez místo pravidelných horizontálních pásů;
+- odhalené vltavíny a vzorky mají tlumenější přírodní sklovitý materiál, jemný lesk a stín namísto neonové ikony;
+- organické profily mají širší napojení do půdy, vrstvené stěny, drobnou suť a čitelnější hloubku;
+- traktor má větší čitelnou siluetu v rámci stávající kolizní stopy, oddělená kola s rotací, kabinu, výfuk, světlo, pružení podvozku a krátké stopy v půdě.
+
 ## Další dokončení 5.4.2 — postava, mapy a kopání
 
 - nový třísměrový model hlavní postavy rozlišuje pohled zepředu, zezadu a z boku;
