@@ -58,15 +58,29 @@ test("noční Besednice nemá černou vymazanou plochu", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(3));
-  await page.waitForTimeout(350);
-  const sample = await page.locator("#game").evaluate(canvas => {
-    const context = canvas.getContext("2d");
-    const scaleX = canvas.width / canvas.getBoundingClientRect().width;
-    const scaleY = canvas.height / canvas.getBoundingClientRect().height;
-    const pixel = context.getImageData(Math.round(45 * scaleX), Math.round(canvas.height / 2), 1, 1).data;
-    return [...pixel];
-  });
-  expect(sample.slice(0, 3).some(channel => channel > 5)).toBe(true);
+
+  await expect.poll(
+    () => page.locator("#game").evaluate(canvas => {
+      const context = canvas.getContext("2d");
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const xs = [24, 45, 72].map(value => Math.round(value * scaleX));
+      const ys = [rect.height * .25, rect.height * .5, rect.height * .75].map(value => Math.round(value * scaleY));
+      let brightness = 0;
+      let samples = 0;
+      for (const x of xs) {
+        for (const y of ys) {
+          const pixel = context.getImageData(x, y, 1, 1).data;
+          brightness += pixel[0] + pixel[1] + pixel[2];
+          samples += 3;
+        }
+      }
+      return brightness / samples;
+    }),
+    { timeout: 5_000 }
+  ).toBeGreaterThan(5);
+
   expect(errors).toEqual([]);
 });
 
