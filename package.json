@@ -6,6 +6,7 @@
   "scripts": {
     "validate": "node tools/validate.mjs",
     "test:browser": "playwright test",
+    "test:smoke": "playwright test tests/game-smoke.spec.mjs",
     "test": "npm run validate && npm run test:browser"
   },
   "devDependencies": {
