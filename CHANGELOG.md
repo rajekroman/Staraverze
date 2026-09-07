@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Další dokončení 5.4.2 — postava, mapy a kopání
+
+- nový třísměrový model hlavní postavy rozlišuje pohled zepředu, zezadu a z boku;
+- chůze mění směr okamžitě podle hráče, takže postava při otáčení neopisuje oblouk jako auto;
+- kroky, práce nohou a výbava reagují na skutečnou rychlost pohybu;
+- povrch jednotlivých map dostal vlastní kameny, rostliny, kořeny, cesty a městské detaily;
+- Chlum je čistě sběračská lokalita s viditelnými vltavíny na povrchu a bez minihry kopání;
+- kopání v dalších lokalitách je rychlejší časovaná výzva s pohyblivou zónou, zrychlováním a podporou mezerníku.
+
 ## Dokončení 5.4.2
 
 - opravené noční osvětlení Besednice bez černého výřezu;
