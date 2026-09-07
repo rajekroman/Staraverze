@@ -65,3 +65,9 @@
 - Výkopové profily dostaly materiálové kreslení pro písčitý, tmavý a polní podklad.
 - Traktor odvozuje pružení, otáčení kol a drobný rozstřik zeminy od skutečné rychlosti.
 - Duplicitní základní definice kopací minihry byly odstraněny; výsledné styly jsou soustředěné ve vizuálním passu.
+
+## 5.4.2 — instrumentální soundtrack
+
+- Nahrazeny ostré syntetické 8bitové hudební smyčky měkkými instrumentálními motivy s pianovým pluckem, dlouhým padem a basovou linkou.
+- Každá lokalita má vlastní harmonickou variantu stejného hudebního jazyka, takže přechody zůstávají soudržné a přitom se neopakují identicky.
+- Service-worker cache byla povýšena na `music-1`, aby se nová hudba dostala i do offline režimu.
