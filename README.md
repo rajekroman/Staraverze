@@ -15,7 +15,8 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - pauza, dialog, minihra a ztráta fokusu bezpečně uvolní dotykový i klávesový pohyb;
 - protisměrné klávesy se vyhodnocují správně a mezerník neopakuje akci při podržení;
 - staré a poškozené uložené stavy se migrují, omezí na bezpečné hodnoty a neshodí hru;
-- automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu.
+- automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu;
+- smoke matrix navíc ověřuje desktop a iPhone portrait ve WebKitu jako CI aproximaci Safari.
 
 ## Vývoj a ověření
 

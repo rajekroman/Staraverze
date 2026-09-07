@@ -27,7 +27,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [desktop-chromium, iphone-portrait, iphone-landscape]
+        include:
+          - project: desktop-chromium
+            browser: chromium
+          - project: iphone-portrait
+            browser: chromium
+          - project: iphone-landscape
+            browser: chromium
+          - project: desktop-webkit
+            browser: webkit
+          - project: iphone-portrait-webkit
+            browser: webkit
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,7 +45,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
       - run: npm run test:smoke -- --project=${{ matrix.project }}
       - uses: actions/upload-artifact@v4
         if: failure()
