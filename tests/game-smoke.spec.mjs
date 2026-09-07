@@ -89,6 +89,27 @@ test("pauza a ztráta fokusu vždy uvolní pohyb", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("hlavní postava drží svislou siluetu a zrcadlí se jen do stran", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+
+  await page.keyboard.down("KeyA");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(-1);
+  await page.keyboard.up("KeyA");
+
+  const beforeUp = await page.evaluate(() => window.__lovecDebug.snapshot().player.y);
+  await page.keyboard.down("KeyW");
+  await expect.poll(() => page.evaluate(y => window.__lovecDebug.snapshot().player.y < y, beforeUp)).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(-1);
+  await page.keyboard.up("KeyW");
+
+  await page.keyboard.down("KeyD");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().player.facing)).toBe(1);
+  await page.keyboard.up("KeyD");
+  expect(errors).toEqual([]);
+});
+
 test("starý nebo poškozený save se bezpečně obnoví", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
