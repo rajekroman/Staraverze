@@ -1,4 +1,14 @@
-# Lovec vltavínů Reborn 5.4.1
+# Lovec vltavínů Reborn 5.4.2
+
+## Dokončení 5.4.2
+
+- opravené noční osvětlení Besednice bez černého výřezu;
+- opravené rozložení titulní obrazovky na telefonu v režimu naležato;
+- ovládání se bezpečně uvolní při pauze, modálním okně, ztrátě fokusu a skrytí stránky;
+- klávesnice správně zpracuje současně držené protisměrné klávesy;
+- přidaná bezpečná migrace a normalizace starších uložených stavů;
+- sjednocené číslo runtime, obrazovky, PWA cache a balíčku na 5.4.2;
+- přidaná statická validace a Playwright matrix pro desktop a mobilní orientace.
 
 ## Kritické opravy
 

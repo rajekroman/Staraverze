@@ -1,0 +1,14 @@
+{
+  "name": "lovec-vltavinu-reborn",
+  "version": "5.4.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node tools/validate.mjs",
+    "test:browser": "playwright test",
+    "test": "npm run validate && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1"
+  }
+}

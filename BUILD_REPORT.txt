@@ -1,4 +1,17 @@
-Lovec vltavínů Reborn 5.4.1 — kontrola a opravy
+Lovec vltavínů Reborn 5.4.2 — dokončení pokračující větve
+
+OVĚŘENÍ 5.4.2
+- statická validace: PASS
+- desktop Chromium: 5/5 PASS
+- iPhone portrait Chromium: 5/5 PASS
+- iPhone landscape Chromium: 5/5 PASS
+- všech 5 levelů: spuštěno a vykresleno bez runtime chyby
+- uložený stav: migrace a normalizace PASS
+- uvolnění vstupu při pauze a ztrátě fokusu: PASS
+- noční Besednice: černá vymazaná plocha odstraněna a vizuálně zkontrolována
+- titulní nabídka v landscape: všechna tři hlavní tlačítka uvnitř viewportu a vizuálně zkontrolována
+
+PŮVODNÍ KONTROLA 5.4.1
 
 Nalezené kritické chyby ve v5.4:
 1. Chyběly funkce drawPatrol, drawItem a drawHotspot. Hra spadla při prvním vykreslení levelu chybou ReferenceError.

@@ -1,9 +1,25 @@
-# Lovec vltavínů: Na zelené vlně — Reborn 5.4.1
+# Lovec vltavínů: Na zelené vlně — Reborn 5.4.2
 
-Opravené vydání verze 5.4. Původní balíček 5.4 obsahoval kritickou chybu vykreslování a neměl být nasazen. Použij tento balíček.
+Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslovné rozhodnutí vlastníka nahrazuje v repozitáři Staraverze větev vývoje 6.2.0.
 
 ## Opraveno
 - všechny levely se znovu vykreslí;
 - fungují traktory, hlídky, předměty a profily;
 - upozornění o krádeži se správně zobrazí a zavře;
 - honička v Besednici nezačne pod neprůhledným upozorněním.
+
+## Dokončení ve verzi 5.4.2
+
+- noční Besednice už nevytváří černou vymazanou plochu na neprůhledném canvasu;
+- hlavní nabídka je v mobilním landscape režimu celá viditelná a ovladatelná;
+- pauza, dialog, minihra a ztráta fokusu bezpečně uvolní dotykový i klávesový pohyb;
+- protisměrné klávesy se vyhodnocují správně a mezerník neopakuje akci při podržení;
+- staré a poškozené uložené stavy se migrují, omezí na bezpečné hodnoty a neshodí hru;
+- automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu.
+
+## Vývoj a ověření
+
+```sh
+npm install
+npm test
+```
