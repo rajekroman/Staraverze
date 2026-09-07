@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const OFFLINE_TEST = /offline-smoke\.spec\.mjs/;
+const VISUAL_TEST = /visual-regression\.spec\.mjs/;
+const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST];
 
 export default defineConfig({
   testDir: "./tests",
@@ -20,33 +22,49 @@ export default defineConfig({
   projects: [
     {
       name: "desktop-chromium",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
     },
     {
       name: "iphone-portrait",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
     },
     {
       name: "iphone-landscape",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
     },
     {
       name: "desktop-webkit",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 720 } }
     },
     {
       name: "iphone-portrait-webkit",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
     },
     {
       name: "iphone-landscape-webkit",
-      testIgnore: OFFLINE_TEST,
+      testIgnore: NON_STANDARD_TESTS,
       use: { ...devices["iPhone 13"], browserName: "webkit", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
+    },
+,
+    {
+      name: "visual-desktop",
+      testMatch: VISUAL_TEST,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
+    },
+    {
+      name: "visual-iphone-portrait",
+      testMatch: VISUAL_TEST,
+      use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 390, height: 844 }, screen: { width: 390, height: 844 } }
+    },
+    {
+      name: "visual-iphone-landscape",
+      testMatch: VISUAL_TEST,
+      use: { ...devices["iPhone 13"], browserName: "chromium", viewport: { width: 844, height: 390 }, screen: { width: 844, height: 390 } }
     },
     {
       name: "offline-chromium",
