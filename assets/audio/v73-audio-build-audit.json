@@ -1,0 +1,204 @@
+{
+  "schema_version": 2,
+  "integrity_auditor": "GitHub Actions stat + sha256sum",
+  "source": "Mixed provenance; see per-file license_source.",
+  "total_bytes": 2361176,
+  "files": [
+    {
+      "file": "ambient-besednice.mp3",
+      "bytes": 598509,
+      "sha256": "4669ebe70bab8004ad26bf016add8663d6224f99b854dd60f4058aa2a84d2216",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "ambient-chlum.mp3",
+      "bytes": 598509,
+      "sha256": "f159d529caced4a698ce348d8d4abfd375653f210deca94486fdaa2ccda854bc",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "ambient-nesmen.mp3",
+      "bytes": 598509,
+      "sha256": "53ab8786387dda318c9d50f21db30c3f74586321fc1fe3113df385c3f70d0e0b",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "ambient-slavia.mp3",
+      "bytes": 284589,
+      "sha256": "1534b563cdab5ef4c19f4ab13999fee8bbf61e38240b78d24996ad5c8084e1b9",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "danger-besednice.mp3",
+      "bytes": 7149,
+      "sha256": "a4f95a3150912278f8066b62b90e2a35c68a69d1c36cf9d9b5a35b5951d82334",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.418
+    },
+    {
+      "file": "danger-caught.mp3",
+      "bytes": 78381,
+      "sha256": "9ae1420419d4b174bfa534e225c1aa10b8569f9a2a3e5b17823ab259b69e4a9a",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "danger-chlum.mp3",
+      "bytes": 17901,
+      "sha256": "c31fc6491bdccb69b856bfe1191fa8459af95398a60a8c0624ed51e28fce1c5c",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "danger-nesmen.mp3",
+      "bytes": 6731,
+      "sha256": "d1a1c5b7c9b313ec29a13165adfdcb9db034e005ba686efbe4fad8c8b5c0b049",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.392
+    },
+    {
+      "file": "danger-slavia.mp3",
+      "bytes": 9239,
+      "sha256": "d5c2ae5a333bcb3fe67c2daccbb4b4042adb6ca0345f9197bebe939dd86d0061",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.549
+    },
+    {
+      "file": "dig-impact-hard.mp3",
+      "bytes": 12717,
+      "sha256": "e3e56f547f06cbbe2aa18f4fca51878eba96145bae137936d7bccb1aa079e831",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "dig-impact-stone.mp3",
+      "bytes": 12717,
+      "sha256": "5b529f32e4e28037450bf9ff26cfb6225fa06d77718f52360bcf6caadb2c1af5",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "dig-impact-wet.mp3",
+      "bytes": 12717,
+      "sha256": "7705360d0a45f914c8132e93a9bb8f3fb0cbfad002f287b3a83db553faeeb872",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "dig-miss.mp3",
+      "bytes": 12717,
+      "sha256": "a5e78f9bd03f1ccb1619c1a5ee873d3421e93c0e063cd39769c02b7808689bc2",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "dig-perfect.mp3",
+      "bytes": 12717,
+      "sha256": "05013022d0273f49aa69e4ff5559864075e4bc4611a770e5f9ed9a4270244221",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "finding-a.mp3",
+      "bytes": 25389,
+      "sha256": "c3c8e3b6be54eff0bf656a8ace29a32d07c198b67bda3fbeab1355d9ac212845",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "finding-b.mp3",
+      "bytes": 25389,
+      "sha256": "27ef605b19f1d2642628b9111ec91cd41b55480755b4c1d9b49383626de7aadf",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "finding-c.mp3",
+      "bytes": 25389,
+      "sha256": "27ef605b19f1d2642628b9111ec91cd41b55480755b4c1d9b49383626de7aadf",
+      "technical_metadata_verified": false,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+    },
+    {
+      "file": "ui-click.mp3",
+      "bytes": 2551,
+      "sha256": "05d1d39d83e271b3d7ad473ce86f83b6f81742bb082971145df94a1b9573891c",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.131
+    },
+    {
+      "file": "ui-close.mp3",
+      "bytes": 3387,
+      "sha256": "5a98fd2c9653658a2cb30c4beb90e11259a8ae5be93b18cbe0270d18dc2edf28",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.183
+    },
+    {
+      "file": "ui-open.mp3",
+      "bytes": 3387,
+      "sha256": "df07df368eaeb8bc7e6c9f928d1121d6280e3f24301e27078c514a9e8b726140",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.183
+    },
+    {
+      "file": "ui-result.mp3",
+      "bytes": 12582,
+      "sha256": "a32b9df73a12cbda89693dc5f2f96987e8b37783e4533dc468bd697080678658",
+      "technical_metadata_verified": true,
+      "license_spdx": "CC0-1.0",
+      "license_source": "Project-original procedural synthesis; no external samples.",
+      "codec": "mp3",
+      "sample_rate_hz": 44100,
+      "bit_rate": 128000,
+      "duration_seconds": 0.758
+    }
+  ]
+}

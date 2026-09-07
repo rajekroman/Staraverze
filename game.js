@@ -116,12 +116,44 @@
       this.targetMusicVolume = .26;
       this.fadeTimer = 0;
       this.musicTracks = {
-        field: "./assets/audio/music/field.wav",
-        meadow: "./assets/audio/music/meadow.wav",
-        forest: "./assets/audio/music/forest.wav",
-        night: "./assets/audio/music/night.wav",
-        city: "./assets/audio/music/city.wav"
+        field: "./assets/audio/ambient/ambient-chlum.mp3",
+        meadow: "./assets/audio/ambient/ambient-nesmen.mp3",
+        forest: "./assets/audio/ambient/ambient-nesmen.mp3",
+        night: "./assets/audio/ambient/ambient-besednice.mp3",
+        city: "./assets/audio/ambient/ambient-slavia.mp3"
       };
+      this.effectVolume = .34;
+      this.effectTracks = {
+        scan: "./assets/audio/effects/finding-chime.mp3",
+        dig: "./assets/audio/effects/dig-hit.mp3",
+        impactHard: "./assets/audio/effects/dig-impact-hard.mp3",
+        impactStone: "./assets/audio/effects/dig-impact-stone.mp3",
+        impactWet: "./assets/audio/effects/dig-impact-wet.mp3",
+        perfect: "./assets/audio/effects/dig-perfect.mp3",
+        good: "./assets/audio/effects/finding-b.mp3",
+        rare: "./assets/audio/effects/finding-c.mp3",
+        bad: "./assets/audio/effects/dig-miss.mp3",
+        catch: "./assets/audio/effects/danger-caught.mp3",
+        paper: "./assets/audio/effects/finding-a.mp3",
+        win: "./assets/audio/effects/ui-result.mp3",
+        click: "./assets/audio/effects/ui-click.mp3",
+        alert: "./assets/audio/effects/danger-pulse.mp3",
+        heartbeat: "./assets/audio/effects/danger-pulse.mp3"
+      };
+      this.dangerTracks = {
+        field: "./assets/audio/effects/danger-chlum.mp3",
+        meadow: "./assets/audio/effects/danger-nesmen.mp3",
+        forest: "./assets/audio/effects/danger-nesmen.mp3",
+        night: "./assets/audio/effects/danger-besednice.mp3",
+        city: "./assets/audio/effects/danger-slavia.mp3"
+      };
+      this.effects = Object.fromEntries(Object.entries(this.effectTracks).map(([name, src]) => {
+        const clip = new Audio(src);
+        clip.preload = "auto";
+        clip.playsInline = true;
+        clip.volume = this.effectVolume;
+        return [name, clip];
+      }));
     }
     start() {
       if (!this.ctx) {
@@ -163,7 +195,10 @@
       this.enabled = !this.enabled;
       if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.enabled ? .42 : 0, this.ctx.currentTime, .03);
       if (this.enabled) this.playMusic();
-      else this.fadeMusic(0,160,()=>this.music.pause());
+      else {
+        this.fadeMusic(0,160,()=>this.music.pause());
+        for (const clip of Object.values(this.effects)) { clip.pause(); try { clip.currentTime = 0; } catch {} }
+      }
       return this.enabled;
     }
     tone(freq, dur=.1, type="triangle", vol=.16, when=0, slide=0) {
@@ -188,6 +223,27 @@
       src.connect(filter); filter.connect(g); g.connect(this.sfxGain); src.start();
     }
     sfx(name) {
+      const source = name === "boss" ? this.dangerTracks[this.theme] : this.effectTracks[name];
+      const clip = name === "boss" ? this.effects.boss : this.effects[name];
+      if (source && this.enabled) {
+        const playable = clip || (() => {
+          const created = new Audio(source);
+          created.preload = "auto";
+          created.playsInline = true;
+          created.volume = this.effectVolume;
+          this.effects[name] = created;
+          return created;
+        })();
+        playable.src = source;
+        playable.volume = this.effectVolume;
+        try { playable.currentTime = 0; } catch {}
+        const attempt = playable.play();
+        if (attempt?.catch) attempt.catch(() => this.fallbackSfx(name));
+        return;
+      }
+      this.fallbackSfx(name);
+    }
+    fallbackSfx(name) {
       const f = {
         scan:()=>{this.tone(260,.18,"sine",.08,0,420);this.tone(520,.22,"sine",.05,.08,260);},
         dig:()=>{this.noise(.11,.13,800);this.tone(82,.12,"triangle",.06);},
@@ -592,7 +648,7 @@
   function digAttempt(){
     const now=performance.now();if(mode!=="dig"||now<digInputLockUntil)return;digInputLockUntil=now+110;audio.sfx("dig");const width=.26+state.perks.shovel*.055;const good=Math.abs(digMarker-digZoneCenter)<=width/2;
     if(good){
-      shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("good");haptic([12,28,16]);$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");setDigFeedback(`Přesně · tempo ${digHits}/3 · +0,5 s`,"good");
+      shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("perfect");haptic([12,28,16]);$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");setDigFeedback(`Přesně · tempo ${digHits}/3 · +0,5 s`,"good");
       const card=$("digScreen").querySelector(".dig-card");card.classList.remove("hit");void card.offsetWidth;card.classList.add("hit");
       digZoneCenter=rand(.28,.72);updateDigZone();if(digHits>=3)setTimeout(finishDig,150);
     }else{
@@ -666,7 +722,7 @@
     world.runtime.open=Math.max(0,(world.runtime.open||0)-1);
     state.score+=160*state.combo;
     boostCombo();
-    audio.sfx("dig");
+    audio.sfx("impactWet");
     burst(hole.x,hole.y,"#9a744c",12);
     toast("Profil zahrabán","good");
     nearest=null;

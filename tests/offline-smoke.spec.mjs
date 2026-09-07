@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-music-1";
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-audio-1";
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
   await page.goto("/?debug=1", { waitUntil: "load" });
@@ -29,7 +29,13 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
   const response = await page.reload({ waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
 
-  for (const asset of ["/game.js", "/style.css", "/manifest.webmanifest"]) {
+  for (const asset of [
+    "/game.js",
+    "/style.css",
+    "/manifest.webmanifest",
+    "/assets/audio/ambient/ambient-chlum.mp3",
+    "/assets/audio/effects/dig-perfect.mp3"
+  ]) {
     const cached = await page.evaluate(async path => {
       const response = await fetch(path);
       return { ok: response.ok, status: response.status, length: (await response.text()).length };
