@@ -1353,6 +1353,7 @@
         hitBoss(){hitRival();return world?.rival?{active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase}:null;},
         setPlayer(x,y){player.x=x;player.y=y;return {x:player.x,y:player.y};},
         setScanCooldown(value=0){scanCooldown=Math.max(0,Number(value)||0);return scanCooldown;},
+        setScanPulse(value=.45){scanPulse=clamp(Number(value)||0,0,1);return scanPulse;},
         setBossPose(x,y,angle=0){if(!world?.rival)return null;world.rival.x=x;world.rival.y=y;world.rival.angle=angle;world.rival.speed=0;world.rival.target={x,y};return {x,y,angle};},
         setHeat(value){state.heat=clamp(value,0,100);return state.heat;},
         setBossStun(value=1){if(!world?.rival)return null;world.rival.stunTimer=value;return world.rival.stunTimer;},
