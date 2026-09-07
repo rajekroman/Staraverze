@@ -1,11 +1,52 @@
-# PROJECT_CONTROL.md — terminální post-release řídicí registr
+# PROJECT_CONTROL.md — živý řídicí registr Staraverze
 
-Revize: **2.15.0 · 8. 8. 2026**  
-Repozitář: **`rajekroman/lovec-vltavinu`**
+Revize: **3.0.0 · 7. 9. 2026**
+Aktuální repozitář: **`rajekroman/Staraverze`**
+Aktuální zdrojová verze: **6.2.0**
 
-Tento dokument je autoritativní stavový registr projektu. Technické invarianty jsou v `docs/ARCHITECTURE_CONTRACT.md`; pracovní pravidla v `AGENTS.md`. Historická release evidence se nesmí zpětně přepisovat novými post-release změnami.
+## 0. Živý stav po importu do Staraverze
 
-Tato revize je záměrně **terminální stavový snapshot** po dokončení post-release governance sekvence. Nehardcoduje SHA vlastního budoucího merge commitu a neudržuje umělý „aktivní“ koordinační issue. Pokud vznikne nový schválený feature cíl nebo reprodukovatelný incident, další práce začne novým explicitním A0 issue s base SHA, větví, povolenými cestami, acceptance criteria a testy.
+Tento úvod je autoritou pro současný repozitář. Oddíly pod značkou
+**Importovaný historický registr** jsou zachovanou auditní evidencí původního
+repozitáře `rajekroman/lovec-vltavinu`; jejich čísla issues, PR, tagy, releasy,
+SHA a URL se nesmějí vykládat jako objekty vytvořené v `Staraverze`.
+
+- Aktuální `main`: `3e7eb4aa439de95cc7ef82a93c8e97141d1b0855`.
+- PR #3 importoval a publikoval verzi 6.2.0; merge commit:
+  `cad87ff1ca04997a79dadc05c1dc83422a0e9f26`.
+- PR #6 stabilizoval mobilní QA bez změny gameplaye nebo assetů; merge commit:
+  `3e7eb4aa439de95cc7ef82a93c8e97141d1b0855`.
+- Post-merge workflow `Validate game` run `34065164510` dokončil všech pět
+  skutečně spuštěných jobů včetně iPhone portrait a landscape jako `SUCCESS`.
+- GitHub Pages deploy run `34065164492` na stejném merge SHA je `SUCCESS`.
+- Veřejná URL: `https://rajekroman.github.io/Staraverze/`.
+- Issues #1 a #5 jsou `COMPLETED`; issue #7 vlastní pouze tuto synchronizaci
+  řídicího registru. Není doložen otevřený produktový blocker.
+- V repozitáři `Staraverze` při tomto auditu nejsou tagy ani GitHub Releases.
+  Historické releasy `v6.0.0` a `v6.1.0` níže patří původnímu repozitáři.
+
+Další implementace smí začít pouze novým konkrétním issue s base SHA, větví,
+povolenými cestami, acceptance criteria a testy. `main` zůstává jedinou
+zveřejnitelnou větví.
+
+## Importovaný historický registr původního repozitáře
+
+Následující obsah zachovává stav původního projektu v okamžiku exportu. Je
+historickou evidencí, nikoli živou frontou repozitáře `Staraverze`.
+
+Původní revize: **2.15.0 · 8. 8. 2026**.
+
+V původním repozitáři tento obsah sloužil jako autoritativní stavový registr.
+Technické invarianty jsou v `docs/ARCHITECTURE_CONTRACT.md`; pracovní pravidla
+v `AGENTS.md`. Historická release evidence se nesmí zpětně přepisovat novými
+post-release změnami.
+
+Původní revize byla záměrně **terminální stavový snapshot** po dokončení
+post-release governance sekvence. Nehardcoduje SHA vlastního budoucího merge
+commitu a neudržuje umělý „aktivní“ koordinační issue. Pokud vznikne nový
+schválený feature cíl nebo reprodukovatelný incident, další práce začne novým
+explicitním A0 issue s base SHA, větví, povolenými cestami, acceptance criteria
+a testy.
 
 ## 1. Aktuální stabilní stav
 
@@ -333,7 +374,9 @@ Stav: **COMPLETED / MERGED** na `main@ce5a4a95624d21727aae5613dfb3c406681ce760` 
 
 ### #182 — Release v6.2.0 po integraci prostředí
 
-Stav: **ACTIVE**, releasový kandidát bude přesně označen merge SHA releasového PR; tento kandidát je přímým potomkem `v6.0.0`, `v6.1.0` a #180.
+Historický stav původního repozitáře při exportu: **ACTIVE**. V `Staraverze`
+byla zdrojová verze 6.2.0 importována a publikována přes issue #1 / PR #3;
+nejde o otevřený issue #182 tohoto repozitáře.
 
 - Povolený rozsah: pouze číslo verze v balíčku a titulní obrazovce, verzovaný název distribuční cache, odpovídající kontraktový test a aktualizace tohoto řídicího záznamu.
 - Gameplay, data, render kontrakty, assety a ovládání se nemění.
