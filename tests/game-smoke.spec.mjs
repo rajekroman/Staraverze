@@ -470,11 +470,16 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
   await expect(page.locator("#objectiveLabel")).toHaveText("Dokumenty 0/3");
 
-  for (const paper of papers) {
+  for (let index = 0; index < papers.length; index += 1) {
+    const paper = papers[index];
     await page.evaluate(({ x, y }) => window.__lovecDebug.setPlayer(x, y), paper);
     await expect(page.locator("#actionText")).toHaveText("SEBRAT");
     await page.keyboard.press("Space");
-    await expect(page.locator("#objectiveLabel")).toHaveText(paper.objective);
+    if (index < papers.length - 1) {
+      await expect(page.locator("#objectiveLabel")).toHaveText(paper.objective);
+    } else {
+      await expect(page.locator("#objectiveLabel")).toHaveText(/Dokumenty 3\/3|Dožeň Frantu/);
+    }
   }
 
   await page.evaluate(() => {
