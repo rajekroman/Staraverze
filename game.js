@@ -1020,7 +1020,7 @@
       }
       if(p.working&&p.moving)p.workPhase=(p.workPhase||0)+movedDistance*.075;
       if(d<12)p.index=(p.index+1)%p.points.length;
-      if(vehicle){const rr=p.type==="tractor"?48*(p.scale||1):25*(p.scale||1);if(Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
+      if(vehicle){const rr=p.type==="tractor"?48*(p.scale||1):25*(p.scale||1);if(!p.debugNoCollision&&Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
       let suspicious=true;if(p.requires==="permit"&&world.runtime.permit)suspicious=false;if(p.type==="ranger"&&world.runtime.open<=0)suspicious=false;if(p.type==="police"&&world.runtime.papers>=3&&!world.rival?.active)suspicious=false;
       p.seesPlayer=false;
       if(!suspicious||!p.vision)continue;
@@ -1866,9 +1866,11 @@
           if(Number.isFinite(options.speed))p.speed=Math.max(0,options.speed);
           if(Number.isFinite(options.angle)){p.angle=options.angle;p.visualAngle=options.angle;}
           if(typeof options.working==="boolean")p.working=options.working;
+          if(typeof options.collisionEnabled==="boolean")p.debugNoCollision=!options.collisionEnabled;
           if(options.resetMotion){p.motionPhase=0;p.workPhase=0;p.wheelRotation=0;p.distanceTravelled=0;p.motionRatio=0;p.moving=false;p.turnAmount=0;}
-          return {type:p.type,x:p.x,y:p.y,speed:p.speed,index:p.index,working:p.working,angle:p.angle,visualAngle:p.visualAngle,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled};
+          return {type:p.type,x:p.x,y:p.y,speed:p.speed,index:p.index,working:p.working,angle:p.angle,visualAngle:p.visualAngle,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,collisionEnabled:!p.debugNoCollision};
         },
+        snapCameraToPlayer(){camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));return {x:camera.x,y:camera.y};},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
         snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
