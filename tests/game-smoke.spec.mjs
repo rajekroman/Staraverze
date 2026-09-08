@@ -4,14 +4,18 @@ const LEVELS = ["chlum", "locenice", "nesmen", "besednice", "malse"];
 const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
-test("Franta je v příběhu sběratel a vystavovatel, ne překupník", async ({ page }) => {
+test("Franta je sběratel a vystavovatel, zatímco hráč zůstává bezejmenný", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const source = await page.evaluate(async () => (await fetch("/game.js")).text());
   expect(source).toContain("sběratel Franta");
-  expect(source).toContain("Franta už se svou sbírkou míří do KD Slávie");
+  expect(source).toContain("Stejně jako ty chystá vlastní kolekci");
+  expect(source).toContain("SBĚRATEL FRANTA");
+  expect(source).toContain("kde ji chce na akci Na zelené vlně vystavit stejně jako ty");
   expect(source).not.toContain("překupník Franta");
   expect(source).not.toContain("Frantových překupníků");
+  expect(source).not.toContain("FETÁK FRANTA");
   expect(source).not.toContain("certifikát prodat");
+  expect(source).not.toContain("playerName");
 });
 
 test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
@@ -670,7 +674,7 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
     { timeout: 5_000 }
   ).toBe("franta");
   await expect(page.locator("#objectiveLabel")).toHaveText("Dožeň Frantu");
-  await expect(page.locator("#bossName")).toHaveText("FETÁK FRANTA");
+  await expect(page.locator("#bossName")).toHaveText("SBĚRATEL FRANTA");
 
   for (let hit = 1; hit <= 2; hit += 1) {
     await page.evaluate(() => {
