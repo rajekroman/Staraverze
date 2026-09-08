@@ -2,12 +2,12 @@
 
 ## Přístupné modály a mobilní zoom
 
-- všechny interaktivní překryvy mají jednotnou dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu a inertní neaktivní obsah;
+- skutečné interaktivní překryvy mají dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu a inertní neaktivní obsah; briefing a finální výsledek jsou samostatné pojmenované obrazovky bez falešného `aria-modal` a při přechodu oznamují vlastní nadpis;
 - Escape bezpečně obsluhuje pauzu, návod, rekordy a dialog bez přeskočení povinného určení, perku nebo poroty;
 - globální blokování pinch-to-zoom bylo odstraněno; `touch-action:none` zůstává pouze na joysticku a herních tlačítkách, která potřebují kontinuální pointer;
-- joystick, akční tlačítko a kopací/zahrabávací tlačítko drží vlastní aktivní pointer a vždy se uvolní při `pointercancel`, ztrátě fokusu, skrytí stránky nebo změně orientace;
+- joystick, akční tlačítko a kopací/zahrabávací tlačítko drží vlastní aktivní pointer; sdílený lifecycle reset nově explicitně ruší i interní `digPointer`, takže po `pointercancel`, ztrátě fokusu, skrytí stránky nebo změně orientace nemůže minihra zůstat zamčená starým dotykem;
 - HUD už není celý živý region; stručné stavové zprávy používají cílené `status`/alert regiony;
-- PWA cache byla zvýšena na `runtime-6`.
+- PWA cache byla zvýšena na `runtime-19`, aby se oprava vstupů a přístupnosti propsala i do dříve nainstalované PWA.
 
 ## Příběhové role hráče a Franty
 

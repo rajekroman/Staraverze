@@ -871,9 +871,9 @@ test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ pa
 });
 
 
-test("přístupné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
+test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
   await page.goto("/");
-  const modalIds = ["briefScreen","digScreen","identifyScreen","dialogScreen","perkScreen","juryScreen","resultScreen","pauseScreen","howScreen","recordsScreen"];
+  const modalIds = ["digScreen","identifyScreen","dialogScreen","perkScreen","juryScreen","pauseScreen","howScreen","recordsScreen"];
   for (const id of modalIds) {
     const attrs = await page.locator(`#${id}`).evaluate(element => ({
       role: element.getAttribute("role"),
@@ -892,8 +892,26 @@ test("přístupné modály mají názvy, modalitu a skryté obrazovky jsou inert
     await expect(page.locator(`#${label}`), `${id} label`).toHaveCount(1);
     if (attrs.describedby) await expect(page.locator(`#${attrs.describedby}`), `${id} description`).toHaveCount(1);
   }
+
+  for (const id of ["briefScreen","resultScreen"]) {
+    await expect(page.locator(`#${id}`), `${id} is a standalone flow screen`).not.toHaveAttribute("role","dialog");
+    await expect(page.locator(`#${id}`)).not.toHaveAttribute("aria-modal","true");
+    await expect(page.locator(`#${id}`)).toHaveAttribute("aria-labelledby",/.+/);
+    await expect(page.locator(`#${id}`)).toHaveAttribute("inert","");
+    await expect(page.locator(`#${id}`)).toHaveAttribute("aria-hidden","true");
+  }
+
+  await expect(page.locator("#titleScreen")).not.toHaveAttribute("role","dialog");
   await expect(page.locator("#theftAlert")).toHaveAttribute("role","alert");
   await expect(page.locator("#bossIntro")).toHaveAttribute("role","status");
+});
+
+test("briefing je samostatná obrazovka a po přechodu oznámí svůj nadpis", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#playButton").click();
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#briefScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#briefTitle")).toBeFocused();
 });
 
 test("fokus se přesune do modálu, zůstane uvnitř a vrátí se na spouštěč", async ({ page }) => {
@@ -970,7 +988,64 @@ test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", asyn
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
 });
 
-test("viewport zůstává zoomovatelný a blokace gest je jen na herních ovladačích", async ({ page }) => {
+test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvolní", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith("desktop-"),"Dotykové akční tlačítko je v desktop fine-pointer layoutu záměrně skryté.");
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const button = page.locator("#actionButton");
+  const box = await button.boundingBox();
+  expect(box).toBeTruthy();
+
+  await page.mouse.move(box.x + box.width / 2,box.y + box.height / 2);
+  await page.mouse.down();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
+
+  await button.dispatchEvent("pointerdown",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
+  await button.dispatchEvent("pointercancel",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
+
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
+  await expect(button).not.toHaveClass(/active/);
+  await page.mouse.up();
+
+  await page.mouse.down();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
+});
+test("kopací tlačítko po blur, pagehide a změně orientace nezůstane zamčené starým pointerem", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startFillChallenge());
+  const button = page.locator("#digButton");
+  const box = await button.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+
+  for (const lifecycleEvent of ["blur","pagehide","orientationchange"]) {
+    await page.mouse.down();
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+    await expect(button).toHaveClass(/pressed/);
+
+    await button.dispatchEvent("pointerdown",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointercancel",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+
+    await page.evaluate(name => window.dispatchEvent(new Event(name)), lifecycleEvent);
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+    await expect(button).not.toHaveClass(/pressed/);
+    await page.mouse.up();
+  }
+
+  await page.mouse.down();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+});
+
+test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo herní ovladače", async ({ page }) => {
+  // Viewport emulation only verifies CSS/viewport preconditions. Physical pinch-to-zoom
+  // still requires a separate manual check on a real phone.
   await page.goto("/");
   const audit = await page.evaluate(() => {
     const viewport = document.querySelector('meta[name="viewport"]')?.content || "";
