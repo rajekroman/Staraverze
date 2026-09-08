@@ -586,6 +586,29 @@ test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async (
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
     await expect(page.locator("#actionText")).toHaveText("ZAHRABAT");
     await page.keyboard.press("Space");
+
+    await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+    await expect(page.locator("#digTitle")).toHaveText("Zahrabání díry");
+    await expect(page.locator("#digButton")).toHaveText("DRŽ A PUSŤ");
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().kind)).toBe("fill");
+
+    for (let transfer = 1; transfer <= 3; transfer += 1) {
+      await page.evaluate(() => window.__lovecDebug.setDigSpeed(0));
+      await page.keyboard.down("Space");
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+      await page.evaluate(() => {
+        const snapshot = window.__lovecDebug.digSnapshot();
+        window.__lovecDebug.setDigMarker(snapshot.zoneCenter);
+      });
+      await page.keyboard.up("Space");
+
+      if (transfer < 3) {
+        await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
+        await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+      }
+    }
+
+    await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
   }
 
   await openDebug(page);
