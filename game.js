@@ -645,7 +645,7 @@
     const radius=260+state.perks.scanner*55;
     // Radar should keep the search flowing: a short base cooldown prevents spam,
     // while the scanner perk still rewards investment without making early levels sluggish.
-    scanPulse=.01;scanCooldown=Math.max(1.15,3.2-state.perks.scanner*.45);audio.sfx("scan");state.heat=clamp(state.heat+1.5,0,100);
+    scanPulse=.01;scanCooldown=Math.max(1.1,2-state.perks.scanner*.3);audio.sfx("scan");state.heat=clamp(state.heat+1.5,0,100);
     let count=0;
     for(const h of world.hotspots){if(h.active&&dist(player,h)<=radius){h.revealed=true;h.ttl=9;world.radarPings.push({x:h.x,y:h.y,life:.62,maxLife:.62,kind:"profile"});count++;}}
     for(const item of world.items){if(item.active&&item.hidden&&dist(player,item)<=radius){item.hidden=false;world.radarPings.push({x:item.x,y:item.y,life:.62,maxLife:.62,kind:"stone"});count++;}}
