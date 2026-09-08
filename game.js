@@ -599,9 +599,16 @@
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
     state=freshState();state.levelIndex=1;
     const portrait=viewport.h>viewport.w*1.18;
-    const layout=portrait
-      ? {w:720,h:1280,player:[360,690],pines:[[125,230,1.45,0],[565,260,1.25,1],[155,760,1.3,2],[570,880,1.5,0]],mound:[350,1050],fallen:[350,555],sign:[165,1160]}
-      : {w:1200,h:850,player:[600,480],pines:[[145,240,1.55,0],[990,230,1.3,1],[210,675,1.35,2],[1015,690,1.5,0]],mound:[830,570],fallen:[420,390],sign:[170,760]};
+    const w=portrait?720:Math.round(700*viewport.w/Math.max(1,viewport.h));
+    const h=portrait?Math.round(720*viewport.h/Math.max(1,viewport.w)):700;
+    const layout={
+      w,h,
+      player:[w*.52,h*.52],
+      pines:[[w*.14,h*.18,1.5,0],[w*.82,h*.2,1.3,1],[w*.18,h*.7,1.35,2],[w*.84,h*.76,1.5,0]],
+      mound:[w*.7,h*.65],
+      fallen:[w*.36,h*.4],
+      sign:[w*.14,h*.88]
+    };
     world={id:"locenice",theme:"meadow",w:layout.w,h:layout.h,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{correct:0,real:0,identified:0},rain:0,referenceScene:true};
     player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
     layout.pines.forEach((q,i)=>addProp("realpine",q[0],q[1],{scale:q[2],lean:i%2?.04:-.03,rooted:i===0||i===3,variant:q[3]}));
