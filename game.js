@@ -590,7 +590,7 @@
     addProp("plaza",1440,400,{scale:1.0});
     [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["fotografie nálezů","souhlasy vlastníků","vážní protokol"][i]}));
     addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
-    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7});
+    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:2.55,variant:0});
     addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
@@ -606,7 +606,7 @@
     player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
     addProp("farm",layout.farm[0],layout.farm[1],{scale:3.0,reference:true});
     addProp("bench",layout.bench[0],layout.bench[1],{scale:1.15,reference:true});
-    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,reference:true});
+    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,visualScale:3.15,reference:true,variant:1});
     addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:2.5,reference:true,working:true,variant:1});
     addProp("tree",layout.tree[0],layout.tree[1],{scale:2.5,variant:1,reference:true});
     addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:2.0,angle:0,reference:true,working:false,workSpeed:0,workPhase:1.35,turretAngle:.08,turretTarget:.08,variant:1});
@@ -1078,7 +1078,8 @@
       p.motionPhase=(p.motionPhase||0)+movedDistance*.085;
       p.distanceTravelled=(p.distanceTravelled||0)+movedDistance;
       if(vehicle){
-        const wheelRadius=(p.type==="tractor"?20:p.type==="bike"?9:6)*(p.scale||1);
+        const wheelScale=p.type==="car"?(p.visualScale||p.scale||1):(p.scale||1);
+        const wheelRadius=(p.type==="tractor"?20:p.type==="bike"?9:6)*wheelScale;
         p.wheelRotation=(p.wheelRotation||0)+(wheelRadius>0?movedDistance/wheelRadius:0);
       }
       if(p.working&&p.moving)p.workPhase=(p.workPhase||0)+movedDistance*.075;
@@ -1709,14 +1710,52 @@
       ctx.restore();return;
     }
     if(p.type==="car"||p.type==="bike"){
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.scale(p.scale||1, p.scale||1);
+      const renderAngle=p.type==="car"&&Number.isFinite(p.visualAngle)?p.visualAngle:(p.angle||0);
+      const renderScale=p.type==="car"?(p.visualScale||p.scale||1):(p.scale||1);
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(renderAngle);ctx.scale(renderScale,renderScale);
       if(p.type==="car"){
-        ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(0,11,28,12,0,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#87443f";roundRect(ctx,-26,-14,52,28,9);ctx.fill();
-        ctx.fillStyle="#293f48";roundRect(ctx,-10,-18,24,13,5);ctx.fill();
-        ctx.strokeStyle="rgba(236,184,136,.42)";ctx.lineWidth=1.5;ctx.stroke();
-        ctx.fillStyle="#171e21";ctx.beginPath();ctx.arc(-16,11,6,0,Math.PI*2);ctx.arc(16,11,6,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#f2d58e";ctx.fillRect(20,-6,5,5);ctx.fillStyle="#ef8e65";ctx.fillRect(-25,-6,4,5);
+        const motion=clamp(p.motionRatio||0,0,1);
+        const suspension=p.moving?Math.sin((p.motionPhase||0)*.42)*.65*motion:0;
+        const wheelSpin=p.wheelRotation||0;
+        const steer=clamp(p.turnAmount||0,-1,1)*.24;
+        const variant=p.variant||0;
+        ctx.translate(0,suspension);
+
+        ctx.fillStyle="rgba(0,0,0,.27)";ctx.beginPath();ctx.ellipse(0,4,35,16,0,0,Math.PI*2);ctx.fill();
+        const drawWheel=(x,y,front=false)=>{
+          ctx.save();ctx.translate(x,y);if(front)ctx.rotate(steer);
+          ctx.fillStyle="#171b1d";ctx.beginPath();ctx.ellipse(0,0,5.8,4.6,0,0,Math.PI*2);ctx.fill();
+          ctx.strokeStyle="#52595c";ctx.lineWidth=1.3;ctx.stroke();
+          ctx.rotate(wheelSpin);ctx.strokeStyle="rgba(205,211,208,.55)";ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-3.4,0);ctx.lineTo(3.4,0);ctx.moveTo(0,-2.8);ctx.lineTo(0,2.8);ctx.stroke();
+          ctx.restore();
+        };
+        drawWheel(-19,-13.5,false);drawWheel(-19,13.5,false);drawWheel(19,-13.5,true);drawWheel(19,13.5,true);
+
+        const body=ctx.createLinearGradient(-33,-15,33,15);
+        if(variant===1){body.addColorStop(0,"#415c68");body.addColorStop(.55,"#557789");body.addColorStop(1,"#2f4b58");}
+        else{body.addColorStop(0,"#783934");body.addColorStop(.55,"#a35349");body.addColorStop(1,"#69302e");}
+        ctx.fillStyle=body;roundRect(ctx,-33,-15,66,30,10);ctx.fill();
+        ctx.strokeStyle="rgba(246,214,174,.28)";ctx.lineWidth=1.2;ctx.stroke();
+
+        ctx.fillStyle=variant===1?"#36515d":"#713631";roundRect(ctx,13,-13,17,26,7);ctx.fill();
+        ctx.fillStyle=variant===1?"#344d58":"#67312e";roundRect(ctx,-30,-12,13,24,6);ctx.fill();
+        ctx.strokeStyle="rgba(24,28,30,.28)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(13,-12);ctx.lineTo(13,12);ctx.moveTo(-17,-11);ctx.lineTo(-17,11);ctx.stroke();
+
+        const glass=ctx.createLinearGradient(-12,-12,13,12);glass.addColorStop(0,"#6f919a");glass.addColorStop(.52,"#37545e");glass.addColorStop(1,"#203942");
+        ctx.fillStyle="#27383d";roundRect(ctx,-13,-13,28,26,7);ctx.fill();
+        ctx.fillStyle=glass;roundRect(ctx,-10,-10,22,20,5);ctx.fill();
+        ctx.strokeStyle="rgba(204,228,226,.38)";ctx.lineWidth=1.1;ctx.stroke();
+        ctx.strokeStyle="rgba(12,27,32,.75)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(1,-10);ctx.lineTo(1,10);ctx.stroke();
+        ctx.fillStyle="rgba(231,246,238,.19)";ctx.fillRect(6,-8,2,15);
+
+        ctx.fillStyle="#20282b";roundRect(ctx,-1,-18,7,4,2);ctx.fill();roundRect(ctx,-1,14,7,4,2);ctx.fill();
+        ctx.fillStyle="#2c3031";roundRect(ctx,29,-10,5,20,2);ctx.fill();roundRect(ctx,-34,-10,5,20,2);ctx.fill();
+        ctx.strokeStyle="#22282a";ctx.lineWidth=2;for(const y of [-5,0,5]){ctx.beginPath();ctx.moveTo(29,y);ctx.lineTo(33,y);ctx.stroke();}
+        ctx.fillStyle="#f3df9a";roundRect(ctx,29,-10,4,6,2);ctx.fill();roundRect(ctx,29,4,4,6,2);ctx.fill();
+        ctx.fillStyle="#da6d59";roundRect(ctx,-33,-10,4,6,2);ctx.fill();roundRect(ctx,-33,4,4,6,2);ctx.fill();
+
+        ctx.strokeStyle="rgba(255,232,197,.22)";ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-25,-11);ctx.lineTo(25,-11);ctx.stroke();
+        ctx.strokeStyle="rgba(58,36,31,.28)";ctx.beginPath();ctx.moveTo(-24,9);ctx.lineTo(-8,8);ctx.moveTo(12,10);ctx.lineTo(25,8);ctx.stroke();
       }else{
         ctx.strokeStyle="#25383e";ctx.lineWidth=3.5;ctx.beginPath();ctx.arc(-11,9,9,0,Math.PI*2);ctx.arc(11,9,9,0,Math.PI*2);ctx.stroke();
         ctx.strokeStyle="#607a83";ctx.beginPath();ctx.moveTo(-11,9);ctx.lineTo(0,-4);ctx.lineTo(11,9);ctx.moveTo(0,-4);ctx.lineTo(0,-15);ctx.stroke();
