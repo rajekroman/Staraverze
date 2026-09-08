@@ -995,8 +995,8 @@ test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvoln
     window.__lovecDebug.setPlayer(60,60);
     const controls = document.getElementById("controls");
     controls.classList.remove("hidden");
-    controls.style.display = "flex";
-    controls.style.pointerEvents = "auto";
+    controls.style.setProperty("display","flex","important");
+    controls.style.setProperty("pointer-events","auto","important");
   });
   const button = page.locator("#actionButton");
   const box = await button.boundingBox();
