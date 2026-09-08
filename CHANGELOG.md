@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Na zelené vlně 2026 — propagační integrace
+
+- hra je na titulní obrazovce výslovně označena jako herní pozvánka na akci Na zelené vlně;
+- menu uvádí termín **19. 9. 2026**, **České Budějovice** a **KD Slavie** a vysvětluje hlavní příběhový cíl: najít a nasbírat vltavíny a v posledním levelu dorazit na akci;
+- do projektu bylo vloženo dodané logo Na zelené vlně a odkazy na `nazelenevlne.cz`;
+- briefing každé lokality, průběžný HUD, finální porota a výsledková obrazovka připomínají reálný cíl výpravy;
+- UI používá brandovou zelenou `#7CFFC3` a fialovou `#3A006E`; terén zůstává přírodní, aby se nezhoršila čitelnost gameplaye;
+- PWA cache byla zvýšena na `runtime-2`, aby se nový branding a logo zobrazily i uživatelům se starší instalací.
+
 ## Produkční audit 5.4.2 — runtime a čitelnost
 
 - Chybně určený vzorek v Ločenicích lze znovu dohledat radarem; chyby už nemohou natrvalo zablokovat úkol.
