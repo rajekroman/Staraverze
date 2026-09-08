@@ -2,13 +2,14 @@ Lovec vltavínů Reborn 5.4.2 — aktuální ověřený stav
 
 OVĚŘENÍ 5.4.2
 - statická validace: PASS
-- desktop Chromium smoke: 14/14 PASS
-- iPhone portrait Chromium smoke: 14/14 PASS
-- iPhone landscape Chromium smoke: 14/14 PASS
-- desktop WebKit smoke: 14/14 PASS
-- iPhone portrait WebKit smoke: 14/14 PASS
-- iPhone landscape WebKit smoke: 14/14 PASS
+- desktop Chromium smoke: 22/22 PASS
+- iPhone portrait Chromium smoke: 22/22 PASS
+- iPhone landscape Chromium smoke: 22/22 PASS
+- desktop WebKit smoke: 22/22 PASS
+- iPhone portrait WebKit smoke: 22/22 PASS
+- iPhone landscape WebKit smoke: 22/22 PASS
 - offline Chromium PWA smoke: 1/1 PASS
+- visual regression: 12/12 PASS (menu, Chlum, radar, kopání × desktop/iPhone portrait/iPhone landscape)
 - všech 5 levelů: spuštěno a vykresleno bez runtime chyby
 - full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
 - uložený stav: migrace a normalizace PASS
@@ -24,6 +25,7 @@ OVĚŘENÍ 5.4.2
 - Malše/Slávie: 3 dokumenty → Franta → 2× dohnat → vstup do Slávie PASS
 - noční Besednice: černá vymazaná plocha odstraněna
 - titulní nabídka v landscape: hlavní ovládací prvky zůstávají uvnitř viewportu
+- Na zelené vlně branding: menu zobrazuje logo, datum, místo, cíl výpravy a odkazy na akci; promo prvky zůstávají ve viewportu PASS
 
 PŮVODNÍ KONTROLA 5.4.1
 
