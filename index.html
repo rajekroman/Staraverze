@@ -19,7 +19,7 @@
 <main id="app">
   <canvas id="game" tabindex="0" aria-label="Herní plocha"></canvas>
 
-  <section id="hud" class="hud hidden" aria-live="polite">
+  <section id="hud" class="hud hidden">
     <div class="hud-topbar">
       <div class="mission-panel">
         <span id="missionNumber" class="mission-index">1</span>
@@ -43,19 +43,19 @@
     <div id="dangerBanner" class="danger-banner hidden"><span>⚠</span><strong id="dangerText">VE SVĚTLE</strong></div>
     <div id="combo" class="combo hidden">KOMBO ×2</div>
     <div id="hint" class="hint hidden">Rozhlédni se po okolí</div>
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="campaign-hud-badge" aria-label="Cíl výpravy: Na zelené vlně, 19. září 2026, KD Slavie České Budějovice">
       <span>CÍL VÝPRAVY</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD SLAVIE</small>
     </div>
   </section>
 
-  <div id="theftAlert" class="theft-alert hidden" aria-live="assertive">
+  <div id="theftAlert" class="theft-alert hidden" role="alert" aria-live="assertive" aria-atomic="true">
     <small>POZOR!</small>
     <strong>BYL JSI OKRADEN OD FEŤÁKA</strong>
     <span>Vzácný Besednický ježek ti byl vytržen přímo z profilu. Dožeň zloděje!</span>
   </div>
 
-  <div id="bossIntro" class="boss-intro hidden" aria-live="assertive">
+  <div id="bossIntro" class="boss-intro hidden" role="status" aria-live="polite" aria-atomic="true">
     <div class="boss-intro-line"></div>
     <small id="bossIntroKicker">HROZBA V LOKALITĚ</small>
     <strong id="bossIntroName">KRYSTALOVÝ KAREL</strong>
@@ -101,7 +101,7 @@
     </div>
   </section>
 
-  <section id="briefScreen" class="screen">
+  <section id="briefScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="briefTitle" aria-describedby="briefText" tabindex="-1">
     <div class="brief-card">
       <p id="briefKicker" class="eyebrow">LOKALITA 1 / 5</p>
       <h2 id="briefTitle">Chlum po bouřce</h2>
@@ -116,7 +116,7 @@
     </div>
   </section>
 
-  <section id="digScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="digTitle" aria-describedby="digInfo">
+  <section id="digScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="digTitle" aria-describedby="digInfo" tabindex="-1">
     <div class="dig-card">
       <button id="digPauseButton" class="icon-button dig-pause" type="button" aria-label="Pozastavit kopání">Ⅱ</button>
       <p class="eyebrow">KOPÁNÍ</p>
@@ -134,12 +134,12 @@
       </div>
       <div class="dig-timer" aria-label="Zbývající čas"><span id="digTimerFill"></span></div>
       <div id="digHits" class="dig-hits">◇ ◇ ◇</div>
-      <div id="digFeedback" class="dig-feedback" role="status" aria-live="polite">Čekám na první úder</div>
+      <div id="digFeedback" class="dig-feedback" role="status" aria-live="polite" aria-atomic="true">Čekám na první úder</div>
       <button id="digButton" class="primary-button dig-action" type="button">ÚDER!</button>
     </div>
   </section>
 
-  <section id="identifyScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="sampleTitle">
+  <section id="identifyScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="sampleTitle" aria-describedby="sampleDescription" tabindex="-1">
     <div class="identify-card">
       <p class="eyebrow">RYCHLÉ URČENÍ</p>
       <div id="sampleGem" class="sample-gem">◆</div>
@@ -152,7 +152,7 @@
     </div>
   </section>
 
-  <section id="dialogScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="dialogName" aria-describedby="dialogText">
+  <section id="dialogScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="dialogName" aria-describedby="dialogText" tabindex="-1">
     <div class="dialog-card">
       <div id="dialogAvatar" class="avatar">V</div>
       <div><p id="dialogName" class="eyebrow">VÁCLAV</p><p id="dialogText"></p></div>
@@ -160,26 +160,26 @@
     </div>
   </section>
 
-  <section id="perkScreen" class="screen">
+  <section id="perkScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="perkTitle" tabindex="-1">
     <div class="perk-card">
       <p class="eyebrow">VÝPRAVA SÍLÍ</p>
-      <h2>Vyber jednu výhodu</h2>
+      <h2 id="perkTitle">Vyber jednu výhodu</h2>
       <div id="perkList" class="perk-list"></div>
     </div>
   </section>
 
-  <section id="juryScreen" class="screen">
+  <section id="juryScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="juryTitle" aria-describedby="juryDescription" tabindex="-1">
     <div class="jury-card">
       <div class="event-arrival-banner"><span>DORAZIL JSI NA AKCI</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD Slavie · České Budějovice</small></div>
       <p class="eyebrow">FINÁLE V KD SLAVII</p>
-      <h2>Vyber tři kameny do vitríny</h2>
-      <p>Vzácnost, stav a doložený původ rozhodnou o výsledku.</p>
+      <h2 id="juryTitle">Vyber tři kameny do vitríny</h2>
+      <p id="juryDescription">Vzácnost, stav a doložený původ rozhodnou o výsledku.</p>
       <div id="juryList" class="jury-list"></div>
       <div class="jury-footer"><span id="juryCount">0 / 3</span><button id="juryButton" class="primary-button" type="button" disabled>POSTAVIT VITRÍNU</button></div>
     </div>
   </section>
 
-  <section id="resultScreen" class="screen">
+  <section id="resultScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="resultTitle" aria-describedby="resultText" tabindex="-1">
     <div class="result-card">
       <p id="resultKicker" class="eyebrow">VÝSLEDEK POROTY</p>
       <h2 id="resultTitle">Výstavní uznání</h2>
@@ -196,13 +196,13 @@
     </div>
   </section>
 
-  <section id="pauseScreen" class="screen transparent" role="dialog" aria-modal="true" aria-label="Pauza">
-    <div class="small-card"><p class="eyebrow">PAUZA</p><h2>Výprava čeká</h2><button id="resumeButton" class="primary-button" type="button">POKRAČOVAT</button><button id="menuButton" class="secondary-button" type="button">ULOŽIT A ODEJÍT</button></div>
+  <section id="pauseScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="pauseTitle" tabindex="-1">
+    <div class="small-card"><p class="eyebrow">PAUZA</p><h2 id="pauseTitle">Výprava čeká</h2><button id="resumeButton" class="primary-button" type="button">POKRAČOVAT</button><button id="menuButton" class="secondary-button" type="button">ULOŽIT A ODEJÍT</button></div>
   </section>
 
-  <section id="howScreen" class="screen">
+  <section id="howScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="howTitle" tabindex="-1">
     <div class="how-card">
-      <p class="eyebrow">JEDEN PALEC, JEDNO TLAČÍTKO</p><h2>Jak se hraje</h2>
+      <p class="eyebrow">JEDEN PALEC, JEDNO TLAČÍTKO</p><h2 id="howTitle">Jak se hraje</h2>
       <div class="how-grid">
         <div><b>1</b><strong>Pohyb</strong><p>Táhni palcem vlevo. Na okraji joysticku běžíš automaticky.</p></div>
         <div><b>2</b><strong>Radar a akce</strong><p>Radar nejdřív odhalí skryté nálezy. U odhaleného cíle stejné tlačítko automaticky přepne na sběr, kopání, rozhovor nebo zahrabání.</p></div>
@@ -213,8 +213,8 @@
     </div>
   </section>
 
-  <section id="recordsScreen" class="screen">
-    <div class="records-card"><p class="eyebrow">NEJLEPŠÍ VÝPRAVY</p><h2>Rekordy</h2><ol id="recordsList"></ol><button id="closeRecordsButton" class="primary-button" type="button">ZAVŘÍT</button></div>
+  <section id="recordsScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="recordsTitle" tabindex="-1">
+    <div class="records-card"><p class="eyebrow">NEJLEPŠÍ VÝPRAVY</p><h2 id="recordsTitle">Rekordy</h2><ol id="recordsList"></ol><button id="closeRecordsButton" class="primary-button" type="button">ZAVŘÍT</button></div>
   </section>
 
   <noscript><div class="noscript">Hra potřebuje zapnutý JavaScript.</div></noscript>
