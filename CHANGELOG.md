@@ -2,9 +2,9 @@
 
 ## Příběhová korekce Franty
 
-- Franta je napříč příběhem popsaný jako konkurenční sběratel, který připravuje vlastní kolekci pro Na zelené vlně;
+- Franta je napříč příběhem popsaný jako konkurenční sběratel, který připravuje a na Na zelené vlně vystavuje vlastní kolekci;
 - z Chlumu a Ločenic byly odstraněny formulace „překupník“ / „Frantovi překupníci“;
-- finále u KD Slavie už nemluví o prodeji certifikátu, ale o závodu dvou sběratelů na výstavu s doloženým původem kamenů.
+- finále u KD Slavie už nemluví o prodeji certifikátu, ale o závodu dvou sběratelů na výstavu s doloženým původem kamenů;\n- hlavní postava zůstává záměrně bezejmenná — je to přímo hráč a příběhové texty ji oslovují ve druhé osobě.
 
 ## Hlavní menu — copy a vizuální hierarchie
 
