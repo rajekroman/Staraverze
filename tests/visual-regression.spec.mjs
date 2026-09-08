@@ -161,6 +161,30 @@ test("Malše / Slávie identity baseline", async ({ page }) => {
   await capture(page, "malse-slavie");
 });
 
+test("Malše / Slávie rear-occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.setPlayer(1450, 188);
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(700);
+  await capture(page, "malse-slavie-behind");
+});
+
+test("Malše river embankment identity evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.setPlayer(505, 310);
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(700);
+  await capture(page, "malse-river");
+});
+
 test("radar reveal visual baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
