@@ -1508,7 +1508,7 @@
   }
 
   function pause(){if(mode!=="playing"&&mode!=="dig")return;pausedMode=mode;mode="pause";audio.pauseMusic();setPlaying(false);showOnly(screens.pause);}
-  function resume(){if(mode!=="pause")return;mode=pausedMode;showOnly(mode==="dig"?screens.dig:null);audio.resumeMusic();setPlaying(mode==="playing");last=performance.now();}
+  function resume(){if(mode!=="pause")return;mode=pausedMode;showOnly(mode==="dig"?screens.dig:null);audio.resumeMusic();setPlaying(mode==="playing");if(mode==="playing")requestAnimationFrame(()=>canvas.focus({preventScroll:true}));last=performance.now();}
   function toMenu(){save();audio.pauseMusic();currentDig=null;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();}
   function showRecords(){const list=$("recordsList"),rows=getRecords();list.innerHTML="";if(!rows.length){list.innerHTML="<li><span>–</span><div>Zatím žádná dokončená výprava</div></li>";}else rows.forEach((r,i)=>{const li=document.createElement("li");li.innerHTML=`<b>${i+1}.</b><div><strong>${escapeHtml(r.title)}</strong><small>${r.stones} kamenů · ${new Date(r.date).toLocaleDateString("cs-CZ")}</small></div><strong>${Number(r.score).toLocaleString("cs-CZ")}</strong>`;list.append(li);});showOnly(screens.records);}
 
