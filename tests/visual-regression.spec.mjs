@@ -153,7 +153,7 @@ test("Malše / Slávie identity baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(4);
-    window.__lovecDebug.setPlayer(1450, 300);
+    window.__lovecDebug.setPlayer(1450, 245);
     document.getElementById("hud")?.classList.add("hidden");
     document.getElementById("controls")?.classList.add("hidden");
   });
