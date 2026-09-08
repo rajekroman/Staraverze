@@ -4,7 +4,8 @@ const OFFLINE_TEST = /offline-smoke\.spec\.mjs/;
 const VISUAL_TEST = /visual-regression\.spec\.mjs/;
 const MOTION_TEST = /motion-evidence\.spec\.mjs/;
 const EXCAVATOR_MOTION_TEST = /excavator-motion-evidence\.spec\.mjs/;
-const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST];
+const CAR_MOTION_TEST = /car-motion-evidence\.spec\.mjs/;
+const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST, CAR_MOTION_TEST];
 const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
 const baseURL = `http://127.0.0.1:${port}`;
 const webRoot = process.env.PLAYWRIGHT_ROOT || ".";
@@ -79,6 +80,11 @@ export default defineConfig({
     {
       name: "motion-excavator",
       testMatch: EXCAVATOR_MOTION_TEST,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 }, video: "on", trace: "off", screenshot: "off" }
+    },
+    {
+      name: "motion-car",
+      testMatch: CAR_MOTION_TEST,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 }, video: "on", trace: "off", screenshot: "off" }
     },
     {
