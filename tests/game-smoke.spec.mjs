@@ -484,7 +484,7 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
     window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
     window.__lovecDebug.setBossStun(0);
   });
-  await expect(page.locator("#actionText")).toHaveText("DOHNAT");
+  await expect(page.locator("#actionText")).toHaveText("CHYTIT");
   await page.keyboard.press("Space");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(0);
 
