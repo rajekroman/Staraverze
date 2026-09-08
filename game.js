@@ -590,7 +590,7 @@
     addProp("plaza",1440,400,{scale:1.0});
     [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["fotografie nálezů","souhlasy vlastníků","vážní protokol"][i]}));
     addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
-    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7});
+    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:1.25,variant:0});
     addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
@@ -606,7 +606,7 @@
     player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
     addProp("farm",layout.farm[0],layout.farm[1],{scale:3.0,reference:true});
     addProp("bench",layout.bench[0],layout.bench[1],{scale:1.15,reference:true});
-    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,reference:true});
+    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,visualScale:1,variant:1,reference:true});
     addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:2.5,reference:true,working:true,variant:1});
     addProp("tree",layout.tree[0],layout.tree[1],{scale:2.5,variant:1,reference:true});
     addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:2.0,angle:0,reference:true,working:false,workSpeed:0,workPhase:1.35,turretAngle:.08,turretTarget:.08,variant:1});
@@ -1078,7 +1078,7 @@
       p.motionPhase=(p.motionPhase||0)+movedDistance*.085;
       p.distanceTravelled=(p.distanceTravelled||0)+movedDistance;
       if(vehicle){
-        const wheelRadius=(p.type==="tractor"?20:p.type==="bike"?9:6)*(p.scale||1);
+        const wheelRadius=p.type==="tractor"?20*(p.scale||1):p.type==="bike"?9*(p.scale||1):6*(p.scale||1)*(p.visualScale||1);
         p.wheelRotation=(p.wheelRotation||0)+(wheelRadius>0?movedDistance/wheelRadius:0);
       }
       if(p.working&&p.moving)p.workPhase=(p.workPhase||0)+movedDistance*.075;
@@ -1708,20 +1708,75 @@
       ctx.restore();
       ctx.restore();return;
     }
-    if(p.type==="car"||p.type==="bike"){
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.scale(p.scale||1, p.scale||1);
-      if(p.type==="car"){
-        ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(0,11,28,12,0,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#87443f";roundRect(ctx,-26,-14,52,28,9);ctx.fill();
-        ctx.fillStyle="#293f48";roundRect(ctx,-10,-18,24,13,5);ctx.fill();
-        ctx.strokeStyle="rgba(236,184,136,.42)";ctx.lineWidth=1.5;ctx.stroke();
-        ctx.fillStyle="#171e21";ctx.beginPath();ctx.arc(-16,11,6,0,Math.PI*2);ctx.arc(16,11,6,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#f2d58e";ctx.fillRect(20,-6,5,5);ctx.fillStyle="#ef8e65";ctx.fillRect(-25,-6,4,5);
-      }else{
-        ctx.strokeStyle="#25383e";ctx.lineWidth=3.5;ctx.beginPath();ctx.arc(-11,9,9,0,Math.PI*2);ctx.arc(11,9,9,0,Math.PI*2);ctx.stroke();
-        ctx.strokeStyle="#607a83";ctx.beginPath();ctx.moveTo(-11,9);ctx.lineTo(0,-4);ctx.lineTo(11,9);ctx.moveTo(0,-4);ctx.lineTo(0,-15);ctx.stroke();
-        ctx.fillStyle="#d4a578";ctx.beginPath();ctx.arc(0,-11,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#263b3e";roundRect(ctx,-7,-18,14,4,2);ctx.fill();
+    if(p.type==="car"){
+      const sc=(p.scale||1)*(p.visualScale||1);
+      const visualAngle=Number.isFinite(p.visualAngle)?p.visualAngle:p.angle;
+      const spin=p.wheelRotation||0,motion=p.motionRatio||0;
+      const steer=clamp(p.turnAmount||0,-1,1)*.36;
+      const suspension=motion>.02?Math.sin(p.motionPhase||0)*motion*.58:0;
+      const pitch=motion>.02?Math.sin((p.motionPhase||0)*.43)*motion*.009:0;
+      const variant=p.variant||0;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(visualAngle);ctx.scale(sc,sc);
+
+      // Contact shadow and tyres stay on the road; only the sprung body moves.
+      ctx.fillStyle="rgba(0,0,0,.27)";ctx.beginPath();ctx.ellipse(0,13,34,14,0,0,Math.PI*2);ctx.fill();
+      const wheel=(x,y,r,phase,steering=0)=>{
+        ctx.save();ctx.translate(x,y);ctx.rotate(steering);
+        ctx.fillStyle="#161b1d";ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#45494a";ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,r-1.5,0,Math.PI*2);ctx.stroke();
+        ctx.fillStyle="#8d8f8b";ctx.beginPath();ctx.arc(0,0,r*.46,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#313638";ctx.lineWidth=1.2;
+        for(let n=0;n<4;n++){const a=phase+n*Math.PI/2;ctx.beginPath();ctx.moveTo(Math.cos(a)*1.2,Math.sin(a)*1.2);ctx.lineTo(Math.cos(a)*(r-2),Math.sin(a)*(r-2));ctx.stroke();}
+        ctx.restore();
+      };
+      wheel(-20,-13,6,spin);wheel(-20,13,6,spin);
+      wheel(20,-13,6,spin,steer);wheel(20,13,6,spin,steer);
+
+      ctx.save();ctx.translate(0,suspension);ctx.rotate(pitch);
+      const body=ctx.createLinearGradient(-30,-13,30,15);
+      body.addColorStop(0,variant===1?"#7d4c46":"#9b5149");
+      body.addColorStop(.48,variant===1?"#a46758":"#a9574d");
+      body.addColorStop(1,variant===1?"#653b39":"#783c3b");
+      ctx.fillStyle=body;roundRect(ctx,-30,-15,60,30,10);ctx.fill();
+      ctx.strokeStyle="rgba(255,205,165,.2)";ctx.lineWidth=1.2;ctx.stroke();
+
+      // Bumpers and wheel arches give the silhouette physical depth.
+      ctx.fillStyle="#323738";roundRect(ctx,27,-10,4,20,2);ctx.fill();roundRect(ctx,-31,-10,4,20,2);ctx.fill();
+      ctx.strokeStyle="rgba(46,42,40,.55)";ctx.lineWidth=2;
+      for(const x of [-20,20]){ctx.beginPath();ctx.arc(x,-13,8,.12,Math.PI-.12);ctx.stroke();ctx.beginPath();ctx.arc(x,13,8,Math.PI+.12,Math.PI*2-.12);ctx.stroke();}
+
+      // Variant 0 reads as a sedan, variant 1 as a slightly longer estate/hatch.
+      const roofX=variant===1?-13:-7,roofW=variant===1?34:28;
+      ctx.fillStyle="#263c44";roundRect(ctx,roofX,-12,roofW,24,7);ctx.fill();
+      const glass=ctx.createLinearGradient(roofX,-11,roofX+roofW,11);
+      glass.addColorStop(0,"rgba(111,151,160,.5)");glass.addColorStop(.5,"rgba(194,220,219,.62)");glass.addColorStop(1,"rgba(80,113,122,.42)");
+      ctx.fillStyle=glass;
+      roundRect(ctx,roofX+3,-10,8,20,3);ctx.fill();
+      roundRect(ctx,roofX+roofW-11,-10,8,20,3);ctx.fill();
+      ctx.strokeStyle="rgba(17,34,39,.72)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(roofX+roofW*.5,-11);ctx.lineTo(roofX+roofW*.5,11);ctx.stroke();
+
+      // Door seams, mirrors and deterministic wear distinguish materials without colour alone.
+      ctx.strokeStyle="rgba(54,38,37,.5)";ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(2,-14);ctx.lineTo(2,14);ctx.moveTo(-16,-13);ctx.lineTo(-16,13);ctx.stroke();
+      ctx.fillStyle="#252d30";roundRect(ctx,5,-18,5,4,2);ctx.fill();roundRect(ctx,5,14,5,4,2);ctx.fill();
+      ctx.strokeStyle="rgba(245,194,147,.24)";ctx.beginPath();ctx.moveTo(-25,-6);ctx.lineTo(-12,-8);ctx.moveTo(11,10);ctx.lineTo(22,8);ctx.stroke();
+
+      // White headlights, red tail lamps and a small plate establish front/back immediately.
+      ctx.fillStyle="#f3dda0";roundRect(ctx,26,-11,4,7,2);ctx.fill();roundRect(ctx,26,4,4,7,2);ctx.fill();
+      ctx.fillStyle="#e47762";roundRect(ctx,-30,-11,4,7,2);ctx.fill();roundRect(ctx,-30,4,4,7,2);ctx.fill();
+      ctx.fillStyle="#d5d9d2";roundRect(ctx,27,-3,3,6,1);ctx.fill();
+      if(Math.abs(p.turnAmount||0)>.12&&p.moving){
+        ctx.fillStyle="rgba(255,188,77,.78)";
+        const sy=(p.turnAmount||0)>0?8:-11;roundRect(ctx,25,sy,3,4,1);ctx.fill();
       }
+      ctx.restore();
+      ctx.restore();return;
+    }
+    if(p.type==="bike"){
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.scale(p.scale||1,p.scale||1);
+      ctx.strokeStyle="#25383e";ctx.lineWidth=3.5;ctx.beginPath();ctx.arc(-11,9,9,0,Math.PI*2);ctx.arc(11,9,9,0,Math.PI*2);ctx.stroke();
+      ctx.strokeStyle="#607a83";ctx.beginPath();ctx.moveTo(-11,9);ctx.lineTo(0,-4);ctx.lineTo(11,9);ctx.moveTo(0,-4);ctx.lineTo(0,-15);ctx.stroke();
+      ctx.fillStyle="#d4a578";ctx.beginPath();ctx.arc(0,-11,7,0,Math.PI*2);ctx.fill();ctx.fillStyle="#263b3e";roundRect(ctx,-7,-18,14,4,2);ctx.fill();
       ctx.restore();return;
     }
     drawActor(p.x,p.y,p.type,p.angle,p.type,false,p);
