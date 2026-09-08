@@ -521,7 +521,7 @@
 
   function generateChlum(){
     world.runtime={permit:true,collected:0}; player.x=360;player.y=1070;
-    addProp("farm",135,1080,{scale:.82}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
+    addProp("farm",135,1080,{scale:.82,visualScale:2.5}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
     for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
@@ -549,7 +549,7 @@
 
   function generateNesmen(){
     world.runtime={permit:false,dug:0,filled:0,open:0};player.x=360;player.y=1050;
-    addProp("npc",290,980,{name:"Lesník",avatar:"L",role:"owner"}); addProp("hut",120,1060,{scale:.9});
+    addProp("npc",290,980,{name:"Lesník",avatar:"L",role:"owner"}); addProp("hut",120,1060,{scale:.9,visualScale:2.25});
     for(let i=0;i<62;i++){const x=rand(30,1770),y=rand(30,1170);if(Math.hypot(x-900,y-650)>180)addProp("tree",x,y,{scale:rand(1.0,1.7)});}
     for(let i=0;i<18;i++)addProp("pine",rand(40,1760),rand(40,1160),{scale:rand(.95,1.45)});
     for(let i=0;i<24;i++)addProp("bush",rand(30,1770),rand(30,1170),{scale:rand(.6,1)});
@@ -1273,7 +1273,7 @@
     if(world.exit)drawExit(world.exit);
   }
 
-  function drawProp(p){ctx.save();ctx.translate(p.x,p.y);const s=p.scale||1;ctx.scale(s,s);
+  function drawProp(p){ctx.save();ctx.translate(p.x,p.y);const s=(p.scale||1)*(p.visualScale||1);ctx.scale(s,s);
     if(p.type==="tree"||p.type==="pine"){
       ctx.fillStyle="rgba(0,0,0,.25)";ellipse(0,17,35,13);
       ctx.fillStyle="#5b4029";roundRect(ctx,-8,-12,16,48,7);ctx.fill();
@@ -1300,7 +1300,81 @@
     else if(p.type==="log"){ctx.rotate(p.angle||0);ctx.fillStyle="#6a4b31";roundRect(ctx,-30,-8,60,16,7);ctx.fill();ctx.fillStyle="#5a3f2b";ctx.beginPath();ctx.arc(-24,0,7,0,Math.PI*2);ctx.arc(24,0,7,0,Math.PI*2);ctx.fill();}
     else if(p.type==="puddle"){ctx.fillStyle="rgba(99,151,153,.46)";ellipse(0,0,p.r||28,(p.r||28)*.45);ctx.strokeStyle="rgba(214,242,238,.25)";ctx.stroke();}
     else if(p.type==="rock"){ctx.fillStyle="rgba(0,0,0,.22)";ellipse(0,12,20,8);ctx.fillStyle="#767465";ctx.beginPath();ctx.moveTo(-18,10);ctx.lineTo(-12,-11);ctx.lineTo(5,-18);ctx.lineTo(21,1);ctx.lineTo(12,16);ctx.closePath();ctx.fill();ctx.fillStyle="rgba(227,222,185,.28)";ctx.beginPath();ctx.moveTo(-11,-9);ctx.lineTo(4,-15);ctx.lineTo(10,-7);ctx.lineTo(-4,-4);ctx.closePath();ctx.fill();}
-    else if(p.type==="farm"||p.type==="hut"){ctx.fillStyle="rgba(0,0,0,.25)";ellipse(0,22,58,15);ctx.fill();ctx.fillStyle=p.type==="farm"?"#d7c7a7":"#74543a";roundRect(ctx,-47,-38,94,60,5);ctx.fill();ctx.fillStyle="#7c392f";ctx.beginPath();ctx.moveTo(-57,-38);ctx.lineTo(0,-78);ctx.lineTo(57,-38);ctx.closePath();ctx.fill();ctx.strokeStyle="rgba(242,206,148,.42)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-48,-38);ctx.lineTo(0,-72);ctx.lineTo(48,-38);ctx.stroke();ctx.fillStyle="#49342a";ctx.fillRect(-12,-12,24,34);ctx.fillStyle="#98b7ae";roundRect(ctx,-36,-15,16,14,2);ctx.fill();roundRect(ctx,20,-15,16,14,2);ctx.fill();}
+    else if(p.type==="farm"||p.type==="hut"){
+      const farm=p.type==="farm";
+      // Ground anchor stays unchanged; the extra side/plinth faces are visual only.
+      ctx.fillStyle="rgba(0,0,0,.27)";ctx.beginPath();ctx.ellipse(3,25,farm?64:55,farm?17:15,0,0,Math.PI*2);ctx.fill();
+
+      if(farm){
+        // Chlum farmhouse: rendered stucco + stone plinth + tile roof.
+        ctx.fillStyle="#a99f89";ctx.beginPath();ctx.moveTo(-50,15);ctx.lineTo(50,15);ctx.lineTo(58,23);ctx.lineTo(-42,23);ctx.closePath();ctx.fill();
+        ctx.fillStyle="#c9bfa4";ctx.beginPath();ctx.moveTo(48,-37);ctx.lineTo(57,-31);ctx.lineTo(57,17);ctx.lineTo(48,15);ctx.closePath();ctx.fill();
+
+        const wall=ctx.createLinearGradient(-47,-35,47,18);wall.addColorStop(0,"#ede2c7");wall.addColorStop(.58,"#d8ccb0");wall.addColorStop(1,"#c8b99b");
+        ctx.fillStyle=wall;roundRect(ctx,-49,-39,98,57,4);ctx.fill();
+        ctx.strokeStyle="rgba(116,101,76,.38)";ctx.lineWidth=1.4;ctx.stroke();
+
+        // Stone base is textural, not only darker colour.
+        ctx.fillStyle="#8e816b";ctx.fillRect(-48,10,96,9);
+        ctx.strokeStyle="rgba(229,218,190,.28)";ctx.lineWidth=1;
+        for(let x=-45;x<45;x+=14){ctx.beginPath();ctx.moveTo(x,11);ctx.lineTo(x+7,18);ctx.stroke();}
+
+        // Deep doorway: 44 visual units high, enough for the adult reference scale.
+        ctx.fillStyle="#3d3028";roundRect(ctx,-12,-26,24,45,3);ctx.fill();
+        ctx.fillStyle="#72513b";roundRect(ctx,-9,-23,18,42,2);ctx.fill();
+        ctx.strokeStyle="rgba(207,166,112,.42)";ctx.lineWidth=1.2;for(let y=-18;y<15;y+=8){ctx.beginPath();ctx.moveTo(-7,y);ctx.lineTo(7,y);ctx.stroke();}
+        ctx.fillStyle="#d1b071";ctx.beginPath();ctx.arc(5,-1,1.7,0,Math.PI*2);ctx.fill();
+
+        const farmWindow=(x)=>{
+          ctx.fillStyle="#f0e8d2";roundRect(ctx,x-12,-24,24,22,2);ctx.fill();
+          ctx.fillStyle="#78999a";roundRect(ctx,x-9,-21,18,16,1);ctx.fill();
+          ctx.strokeStyle="rgba(50,67,68,.68)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(x,-21);ctx.lineTo(x,-5);ctx.moveTo(x-9,-13);ctx.lineTo(x+9,-13);ctx.stroke();
+          ctx.fillStyle="rgba(225,243,235,.22)";ctx.fillRect(x-7,-19,3,11);
+          ctx.fillStyle="#b5aa8c";ctx.fillRect(x-13,-2,26,3);
+        };
+        farmWindow(-31);farmWindow(31);
+
+        // Gable roof with an offset side plane and deterministic tile rows.
+        ctx.fillStyle="#633128";ctx.beginPath();ctx.moveTo(-60,-39);ctx.lineTo(0,-82);ctx.lineTo(61,-39);ctx.lineTo(55,-34);ctx.lineTo(0,-74);ctx.lineTo(-54,-34);ctx.closePath();ctx.fill();
+        const roof=ctx.createLinearGradient(-52,-67,50,-37);roof.addColorStop(0,"#9e4d3b");roof.addColorStop(.55,"#7c382f");roof.addColorStop(1,"#5f2d29");
+        ctx.fillStyle=roof;ctx.beginPath();ctx.moveTo(-58,-40);ctx.lineTo(0,-80);ctx.lineTo(58,-40);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(239,178,128,.33)";ctx.lineWidth=1.1;
+        for(let y=-68;y<=-44;y+=7){const half=(80+y)*1.42;ctx.beginPath();ctx.moveTo(-half,y);ctx.lineTo(half,y);ctx.stroke();}
+        ctx.strokeStyle="rgba(59,31,28,.42)";for(let x=-42;x<=42;x+=14){ctx.beginPath();ctx.moveTo(x,-42);ctx.lineTo(x*.18,-76);ctx.stroke();}
+        ctx.fillStyle="#ead7af";ctx.beginPath();ctx.moveTo(-7,-39);ctx.lineTo(0,-48);ctx.lineTo(7,-39);ctx.closePath();ctx.fill();
+
+        // Subtle plaster wear; fixed geometry avoids frame-to-frame noise.
+        ctx.strokeStyle="rgba(122,103,76,.18)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-43,-6);ctx.lineTo(-29,-9);ctx.moveTo(19,4);ctx.lineTo(39,1);ctx.moveTo(-42,5);ctx.lineTo(-34,3);ctx.stroke();
+      }else{
+        // Nesměň forest hut: smaller timber construction with a lower asymmetric roof.
+        ctx.fillStyle="#504435";ctx.beginPath();ctx.moveTo(-45,15);ctx.lineTo(45,15);ctx.lineTo(51,22);ctx.lineTo(-39,22);ctx.closePath();ctx.fill();
+        ctx.fillStyle="#5b4330";roundRect(ctx,-45,-34,90,52,3);ctx.fill();
+        ctx.strokeStyle="rgba(41,31,24,.55)";ctx.lineWidth=1.6;
+        for(let y=-28;y<14;y+=8){ctx.beginPath();ctx.moveTo(-43,y);ctx.lineTo(43,y);ctx.stroke();}
+        ctx.strokeStyle="rgba(184,139,92,.28)";ctx.lineWidth=1;for(let x=-37;x<42;x+=16){ctx.beginPath();ctx.moveTo(x,-31);ctx.lineTo(x+5,15);ctx.stroke();}
+
+        // Dark timber door with a simple threshold.
+        ctx.fillStyle="#2f2923";roundRect(ctx,-11,-23,22,41,2);ctx.fill();
+        ctx.fillStyle="#67472f";roundRect(ctx,-8,-21,16,38,1);ctx.fill();
+        ctx.strokeStyle="rgba(199,151,97,.34)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-6,-9);ctx.lineTo(6,-9);ctx.moveTo(-6,2);ctx.lineTo(6,2);ctx.stroke();
+        ctx.fillStyle="#c99d5e";ctx.beginPath();ctx.arc(4,-1,1.5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#76634d";ctx.fillRect(-14,17,28,4);
+
+        const hutWindow=(x)=>{
+          ctx.fillStyle="#312d28";roundRect(ctx,x-11,-21,22,20,2);ctx.fill();
+          ctx.fillStyle="#6e9590";roundRect(ctx,x-8,-18,16,14,1);ctx.fill();
+          ctx.strokeStyle="rgba(27,45,44,.75)";ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x,-18);ctx.lineTo(x,-4);ctx.moveTo(x-8,-11);ctx.lineTo(x+8,-11);ctx.stroke();
+        };
+        hutWindow(-28);hutWindow(28);
+
+        ctx.fillStyle="#3f352c";ctx.beginPath();ctx.moveTo(-52,-35);ctx.lineTo(-13,-67);ctx.lineTo(55,-47);ctx.lineTo(48,-34);ctx.closePath();ctx.fill();
+        const hutRoof=ctx.createLinearGradient(-44,-60,48,-35);hutRoof.addColorStop(0,"#655141");hutRoof.addColorStop(1,"#3d342e");
+        ctx.fillStyle=hutRoof;ctx.beginPath();ctx.moveTo(-51,-36);ctx.lineTo(-12,-65);ctx.lineTo(54,-46);ctx.lineTo(47,-35);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(181,153,119,.24)";ctx.lineWidth=1.2;for(let x=-38;x<45;x+=13){ctx.beginPath();ctx.moveTo(x,-39);ctx.lineTo(x*.45-5,-58);ctx.stroke();}
+        // Small chimney gives the hut a different silhouette from the farmhouse.
+        ctx.fillStyle="#4a433b";roundRect(ctx,22,-60,10,24,2);ctx.fill();ctx.fillStyle="#2f2d29";ctx.fillRect(20,-61,14,4);
+      }
+    }
     else if(p.type==="fieldpit"||p.type==="sandpit"||p.type==="minepit"){ctx.rotate(p.angle||0);const w=p.w||110,h=p.h||58;const palette=p.type==="sandpit"?{lip:"#d8c39a",wall:"#9d8861",deep:"#574d40",line:"#f2debb",material:"sand"}:p.type==="minepit"?{lip:"#956c4a",wall:"#694a33",deep:"#241a13",line:"#c7986a",material:"dark"}:{lip:"#b48858",wall:"#805a3a",deep:"#2a1d14",line:"#d9ad76",material:"field"};drawExcavationProfile(w,h,p.x+p.y,palette);}
     else if(p.type==="soilheap"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,12,35,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#886747";ctx.beginPath();ctx.moveTo(-36,12);ctx.quadraticCurveTo(-12,-22,0,-12);ctx.quadraticCurveTo(18,-28,39,12);ctx.closePath();ctx.fill();ctx.fillStyle="rgba(188,151,100,.26)";ctx.beginPath();ctx.arc(-8,-4,5,0,Math.PI*2);ctx.arc(12,-7,4,0,Math.PI*2);ctx.fill();}
     else if(p.type==="stubble"){ctx.strokeStyle="#b7a271";ctx.lineWidth=2;for(let i=-4;i<=4;i+=2){ctx.beginPath();ctx.moveTo(i,9);ctx.lineTo(i-2,-9-(i%3));ctx.stroke();}}
@@ -2046,6 +2120,14 @@
           return {index:machines.indexOf(p),x:p.x,y:p.y,angle:p.angle||0,turretAngle:p.turretAngle||0,turretTarget:p.turretTarget||0,workPhase:p.workPhase||0,workSpeed:p.workSpeed||0,working:Boolean(p.working),variant:p.variant||0};
         },
         excavatorSnapshot(){return world?world.props.filter(p=>p.type==="excavator").map((p,index)=>({index,x:p.x,y:p.y,angle:p.angle||0,turretAngle:p.turretAngle||0,turretTarget:p.turretTarget||0,workPhase:p.workPhase||0,workSpeed:p.workSpeed||0,working:Boolean(p.working),variant:p.variant||0})):[];},
+        setPropState(type,index=0,options={}){
+          if(!world)return null;
+          const props=world.props.filter(p=>p.type===type);const p=props[clamp(Math.round(index),0,Math.max(0,props.length-1))];if(!p)return null;
+          if(Number.isFinite(options.x))p.x=options.x;if(Number.isFinite(options.y))p.y=options.y;
+          if(Number.isFinite(options.scale))p.scale=options.scale;
+          if(Number.isFinite(options.variant))p.variant=Math.max(0,Math.round(options.variant));
+          if(Number.isFinite(options.visualScale))p.visualScale=Math.max(.1,options.visualScale);return {type:p.type,index:props.indexOf(p),x:p.x,y:p.y,scale:p.scale||1,visualScale:p.visualScale||1,variant:p.variant||0};
+        },
         setScanCooldown(value=0){scanCooldown=Math.max(0,Number(value)||0);return scanCooldown;},
         setScanPulse(value=.45){scanPulse=clamp(Number(value)||0,0,1);return scanPulse;},
         setBossPose(x,y,angle=0){if(!world?.rival)return null;world.rival.x=x;world.rival.y=y;world.rival.angle=angle;world.rival.speed=0;world.rival.target={x,y};return {x,y,angle};},
