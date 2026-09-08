@@ -686,6 +686,7 @@
   function startDig(h){
     if(!h.active||world.id==="chlum")return;
     if(world.id==="nesmen"&&!world.runtime.permit){toast("Nejdřív získej souhlas lesníka","bad",1200);return;}
+    if(world.id==="nesmen"&&(world.runtime.open||0)>0){toast("Nejdřív zahrab otevřený profil","bad",1200);return;}
     configureDigScreen("dig",h);
   }
 
@@ -722,7 +723,7 @@
       if(digHits>=3){digFinishDelay=.35;return;}
     }else{
       state.stats.misses++;
-      digTimeLeft=Math.max(.2,digTimeLeft-.8);
+      digTimeLeft=Math.max(0,digTimeLeft-.8);
       audio.sfx("bad");haptic([24,28,20]);shake=Math.max(shake,4);
       setDigFeedback("Hlína spadla vedle · naber znovu","bad");
     }
@@ -1611,7 +1612,7 @@
   function bindUI(){
     $("digPauseButton").addEventListener("click",pause);
     $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
-    const digButton=$("digButton");digButton.addEventListener("pointerdown",event=>{event.preventDefault();digButton.classList.add("pressed");digPress();});const releaseDigButton=event=>{digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill")digHolding=false;};digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("pointerleave",releaseDigButton);digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
+    const digButton=$("digButton");digButton.addEventListener("pointerdown",event=>{event.preventDefault();digButton.classList.add("pressed");digPress();});const releaseDigButton=event=>{digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("pointerleave",releaseDigButton);digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();$("soundButton").textContent=state.sound?"♫":"×";save();});
