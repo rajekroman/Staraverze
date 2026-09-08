@@ -1,5 +1,10 @@
 export const DIST_DIR = "dist";
 
+export const DISTRIBUTION_NOTICE_FILES = Object.freeze([
+  "assets/audio/LICENSE.md",
+  "assets/audio/PROVENANCE.md"
+]);
+
 export const PUBLISH_FILES = Object.freeze([
   ".nojekyll",
   "index.html",
@@ -32,7 +37,8 @@ export const PUBLISH_FILES = Object.freeze([
   "assets/audio/effects/finding-chime.mp3",
   "assets/audio/effects/ui-click.mp3",
   "assets/audio/effects/ui-result.mp3",
-  "assets/ui/nzv-logo-purple.png"
+  "assets/ui/nzv-logo-purple.png",
+  ...DISTRIBUTION_NOTICE_FILES
 ]);
 
 export const REQUIRED_RUNTIME_FILES = Object.freeze([
@@ -45,6 +51,14 @@ export const REQUIRED_RUNTIME_FILES = Object.freeze([
   "icon-192.png",
   "icon-512.png"
 ]);
+
+export const OFFLINE_CORE_FILES = Object.freeze(
+  PUBLISH_FILES.filter(file =>
+    file !== ".nojekyll" &&
+    file !== "sw.js" &&
+    !DISTRIBUTION_NOTICE_FILES.includes(file)
+  )
+);
 
 export const FORBIDDEN_PUBLISH_NAMES = Object.freeze([
   ".git",
@@ -62,5 +76,6 @@ export const FORBIDDEN_PUBLISH_NAMES = Object.freeze([
   "CHANGELOG.md",
   "package.json",
   "package-lock.json",
-  "playwright.config.mjs"
+  "playwright.config.mjs",
+  "v73-audio-build-audit.json"
 ]);
