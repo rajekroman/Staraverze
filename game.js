@@ -521,7 +521,7 @@
 
   function generateChlum(){
     world.runtime={permit:true,collected:0}; player.x=360;player.y=1070;
-    addProp("farm",135,1080,{scale:.82}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
+    addProp("farm",135,1080,{scale:.82,visualScale:2.5}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
     for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
@@ -549,7 +549,7 @@
 
   function generateNesmen(){
     world.runtime={permit:false,dug:0,filled:0,open:0};player.x=360;player.y=1050;
-    addProp("npc",290,980,{name:"Lesník",avatar:"L",role:"owner"}); addProp("hut",120,1060,{scale:.9});
+    addProp("npc",290,980,{name:"Lesník",avatar:"L",role:"owner"}); addProp("hut",120,1060,{scale:.9,visualScale:2.25});
     for(let i=0;i<62;i++){const x=rand(30,1770),y=rand(30,1170);if(Math.hypot(x-900,y-650)>180)addProp("tree",x,y,{scale:rand(1.0,1.7)});}
     for(let i=0;i<18;i++)addProp("pine",rand(40,1760),rand(40,1160),{scale:rand(.95,1.45)});
     for(let i=0;i<24;i++)addProp("bush",rand(30,1770),rand(30,1170),{scale:rand(.6,1)});
@@ -1273,7 +1273,7 @@
     if(world.exit)drawExit(world.exit);
   }
 
-  function drawProp(p){ctx.save();ctx.translate(p.x,p.y);const s=p.scale||1;ctx.scale(s,s);
+  function drawProp(p){ctx.save();ctx.translate(p.x,p.y);const s=(p.scale||1)*(p.visualScale||1);ctx.scale(s,s);
     if(p.type==="tree"||p.type==="pine"){
       ctx.fillStyle="rgba(0,0,0,.25)";ellipse(0,17,35,13);
       ctx.fillStyle="#5b4029";roundRect(ctx,-8,-12,16,48,7);ctx.fill();
@@ -2126,7 +2126,7 @@
           if(Number.isFinite(options.x))p.x=options.x;if(Number.isFinite(options.y))p.y=options.y;
           if(Number.isFinite(options.scale))p.scale=options.scale;
           if(Number.isFinite(options.variant))p.variant=Math.max(0,Math.round(options.variant));
-          return {type:p.type,index:props.indexOf(p),x:p.x,y:p.y,scale:p.scale||1,variant:p.variant||0};
+          if(Number.isFinite(options.visualScale))p.visualScale=Math.max(.1,options.visualScale);return {type:p.type,index:props.indexOf(p),x:p.x,y:p.y,scale:p.scale||1,visualScale:p.visualScale||1,variant:p.variant||0};
         },
         setScanCooldown(value=0){scanCooldown=Math.max(0,Number(value)||0);return scanCooldown;},
         setScanPulse(value=.45){scanPulse=clamp(Number(value)||0,0,1);return scanPulse;},
