@@ -359,7 +359,8 @@
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
-  let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };\n  let resetDigPointer = () => {};
+  let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };
+  let resetDigPointer = () => {};
   let nearest = null;
   let last = performance.now();
   let scanCooldown = 0;
@@ -2496,8 +2497,9 @@
     $("digPauseButton").addEventListener("click",pause);
     $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
     const digButton=$("digButton");let digPointer=null;
+    resetDigPointer=()=>{const active=digPointer;digPointer=null;if(active!==null&&digButton.hasPointerCapture?.(active)){try{digButton.releasePointerCapture(active);}catch{}}digButton.classList.remove("pressed");};
     digButton.addEventListener("pointerdown",event=>{if(digPointer!==null)return;event.preventDefault();digPointer=event.pointerId;digButton.setPointerCapture?.(digPointer);digButton.classList.add("pressed");digPress();});
-    const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;if(digButton.hasPointerCapture?.(digPointer)){try{digButton.releasePointerCapture(digPointer);}catch{}}digPointer=null;digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
+    const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;const active=digPointer;digPointer=null;if(digButton.hasPointerCapture?.(active)){try{digButton.releasePointerCapture(active);}catch{}}digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
     digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
