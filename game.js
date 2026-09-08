@@ -52,13 +52,13 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Projdi čerstvě rozorané pole, radarem odhal vltavíny ukryté v brázdách a seber je dřív, než pole znovu projede technika.",
+      text: "Po bouřce vyrazil na pole i překupník Franta. Radar odhalí vltavíny ukryté v brázdách dřív, než je sebere cizí technika.",
       why: "Bez silného začátku nebudeš mít co vystavit. Tahle lokalita má odstartovat tvou sbírku pro akci Na zelené vlně.",
       goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
     {
       id: "locenice", name: "Ločenice", title: "Písčitá hrana", theme: "meadow",
-      text: "Projdi borový les na písčitém podloží. Vzorky vypadají podobně, ale jen část z nich jsou skutečné vltavíny.",
+      text: "V borovém lese se šíří padělky z dílny Frantových překupníků. Rozliš pravé vltavíny od falešného skla podle povrchu a lomu světla.",
       why: "Potřebuješ rozšířit sbírku o ověřené kusy. Ločenice prověří oko sběratele, ne jen rychlost pohybu.",
       goal: "Správně urči 5 vzorků a najdi 3 pravé kusy.", music: "meadow"
     },
@@ -70,13 +70,13 @@
     },
     {
       id: "besednice", name: "Besednice", title: "Ježková noc", theme: "night",
-      text: "Rozrytá těžební plocha ukrývá slavný ježkový profil. Najdi stopy, odkryj profil a nenech si uniknout vzácný kus.",
+      text: "Karel vede noční partu, která rozebírá chráněný profil. Najdi stopy, odkryj ježka a získej nález zpět dřív, než ho odvezou.",
       why: "Besednický ježek může rozhodnout celou soutěž. Kdo ho donese do Slávie, má šanci na nejlepší sbírku večera.",
       goal: "Najdi 3 stopy, vykopej ježek a dostaň ho zpět od Karla.", music: "night"
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Podél Malše se blížíš ke KD Slávie. Posbírej dokumentaci, dožeň Frantu a doraz na akci Na zelené vlně připravený.",
+      text: "Franta chce poslední certifikát prodat přímo před KD Slávií. Posbírej dokumentaci, zastav jeho únik a doraz na výstavu s důkazem o původu.",
       why: "Tady končí lov a začíná prezentace. Bez dokumentů a silné sbírky neuspěješ před porotou ani vystavovateli.",
       goal: "Seber 3 složky, dožeň Frantu a vstup do KD Slávie.", music: "city"
     }
@@ -92,12 +92,12 @@
   ];
 
   const SAMPLES = [
-    { real: true, title: "Olivový úlomek", text: "Matný povrch, nepravidelné hrany a drobné podélné bubliny." },
-    { real: false, title: "Jasně zelený střep", text: "Dokonale hladký povrch, ostrý rovný lom a nepřirozeně sytá barva." },
-    { real: true, title: "Hnědozelený splash", text: "Proměnlivá barva, zvlněná skulptace a nestejná tloušťka." },
-    { real: false, title: "Lesklý odlitek", text: "Stejnoměrná barva, kulaté hrany a opakující se povrchový vzor." },
-    { real: true, title: "Drobný celotvar", text: "Přirozeně leptaný povrch a jemná průsvitnost proti světlu." },
-    { real: false, title: "Lahvové sklo", text: "Ploché stěny, pravidelná tloušťka a hladké průmyslové plochy." }
+    { real: true, title: "Olivový úlomek", text: "Vltavín je přírodní impaktní sklo: olivová kapka s nepravidelným povrchem, jamkami a drobnými uzavřenými bublinkami." },
+    { real: false, title: "Jasně zelený střep", text: "Falešné sklo bývá odlévané do formy: má nápadně jednotný odstín, hladší lesk a pravidelný opakovaný tvar." },
+    { real: true, title: "Hnědozelený splash", text: "Hnědozelená kapka má přirozené kanálky, krátery nebo ostré výstupky; uvnitř mohou být vidět stopy tečení skloviny." },
+    { real: false, title: "Lesklý odlitek", text: "Falešný odlitek prozradí stejná skulptace jako u dalších kusů, kulaté hrany a průmyslově hladký, příliš lesklý povrch." },
+    { real: true, title: "Drobný celotvar", text: "Přírodní celotvar má neopakovatelnou skulptaci vzniklou pomalým rozpouštěním v půdě, ne pravidelný vzor z formy." },
+    { real: false, title: "Lahvové sklo", text: "Obyčejné zelené sklo mívá ploché stěny, pravidelnou tloušťku a stejné hrany; samo o sobě nemá přírodní impaktní skulptaci." }
   ];
 
   class AudioEngine {
@@ -281,6 +281,8 @@
       rarity,
       weight: finiteNumber(stone.weight, .5, .01, 1000),
       quality: Math.round(finiteNumber(stone.quality, 60, 0, 100)),
+      size: typeof stone.size === "string" ? stone.size.slice(0, 24) : undefined,
+      qualityLabel: typeof stone.qualityLabel === "string" ? stone.qualityLabel.slice(0, 24) : undefined,
       documented: stone.documented !== false,
       name: typeof stone.name === "string" ? stone.name.slice(0, 80) : "Vltavín",
       value: Math.round(finiteNumber(stone.value, 0, 0, 100000000))
@@ -519,9 +521,9 @@
     addProp("bridge",330,520,{scale:1}); addProp("slavie",1460,235,{scale:1.26}); addProp("sign",780,1000,{text:"Zátkovo nábřeží"});
     addProp("plaza",1440,400,{scale:1.0});
     [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["fotografie nálezů","souhlasy vlastníků","vážní protokol"][i]}));
-    addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0});
-    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0});
-    addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190});
+    addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
+    addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7});
+    addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
@@ -687,8 +689,10 @@
   function makeStone(locality,rarity="common",documented=true,qualityBonus=0){
     const bases={common:[.5,1.8],good:[1.5,3.8],rare:[3.2,7.2],hedgehog:[5.5,10.5]};const b=bases[rarity]||bases.common;
     const weight=+rand(b[0],b[1]).toFixed(2);const quality=clamp(Math.round(rand(58,92)+qualityBonus+state.perks.eye*2),45,100);
-    const names={common:"Drobný vltavín",good:"Olivový splash",rare:"Výstavní celotvar",hedgehog:"Besednický ježek"};
-    return{id:`s${Date.now()}${Math.random()}`,locality,rarity,weight,quality,documented,name:names[rarity],value:Math.round(weight*(rarity==="hedgehog"?4200:rarity==="rare"?1900:rarity==="good"?900:420)*(quality/75))};
+    const size=weight<1.2?"drobný":weight<3.2?"střední":weight<6.5?"velký":"mimořádný";
+    const qualityLabel=quality>=88?"výstavní":quality>=74?"pěkný":quality>=60?"dobrý":"surový";
+    const names={common:`${size[0].toUpperCase()+size.slice(1)} vltavín`,good:`${size[0].toUpperCase()+size.slice(1)} kapka`,rare:"Výstavní celotvar",hedgehog:"Besednický ježek"};
+    return{id:`s${Date.now()}${Math.random()}`,locality,rarity,weight,quality,size,qualityLabel,documented,name:names[rarity],value:Math.round(weight*(rarity==="hedgehog"?4200:rarity==="rare"?1900:rarity==="good"?900:420)*(quality/75))};
   }
   function addStone(stone,x=player.x,y=player.y){
     state.stones.push(stone);state.stats.rare+=stone.rarity==="rare"||stone.rarity==="hedgehog"?1:0;
@@ -704,7 +708,7 @@
     if(item.type==="stone"){
       item.active=false;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",item.documented!==false);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;return;
     }
-    if(item.type==="sample"){currentSample=item;mode="identify";setPlaying(false);$("sampleTitle").textContent=item.sample.title;$("sampleDescription").textContent=item.sample.text;$("sampleGem").style.color=item.sample.real?"#70d999":"#33f48b";showOnly(screens.identify);return;}
+    if(item.type==="sample"){currentSample=item;mode="identify";setPlaying(false);$("sampleTitle").textContent=item.sample.title;$("sampleDescription").textContent=`${item.sample.text} ${item.sample.real?"Hledej nepravidelnost a jemné přírodní leptání.":"Hledej rovné plochy, pravidelnou tloušťku a skleněný lesk."}`;$("sampleGem").style.color=item.sample.real?"#70d999":"#33f48b";showOnly(screens.identify);return;}
     if(item.type==="clue"){
       item.active=false;world.runtime.clues++;audio.sfx("paper");boostCombo();
       const clueText=["První stopa: směr k hlavní těžební ploše","Druhá stopa: ježková vrstva je blízko","Třetí stopa: přesné místo profilu nalezeno"][world.runtime.clues-1]||`Stopa: ${item.label}`;
@@ -744,7 +748,7 @@
     bossIntroTimer=2.35;
     const isKarel=name==="karel";
     if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KRYSTALOVÝ KAREL":"FETÁK FRANTA";
-    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Ukradl ti Besednický ježek. Po sprintu se na chvíli zastaví — tehdy zaútoč.":"Má poslední certifikát a míří ke Slávii.";
+    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel rozebírá chráněný profil a utíká s ježkem. Neútoč naslepo: po sprintu se vyčerpá, tehdy mu vezmi nález zpět.":"Franta veze poslední certifikát k překupníkům ve Slávii. Přeruš jeho únik po každém sprintu a vrať důkaz o původu.";
     ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");
     audio.sfx("boss");haptic([35,40,35]);shake=Math.max(shake,7);flash=.1;flashColor="190,100,75";
     toast(isKarel?"Krystalový Karel utíká s ježkem!":"Franta bere poslední certifikát!","bad",1900);
@@ -755,8 +759,8 @@
     r.hits++;r.stunTimer=0;r.hitFlash=.28;r.phase=Math.min(3,r.hits+1);audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
     r.speed=r.baseSpeed*(1+r.hits*.16);if(r.flashlight){r.vision=r.baseVision+r.hits*34;r.halfAngle=.5+r.hits*.08;}
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
-    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");if(r.name==="karel")addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);else{state.score+=1800;toast("Certifikát je zpět","rare");audio.sfx("win");}}
-    else toast(`Zásah ${r.hits}/${r.maxHits} · boss zrychluje`,"good",900);
+    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");if(r.name==="karel")addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);else{state.score+=1800;toast("Certifikát je zpět · důkaz zachráněn","rare");audio.sfx("win");}}
+    else toast(`Zastavení ${r.hits}/${r.maxHits} · ${r.name==="karel"?"Karel zrychluje":"Franta mění únikovou trasu"}`,"good",1100);
   }
 
   function tryExit(){if(!goalComplete()){toast(levelGoal(),"bad");return;}finishLevel();}
@@ -772,7 +776,7 @@
   }
 
   function showJury(){mode="jury";jurySelection.clear();setPlaying(false);const list=$("juryList");list.innerHTML="";
-    [...state.stones].sort((a,b)=>b.value-a.value).forEach(s=>{const b=document.createElement("button");b.type="button";b.className="stone-card";b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${s.weight.toFixed(2)} g · stav ${s.quality}%${s.documented?" · doložený":""}</small></div>`;b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<3){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / 3`;$("juryButton").disabled=jurySelection.size!==3;});list.append(b);});
+    [...state.stones].sort((a,b)=>b.value-a.value).forEach(s=>{const b=document.createElement("button");b.type="button";b.className="stone-card";const size=s.size|| (s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · ${s.weight.toFixed(2)} g · ${qualityLabel} (${s.quality} %)${s.documented?" · doložený":""}</small></div>`;b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<3){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / 3`;$("juryButton").disabled=jurySelection.size!==3;});list.append(b);});
     $("juryCount").textContent="0 / 3";$("juryButton").disabled=true;showOnly(screens.jury);
   }
   function judge(){
@@ -851,7 +855,7 @@
   function updateHotspots(dt){for(const h of world.hotspots){if(!h.active)continue;if(h.revealed){h.ttl-=dt;if(h.ttl<=0&&!h.marked)h.revealed=false;}}}
   function updatePatrols(dt){
     for(const p of world.patrols){if(!p.active)continue;const target=p.points[p.index],dx=target.x-p.x,dy=target.y-p.y,d=Math.hypot(dx,dy)||1;p.x+=dx/d*p.speed*dt;p.y+=dy/d*p.speed*dt;p.angle=Math.atan2(dy,dx);p.motionRatio=clamp(p.speed/160,0,1);p.motionPhase=(p.motionPhase||0)+dt*(2.8+p.motionRatio*8);p.wheelRotation=(p.wheelRotation||0)+dt*p.speed*.018;if(d<12)p.index=(p.index+1)%p.points.length;
-      if(p.type==="tractor"||p.type==="bike"||p.type==="car"){const rr=p.type==="tractor"?48*(p.scale||1):25;if(Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
+      if(p.type==="tractor"||p.type==="bike"||p.type==="car"){const rr=p.type==="tractor"?48*(p.scale||1):25*(p.scale||1);if(Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
       let suspicious=true;if(p.requires==="permit"&&world.runtime.permit)suspicious=false;if(p.type==="ranger"&&world.runtime.open<=0)suspicious=false;if(p.type==="police"&&world.runtime.papers>=3&&!world.rival?.active)suspicious=false;
       p.seesPlayer=false;
       if(!suspicious||!p.vision)continue;
@@ -1097,7 +1101,8 @@
     };
     const s = styles[type] || styles.farmer;
     const t = performance.now()*0.008 + (x+y)*0.002;
-    const walk = type==="player" ? Math.sin(player.step*1.1) : (local?Math.sin(t)*.15:Math.sin(t)*.65);
+    // NPCs use the same readable step cycle as the hero; only their palette and props differ.
+    const walk = type==="player" ? Math.sin(player.step*1.1) : Math.sin(t*1.1)*.65;
     const bob = Math.abs(walk)*1.5;
     const arm = walk*5.2, leg = walk*4.6;
     ctx.translate(0,-bob);
@@ -1280,7 +1285,7 @@
       ctx.restore();return;
     }
     if(p.type==="car"||p.type==="bike"){
-      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.scale(p.scale||1, p.scale||1);
       if(p.type==="car"){
         ctx.fillStyle="rgba(0,0,0,.22)";ctx.beginPath();ctx.ellipse(0,11,28,12,0,0,Math.PI*2);ctx.fill();
         ctx.fillStyle="#87443f";roundRect(ctx,-26,-14,52,28,9);ctx.fill();
