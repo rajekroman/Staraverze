@@ -9,6 +9,8 @@
 - Chvění a záblesk doznívají i během kopání. Systémové omezení pohybu vypne třes a celoplošné záblesky a stabilizuje déšť, zrno i varovný rám.
 - Průběžný HUD omezil nadbytečné DOM aktualizace. Audio nepřenastavuje tentýž zdroj při každém úderu.
 - Opožděná odměna za třetí přesný úder má na mobilu bezpečnou rezervu pro gesto pauzy, takže pomalejší landscape viewport nemůže nález dokončit před Escape.
+- Popisy určování vltavínů vycházejí z podkladů Muzea vltavínů Český Krumlov a Národního muzea: impaktní sklo, kanálky/jamky, ostré výstupky, uzavřené bublinky, nepravidelná skulptace a varovné znaky sériově odlévaného zeleného skla.
+- Radar má kratší základní čekání (3,2 s místo 5 s, s minimem 1,15 s), takže hledání nálezů méně brzdí tempo výpravy.
 - PWA cache `runtime-1` chrání cizí cache na stejné doméně a ukládá jen známé úspěšné odpovědi. Základní statické soubory čte z verzované cache.
 - Audit, omezení ověření a další priority jsou v `PRODUCTION_AUDIT.md`. Stávající obrazová brána pokrývá Chlum, radar a kopání; starší zmínka o referencích všech pěti map neodpovídá aktuální sadě.
 
