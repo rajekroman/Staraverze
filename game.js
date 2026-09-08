@@ -553,16 +553,16 @@
     state=freshState();state.levelIndex=0;
     const portrait=viewport.h>viewport.w*1.18;
     const layout=portrait
-      ? {w:620,h:1120,player:[205,505],farm:[310,275],bench:[415,505],car:[180,700],tractor:[430,705],tree:[175,970],excavator:[420,970]}
-      : {w:1000,h:800,player:[385,315],farm:[170,320],bench:[560,315],car:[180,535],tractor:[470,540],tree:[190,710],excavator:[565,705]};
+      ? {w:720,h:1450,player:[215,610],farm:[360,330],bench:[470,610],car:[190,850],tractor:[490,855],tree:[190,1170],excavator:[500,1190]}
+      : {w:1200,h:900,player:[430,330],farm:[200,330],bench:[620,330],car:[220,570],tractor:[560,575],tree:[940,650],excavator:[690,790]};
     world={id:"chlum",theme:"field",w:layout.w,h:layout.h,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{permit:true,collected:0},rain:0,referenceScene:true};
     player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
-    addProp("farm",layout.farm[0],layout.farm[1],{scale:2.3,reference:true});
+    addProp("farm",layout.farm[0],layout.farm[1],{scale:3.0,reference:true});
     addProp("bench",layout.bench[0],layout.bench[1],{scale:1.15,reference:true});
-    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:3.2,reference:true});
-    addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:1.8,reference:true});
-    addProp("tree",layout.tree[0],layout.tree[1],{scale:2.0,variant:1,reference:true});
-    addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:1.5,angle:0,reference:true});
+    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,reference:true});
+    addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:2.5,reference:true});
+    addProp("tree",layout.tree[0],layout.tree[1],{scale:2.5,variant:1,reference:true});
+    addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:2.0,angle:0,reference:true});
     buildTerrainCache(world);
     camera.x=0;camera.y=0;nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
     return {level:world.id,reference:true,portrait,player:{x:player.x,y:player.y}};
