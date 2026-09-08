@@ -149,13 +149,14 @@ test("Chlum tractor front occlusion evidence", async ({ page }) => {
     window.__lovecDebug.startLevel(0);
     window.__lovecDebug.setPlayer(820, 650);
     window.__lovecDebug.setPatrolMotion("tractor", {
-      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,
+      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,collisionEnabled:false,
       points:[{x:820,y:600},{x:820,y:600}],index:1
     });
+    window.__lovecDebug.snapCameraToPlayer();
     document.getElementById("hud")?.classList.add("hidden");
     document.getElementById("controls")?.classList.add("hidden");
   });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(120);
   await capture(page, "chlum-tractor-front");
 });
 
@@ -165,13 +166,14 @@ test("Chlum tractor rear occlusion evidence", async ({ page }) => {
     window.__lovecDebug.startLevel(0);
     window.__lovecDebug.setPlayer(820, 550);
     window.__lovecDebug.setPatrolMotion("tractor", {
-      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,
+      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,collisionEnabled:false,
       points:[{x:820,y:600},{x:820,y:600}],index:1
     });
+    window.__lovecDebug.snapCameraToPlayer();
     document.getElementById("hud")?.classList.add("hidden");
     document.getElementById("controls")?.classList.add("hidden");
   });
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(120);
   await capture(page, "chlum-tractor-behind");
 });
 
