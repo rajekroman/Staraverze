@@ -359,7 +359,7 @@
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
-  let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };
+  let resetControls = () => { input.x=0;input.y=0;input.pressed=false; };\n  let resetDigPointer = () => {};
   let nearest = null;
   let last = performance.now();
   let scanCooldown = 0;
@@ -398,7 +398,7 @@
   let activeScreen=null;
   const focusOrigins=new WeakMap();
   const screenParents=new WeakMap();
-  const modalScreens=new Set(Object.values(screens).filter(screen=>screen!==screens.title));
+  const modalScreens=new Set(Object.values(screens).filter(screen=>screen.matches('[role="dialog"][aria-modal="true"]')));
   const FOCUSABLE='button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
   function save() {
@@ -2446,7 +2446,7 @@
     const syncKeyboard=()=>{input.x=(keys.has("KeyD")||keys.has("ArrowRight")?1:0)-(keys.has("KeyA")||keys.has("ArrowLeft")?1:0);input.y=(keys.has("KeyS")||keys.has("ArrowDown")?1:0)-(keys.has("KeyW")||keys.has("ArrowUp")?1:0);};
     const releaseCapture=(element,id)=>{if(id!==null&&element.hasPointerCapture?.(id)){try{element.releasePointerCapture(id);}catch{}}};
     const cancelFillHold=()=>{if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}};
-    resetControls=()=>{releaseCapture(zone,pid);releaseCapture(action,actionPid);pid=null;actionPid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");cancelFillHold();};
+    resetControls=()=>{releaseCapture(zone,pid);releaseCapture(action,actionPid);pid=null;actionPid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");cancelFillHold();resetDigPointer();};
     const move=e=>{const r=zone.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=r.width*.33,len=Math.hypot(dx,dy)||1,s=Math.min(1,max/len),x=dx*s,y=dy*s;input.x=x/max;input.y=y/max;stick.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px))`;};
     zone.addEventListener("pointerdown",e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;zone.setPointerCapture?.(pid);move(e);});
     zone.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e);});
