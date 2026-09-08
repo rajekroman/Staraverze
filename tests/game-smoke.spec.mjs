@@ -991,8 +991,7 @@ test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", asyn
 test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvolní", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
-    window.__lovecDebug.startLevel(0);
-    window.__lovecDebug.setPlayer(60,60);
+    window.__lovecDebug.startScaleReference();
     const controls = document.getElementById("controls");
     controls.classList.remove("hidden");
     controls.style.setProperty("display","flex","important");
