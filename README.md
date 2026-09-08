@@ -15,7 +15,7 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - pauza, dialog, minihra a ztráta fokusu bezpečně uvolní dotykový i klávesový pohyb;
 - protisměrné klávesy se vyhodnocují správně a mezerník neopakuje akci při podržení;
 - staré a poškozené uložené stavy se migrují, omezí na bezpečné hodnoty a neshodí hru;
-- Nesměň vynucuje souhlas lesníka před otevřením průzkumného profilu a kontroluje následné zahrabání;
+- Nesměň vynucuje souhlas lesníka před otevřením průzkumného profilu a následné zahrabání řeší samostatnou hold/release minihrou;
 - automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu;
 - smoke matrix ověřuje desktop a obě orientace iPhonu v Chromiu i WebKitu jako CI aproximaci Chrome/Safari;
 - samostatný offline smoke ověřuje spuštění PWA z cache bez sítě.
