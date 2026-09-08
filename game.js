@@ -1238,6 +1238,7 @@
       // Historic KD Slavie / former Deutsches Haus: simplified for the top-down game map,
       // but preserving the protected Neo-Renaissance frontage's defining proportions.
       ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,77,238,31,0,0,Math.PI*2);ctx.fill();
+      ctx.save();ctx.scale(1,.78);
 
       // Lower side wings and their darker roofs keep the central pediment dominant.
       ctx.fillStyle="#4e4d46";ctx.beginPath();ctx.moveTo(-242,-100);ctx.lineTo(-174,-126);ctx.lineTo(-174,-88);ctx.lineTo(-242,-72);ctx.closePath();ctx.fill();
@@ -1299,6 +1300,7 @@
       // Plinth and small step tie the facade to the plaza.
       ctx.fillStyle="#d6cdb4";ctx.beginPath();ctx.moveTo(-190,58);ctx.lineTo(190,58);ctx.lineTo(205,70);ctx.lineTo(-205,70);ctx.closePath();ctx.fill();
       ctx.strokeStyle="rgba(118,110,94,.35)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-205,70);ctx.lineTo(205,70);ctx.stroke();
+      ctx.restore();
     }
     ctx.restore();
   }
