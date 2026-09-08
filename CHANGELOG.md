@@ -42,6 +42,8 @@
 
 ## 5.4.2 — dodaná instrumentální hudba a zvuky
 
+- Nesměň: zahrabávání průzkumných profilů je nově samostatná hold/release minihra — hráč drží tlačítko při přenosu hlíny a pustí ho v cílové zóně; tři správné přenosy uzavřou díru.
+
 - Původní WAV soundtrack byl nahrazen dodanými MP3 ambienty pro Chlum, Nesměň, Besednici a Slávii; hudba se při přechodu lokality plynule zeslabí a znovu spustí.
 - Radar, kopání, nálezy, dokumenty, nebezpečí, zásahy a výsledek používají dodané hudební/produkční efekty místo Web Audio 8bitových oscilátorů.
 - Kopací minihra rozlišuje úder, přesný zásah, chybu a zahrabání podle dodaných variant dopadu; kroky zůstávají záměrně velmi tiché jako prostorový fallback.
