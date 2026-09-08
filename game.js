@@ -547,6 +547,25 @@
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
+
+  function generateScaleReference(){
+    currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
+    state=freshState();state.levelIndex=0;
+    world={id:"chlum",theme:"field",w:1200,h:1100,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{permit:true,collected:0},rain:0,referenceScene:true};
+    player.x=610;player.y=520;player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
+    addProp("farm",420,520,{scale:2.05,reference:true});
+    addProp("bench",785,520,{scale:1,reference:true});
+    addPatrol("car",[{x:440,y:720},{x:440,y:720}],{speed:0,vision:0,scale:2.75,reference:true});
+    addPatrol("tractor",[{x:705,y:730},{x:705,y:730}],{speed:0,vision:0,scale:1.35,reference:true});
+    addProp("tree",430,930,{scale:1.75,variant:1,reference:true});
+    addProp("excavator",740,930,{scale:1.55,angle:0,reference:true});
+    buildTerrainCache(world);
+    camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));
+    camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));
+    nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
+    return {level:world.id,reference:true,player:{x:player.x,y:player.y}};
+  }
+
   function startNew(){
     audio.start();audio.sfx("click");state=freshState();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);
   }
@@ -1188,6 +1207,7 @@
     else if(p.type==="excavator"){ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,22,58,16,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#36322d";roundRect(ctx,-42,8,74,18,8);ctx.fill();ctx.strokeStyle="#5a554d";ctx.lineWidth=4;for(let x=-34;x<28;x+=14){ctx.beginPath();ctx.moveTo(x,10);ctx.lineTo(x+8,24);ctx.stroke();}ctx.fillStyle="#d6a52e";roundRect(ctx,-26,-18,48,32,7);ctx.fill();ctx.fillStyle="#35434a";roundRect(ctx,-14,-34,28,22,4);ctx.fill();ctx.fillStyle="rgba(194,225,235,.35)";ctx.fillRect(-10,-31,11,12);ctx.strokeStyle="#d6a52e";ctx.lineWidth=10;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(20,-12);ctx.lineTo(50,-40);ctx.lineTo(78,-18);ctx.stroke();ctx.fillStyle="#6e5432";ctx.beginPath();ctx.moveTo(70,-25);ctx.lineTo(91,-16);ctx.lineTo(75,-3);ctx.closePath();ctx.fill();}
     else if(p.type==="plazatree"){ctx.fillStyle="rgba(0,0,0,.16)";ctx.beginPath();ctx.ellipse(0,15,24,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#6a5140";ctx.fillRect(-4,-32,8,50);ctx.fillStyle="#507044";for(const q of [[-12,-35,18],[12,-38,20],[0,-55,22]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,Math.PI*2);ctx.fill();}}
     else if(p.type==="plaza"){ctx.fillStyle="rgba(232,233,228,.5)";roundRect(ctx,-190,-70,380,140,16);ctx.fill();for(let i=-160;i<=160;i+=40){ctx.strokeStyle="rgba(110,115,112,.18)";ctx.beginPath();ctx.moveTo(i,-70);ctx.lineTo(i,70);ctx.stroke();}for(let i=0;i<8;i++){const x=-140+i*40;ctx.fillStyle=i%2?"#48535c":"#7a6a5d";ctx.beginPath();ctx.arc(x,5+(i%3)*10,5,0,Math.PI*2);ctx.fill();}}
+    else if(p.type==="bench"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,18,50,10,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#3d413e";ctx.lineWidth=5;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-34,3);ctx.lineTo(-30,24);ctx.moveTo(34,3);ctx.lineTo(30,24);ctx.moveTo(-36,-13);ctx.lineTo(-36,8);ctx.moveTo(36,-13);ctx.lineTo(36,8);ctx.stroke();ctx.fillStyle="#8b6543";roundRect(ctx,-49,-8,98,15,4);ctx.fill();roundRect(ctx,-47,-32,94,14,4);ctx.fill();ctx.fillStyle="rgba(238,203,151,.24)";ctx.fillRect(-43,-29,86,3);ctx.fillRect(-45,-5,90,3);ctx.strokeStyle="#5b3d2b";ctx.lineWidth=1.4;for(const x of [-24,0,24]){ctx.beginPath();ctx.moveTo(x,-31);ctx.lineTo(x,-19);ctx.moveTo(x,-7);ctx.lineTo(x,5);ctx.stroke();}}
     else if(p.type==="npc")drawActor(0,0,p.role==="owner"?"ranger":"farmer",0,p.name,true,{pose:"front",facing:1,moving:false,motionRatio:0,motionPhase:0});
     else if(p.type==="pit"){const r=p.r||28;drawExcavationProfile(r*2,r*1.1,p.x+p.y,{lip:"#a27a4f",wall:"#775035",deep:"#251b14",line:"#d0ad7d"});}
     else if(p.type==="sign"){ctx.fillStyle="rgba(0,0,0,.18)";ellipse(0,20,18,6);ctx.fill();ctx.fillStyle="#744e2f";ctx.fillRect(-4,-30,8,50);ctx.fillStyle="#d5c49d";roundRect(ctx,-42,-52,84,28,5);ctx.fill();ctx.strokeStyle="rgba(255,240,190,.5)";ctx.stroke();ctx.fillStyle="#3f3427";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText(p.text||"",0,-34);}
@@ -1682,6 +1702,7 @@
     if(params.has("debug")){
       window.__lovecDebug={
         startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
+        startScaleReference(){const result=generateScaleReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         spawnBoss(name="karel"){if(!world)return null;startRival(name,player.x+240,player.y-120);return world.rival;},
         hitBoss(){hitRival();return world?.rival?{active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase}:null;},
         setPlayer(x,y){player.x=x;player.y=y;return {x:player.x,y:player.y};},
