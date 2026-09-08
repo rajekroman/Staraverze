@@ -38,13 +38,10 @@ const BASELINES = {
   "visual-iphone-portrait:besednice-excavator-front":[5,5,4,4,4,4,5,5,4,5,5,5,5,5,5,5,5,5,5,5,5,5,6,5,6,5,4,5,5,4,5,5,4,6,6,5,6,6,5,5,5,4,6,5,5,6,6,6,6,5,4,6,5,4,6,6,4,7,7,5,6,6,5,6,6,4,7,6,5,7,6,5,6,6,5,6,5,4,6,5,4,7,6,5,7,6,5,7,6,5,6,6,5,7,6,5,6,5,4,5,4,3,5,4,3,5,4,3,5,5,4,6,5,4,5,4,3,6,5,4,5,4,4,4,4,3,4,4,3,4,4,3,5,4,3,5,4,3,4,4,3,5,5,4],
   "visual-desktop:malse-car-behind":[6,8,7,7,8,7,10,10,9,7,7,7,6,7,7,11,11,10,11,11,10,9,9,9,5,7,7,7,7,6,10,10,9,7,7,7,6,6,6,10,10,9,9,10,9,8,9,8,5,7,7,7,8,6,10,10,9,7,7,7,6,6,6,9,9,9,9,9,9,8,8,8,5,7,7,7,8,6,10,10,9,8,7,7,6,6,6,8,8,8,8,8,7,7,7,7,5,7,7,6,7,6,10,10,9,7,7,7,5,5,5,7,8,7,7,8,7,7,7,7,5,7,7,6,7,6,9,9,9,6,7,6,5,5,5,7,7,7,7,7,7,6,6,6],
   "visual-desktop:malse-car-front":[6,7,7,7,8,7,10,10,9,7,7,7,6,7,7,9,10,9,10,10,10,9,9,9,5,7,7,7,7,6,10,10,9,7,7,7,6,6,6,8,8,8,8,8,8,7,8,7,5,7,7,7,8,7,10,10,9,8,8,7,6,6,6,8,8,8,7,8,7,7,7,7,5,7,7,6,7,6,10,10,9,7,7,7,5,6,6,8,8,8,7,8,7,7,7,6,5,7,7,7,7,6,10,10,9,7,7,7,5,6,5,8,8,8,7,7,7,6,7,6,5,7,7,6,7,6,9,9,8,7,7,6,5,5,5,7,7,7,6,7,6,6,6,6],
-  "visual-desktop:scale-reference":[7,6,5,4,5,4,4,5,4,4,5,4,4,5,4,4,5,4,4,5,4,7,6,5,6,5,5,9,7,6,9,7,6,7,6,4,7,6,4,7,6,4,7,6,4,6,5,4,6,5,5,8,7,5,7,6,5,7,5,4,6,5,4,6,5,4,6,5,4,6,5,4,6,5,5,6,5,4,6,5,4,6,4,3,6,5,4,5,6,4,6,5,3,6,5,4,6,5,5,6,5,4,6,4,3,5,4,3,6,4,3,5,5,3,6,5,3,6,5,4,6,5,5,6,5,3,6,5,3,6,5,3,6,5,3,6,4,3,6,4,3,6,5,4],
   "visual-iphone-landscape:malse-car-behind":[9,9,8,10,9,9,10,10,9,6,6,6,5,5,5,9,9,9,9,9,9,9,10,9,8,8,8,9,9,9,10,10,9,5,5,5,4,4,5,8,8,8,9,9,9,9,9,9,9,9,8,9,9,9,10,10,9,6,6,6,5,5,5,7,8,7,8,8,7,7,8,7,8,8,8,9,9,9,10,10,9,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,9,9,8,9,9,9,10,10,9,6,5,5,5,4,4,7,7,6,7,7,7,7,7,7,8,8,8,10,9,9,10,10,9,6,6,6,5,5,5,7,7,7,8,8,8,7,7,7],
   "visual-iphone-landscape:malse-car-front":[9,9,8,10,9,9,10,10,9,6,6,6,5,5,5,8,8,8,8,8,8,7,8,7,8,8,8,9,9,9,10,10,9,6,6,6,6,6,6,7,8,7,8,8,8,7,7,7,9,9,8,9,9,9,10,10,9,6,6,6,5,5,5,8,8,8,8,8,8,7,7,7,7,8,7,9,9,9,10,10,9,5,5,5,4,4,5,7,8,7,7,7,7,7,7,7,9,9,8,9,9,9,10,10,9,5,5,5,4,4,4,7,8,7,7,7,7,7,7,7,9,9,8,10,9,9,10,10,9,5,6,6,5,5,5,7,8,7,8,8,7,7,7,6],
-  "visual-iphone-landscape:scale-reference":[7,6,5,6,5,4,5,5,4,4,5,4,4,5,4,4,5,4,6,5,4,6,5,5,6,5,5,7,6,5,10,8,7,7,6,4,7,6,4,7,6,4,6,5,4,6,5,4,6,5,5,7,6,4,7,6,5,6,5,4,6,5,4,6,5,4,6,5,4,6,5,4,6,5,5,6,5,4,6,5,4,6,4,3,6,5,4,4,6,4,6,5,4,6,5,4,6,5,5,6,5,4,6,4,4,6,4,3,6,5,3,5,5,3,6,5,4,6,5,4,7,6,5,7,5,4,7,5,4,7,5,4,7,6,4,7,5,4,7,5,4,6,5,5],
   "visual-iphone-portrait:malse-car-behind":[10,9,9,9,9,9,5,5,5,5,5,5,5,5,5,5,5,5,7,7,7,9,9,9,10,10,9,10,10,9,5,5,5,4,4,4,4,5,5,4,5,5,7,7,7,9,10,9,10,10,10,10,10,10,5,5,5,5,5,5,5,5,5,4,4,5,6,7,7,9,9,9,10,10,10,10,10,10,5,5,5,6,5,5,5,5,4,5,5,5,6,6,6,8,8,8,10,10,9,9,9,9,4,5,5,3,4,4,4,4,4,3,4,4,5,5,5,6,7,6,10,9,9,9,9,9,5,5,5,4,4,4,4,5,5,4,4,4,5,6,6,7,8,7],
   "visual-iphone-portrait:malse-car-front":[10,10,9,9,9,9,5,5,6,5,5,5,5,5,5,5,5,5,7,7,7,9,9,9,10,10,9,10,10,9,5,5,5,4,4,4,4,5,5,4,5,5,6,7,6,8,9,8,10,10,10,10,10,10,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,8,9,8,10,10,10,10,10,10,5,5,5,4,4,4,4,5,5,4,4,4,6,6,6,8,8,8,10,10,9,9,9,9,4,5,5,3,4,4,4,4,4,3,4,4,6,6,6,8,8,8,10,9,9,9,9,9,5,5,5,4,4,4,4,5,5,4,4,4,6,6,6,8,8,8],
-  "visual-iphone-portrait:scale-reference":[6,7,5,6,6,5,6,6,4,6,5,4,6,5,4,6,6,4,6,6,5,6,7,5,7,6,5,6,5,4,8,7,5,9,8,6,9,8,6,8,7,6,7,5,4,7,6,5,7,6,5,6,5,4,7,5,4,6,5,4,6,5,4,6,5,4,6,5,4,7,6,5,7,5,4,6,5,4,5,5,4,6,5,4,6,4,3,6,4,3,6,5,3,7,6,4,7,5,4,4,6,4,4,6,3,6,5,3,6,5,3,7,5,3,6,5,3,7,6,4,7,6,5,6,5,4,6,5,4,6,5,4,6,5,4,6,5,4,6,5,4,7,6,5],
 };
 
 function decodePng(buffer) {
@@ -255,6 +252,62 @@ test("Malše car rear occlusion evidence", async ({ page }) => {
   });
   await page.waitForTimeout(120);
   await capture(page, "malse-car-behind");
+});
+
+test("Chlum farmhouse front occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPropState("farm",0,{x:900,y:600});
+    window.__lovecDebug.setPlayer(900, 665);
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(120);
+  await capture(page, "chlum-farm-front");
+});
+
+test("Chlum farmhouse rear occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPropState("farm",0,{x:900,y:600});
+    window.__lovecDebug.setPlayer(900, 520);
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(120);
+  await capture(page, "chlum-farm-behind");
+});
+
+test("Nesměň hut front occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.setPropState("hut",0,{x:900,y:600});
+    window.__lovecDebug.setPlayer(900, 660);
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(120);
+  await capture(page, "nesmen-hut-front");
+});
+
+test("Nesměň hut rear occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.setPropState("hut",0,{x:900,y:600});
+    window.__lovecDebug.setPlayer(900, 525);
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(120);
+  await capture(page, "nesmen-hut-behind");
 });
 
 test("shared scale reference visual evidence", async ({ page }) => {
