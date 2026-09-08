@@ -1,5 +1,16 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Produkční audit 5.4.2 — runtime a čitelnost
+
+- Chybně určený vzorek v Ločenicích lze znovu dohledat radarem; chyby už nemohou natrvalo zablokovat úkol.
+- Kopání lze pozastavit i dotykovým tlačítkem nebo skrytím stránky. Dokončení a opožděný příchod Franty používají čas aktuálního světa, nikoli nezávislé časovače.
+- Mezerník funguje na tlačítkách nabídek; vstup z neherních obrazovek nezanechává pohyb.
+- Stromy a borovice mají prostorovější stínování a koruny překrývající postavu částečně zprůhlední.
+- Chvění a záblesk doznívají i během kopání. Systémové omezení pohybu vypne třes a celoplošné záblesky a stabilizuje déšť, zrno i varovný rám.
+- Průběžný HUD omezil nadbytečné DOM aktualizace. Audio nepřenastavuje tentýž zdroj při každém úderu.
+- PWA cache `runtime-1` chrání cizí cache na stejné doméně a ukládá jen známé úspěšné odpovědi. Základní statické soubory čte z verzované cache.
+- Audit, omezení ověření a další priority jsou v `PRODUCTION_AUDIT.md`. Stávající obrazová brána pokrývá Chlum, radar a kopání; starší zmínka o referencích všech pěti map neodpovídá aktuální sadě.
+
 ## 5.4.2 — dodaná instrumentální hudba a zvuky
 
 - Původní WAV soundtrack byl nahrazen dodanými MP3 ambienty pro Chlum, Nesměň, Besednici a Slávii; hudba se při přechodu lokality plynule zeslabí a znovu spustí.

@@ -3,6 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 const OFFLINE_TEST = /offline-smoke\.spec\.mjs/;
 const VISUAL_TEST = /visual-regression\.spec\.mjs/;
 const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST];
+const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
+const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -13,7 +15,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   reporter: [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL,
     serviceWorkers: "block",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
@@ -76,9 +78,9 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: "python3 -m http.server 4173 --bind 127.0.0.1",
-    url: "http://127.0.0.1:4173/index.html",
-    reuseExistingServer: !process.env.CI,
+    command: `python3 -m http.server ${port} --bind 127.0.0.1`,
+    url: `${baseURL}/index.html`,
+    reuseExistingServer: false,
     timeout: 15_000
   }
 });

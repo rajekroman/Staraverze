@@ -177,6 +177,7 @@ button{-webkit-tap-highlight-color:transparent}
   background-size:79px 67px,111px 93px,61px 53px}
 .dig-card>*{position:relative;z-index:1}
 .dig-card .eyebrow{color:#c9b17f}
+.dig-card .dig-pause{position:absolute;top:8px;right:8px;z-index:2;min-width:44px;min-height:44px}
 #digInfo{max-width:42ch;margin:0 auto;color:#c7cec5;line-height:1.45}
 
 .dig-illustration{position:relative;height:112px;margin:16px auto 10px;border-radius:18px;overflow:hidden;border:1px solid rgba(215,189,143,.13);background:
