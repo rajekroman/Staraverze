@@ -1411,9 +1411,9 @@
       }
 
       // Narrow muddy forest track; subdued enough not to become the visual identity by itself.
-      ctx.strokeStyle="rgba(57,47,38,.34)";ctx.lineWidth=48;ctx.lineCap="round";
+      ctx.strokeStyle="rgba(57,47,38,.3)";ctx.lineWidth=38;ctx.lineCap="round";
       ctx.beginPath();ctx.moveTo(world.w*.08,world.h*.92);ctx.bezierCurveTo(world.w*.27,world.h*.76,world.w*.37,world.h*.52,world.w*.53,world.h*.56);ctx.bezierCurveTo(world.w*.72,world.h*.62,world.w*.79,world.h*.31,world.w*.93,world.h*.1);ctx.stroke();
-      ctx.strokeStyle="rgba(123,112,87,.2)";ctx.lineWidth=18;ctx.stroke();
+      ctx.strokeStyle="rgba(123,112,87,.16)";ctx.lineWidth=12;ctx.stroke();
 
       // Fine root/twig seams break large soil areas and support the wet woodland material.
       ctx.strokeStyle="rgba(47,37,30,.34)";ctx.lineWidth=1.8;
@@ -2152,12 +2152,14 @@
 
   function drawHotspot(h){
     ctx.save();ctx.translate(h.x,h.y);const pulse=world.referenceScene?1:1+Math.sin(performance.now()*.006+h.x)*.08;ctx.scale(pulse,pulse);ctx.rotate(h.angle||0);
-    ctx.strokeStyle=h.special?"#f2cb72":"#72e5a1";ctx.lineWidth=3;ctx.setLineDash([7,6]);
+    const permitted=world.id==="nesmen"&&h.needsFill&&!h.special;
+    ctx.strokeStyle=h.special?"#f2cb72":permitted?"rgba(166,190,132,.76)":"#72e5a1";
+    ctx.lineWidth=permitted?1.8:3;ctx.setLineDash(permitted?[4,5]:[7,6]);
     if(h.needsFill||h.special==="hedgehog"){
       const w=h.w||82,hh=h.h||44;
-      ctx.fillStyle=h.special?"rgba(242,203,114,.15)":"rgba(114,229,161,.11)";organicPitPath(ctx,w+16,hh+13,h.x+h.y,.1);ctx.fill();ctx.stroke();ctx.setLineDash([]);
-      ctx.strokeStyle=h.special?"rgba(255,231,164,.72)":"rgba(177,245,205,.72)";ctx.lineWidth=1.7;organicPitPath(ctx,w*.72,hh*.58,h.x-h.y,.08);ctx.stroke();
-      ctx.fillStyle=h.special?"rgba(255,222,132,.32)":"rgba(151,228,177,.25)";for(let n=0;n<6;n++){const a=n/6*Math.PI*2+(h.x%19)*.03;ctx.beginPath();ctx.arc(Math.cos(a)*w*.42,Math.sin(a)*hh*.4,1.7+n%2,0,Math.PI*2);ctx.fill();}
+      ctx.fillStyle=h.special?"rgba(242,203,114,.15)":permitted?"rgba(112,139,87,.07)":"rgba(114,229,161,.11)";organicPitPath(ctx,w+16,hh+13,h.x+h.y,.1);ctx.fill();ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle=h.special?"rgba(255,231,164,.72)":permitted?"rgba(185,204,153,.46)":"rgba(177,245,205,.72)";ctx.lineWidth=permitted?1.2:1.7;organicPitPath(ctx,w*.72,hh*.58,h.x-h.y,.08);ctx.stroke();
+      ctx.fillStyle=h.special?"rgba(255,222,132,.32)":permitted?"rgba(149,174,119,.15)":"rgba(151,228,177,.25)";for(let n=0;n<6;n++){const a=n/6*Math.PI*2+(h.x%19)*.03;ctx.beginPath();ctx.arc(Math.cos(a)*w*.42,Math.sin(a)*hh*.4,permitted?1.2:1.7+n%2,0,Math.PI*2);ctx.fill();}
       if(world.id==="nesmen"&&!h.special){
         // Four low wooden stakes and muted cord clarify that this is a small permitted profile, not an open pit.
         const pts=[[-w*.48,-hh*.45],[w*.48,-hh*.45],[w*.48,hh*.45],[-w*.48,hh*.45]];
