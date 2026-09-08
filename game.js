@@ -52,13 +52,13 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Po bouřce vyrazil na pole i překupník Franta. Radar odhalí vltavíny ukryté v brázdách dřív, než je sebere cizí technika.",
-      why: "Bez silného začátku nebudeš mít co vystavit. Tahle lokalita má odstartovat tvou sbírku pro akci Na zelené vlně.",
+      text: "Po bouřce vyrážíš na pole za prvními kusy do své sbírky. Nejsi tu ale sám — Franta sbírá stejné vltavíny, aby je mohl prodat a utratit peníze za drogy. Radar ti pomůže odhalit nálezy dřív než on.",
+      why: "Ty vltavíny nehledáš kvůli penězům. Chceš sestavit co nejlepší sbírku a na konci výpravy ji vystavit na akci Na zelené vlně v KD Slavie.",
       goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
     {
       id: "locenice", name: "Ločenice", title: "Písčitá hrana", theme: "meadow",
-      text: "V borovém lese se šíří padělky z dílny Frantových překupníků. Rozliš pravé vltavíny od falešného skla podle povrchu a lomu světla.",
+      text: "V borovém lese se mezi nálezy pletou i kusy falešného skla. Rozliš pravé vltavíny od napodobenin podle povrchu a lomu světla.",
       why: "Potřebuješ rozšířit sbírku o ověřené kusy. Ločenice prověří oko sběratele, ne jen rychlost pohybu.",
       goal: "Správně urči 5 vzorků a najdi 3 pravé kusy.", music: "meadow"
     },
@@ -76,8 +76,8 @@
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Franta chce poslední certifikát prodat přímo před KD Slávií. Posbírej dokumentaci, zastav jeho únik a doraz na výstavu s důkazem o původu.",
-      why: "Tady končí lov a začíná prezentace. Bez dokumentů a silné sbírky neuspěješ před porotou ani vystavovateli.",
+      text: "Franta míří ke KD Slavii, protože kolem akce čeká kupce pro své vltavíny. Ty tam naopak vezeš svou sbírku vystavit. Posbírej dokumentaci, dožeň ho a doraz na Na zelené vlně s doloženým původem kamenů.",
+      why: "Tady končí hledání a začíná výstava. Nejde ti o prodej — chceš ukázat nejlepší sbírku, kterou se ti během výpravy podařilo sestavit.",
       goal: "Seber 3 složky, dožeň Frantu a vstup do KD Slávie.", music: "city"
     }
   ];
@@ -591,7 +591,7 @@
     const bossVisible=Boolean(boss?.active);
     ui.bossHud?.classList.toggle("hidden",!bossVisible);
     ui.bossHud?.classList.toggle("enraged",bossVisible&&boss.phase>=3);ui.bossHud?.classList.toggle("vulnerable",bossVisible&&boss.stunTimer>0);
-    if(bossVisible){const display=boss.name==="karel"?"KRYSTALOVÝ KAREL":"FETÁK FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZRANITELNÝ · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"ZUŘIVÁ FÁZE":boss.phase===2?"ZRYCHLUJE":"VYČKEJ NA PAUZU";}
+    if(bossVisible){const isKarel=boss.name==="karel",display=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=isKarel?(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZRANITELNÝ · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"ZUŘIVÁ FÁZE":boss.phase===2?"ZRYCHLUJE":"VYČKEJ NA PAUZU"):(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"NA DOSAH · DOŽEŇ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"FINÁLNÍ SPRINT":boss.phase===2?"ZRYCHLUJE":"DRŽ SE ZA NÍM");}
     hud.classList.toggle("danger-shake",dangerActive&&state.heat>=60);app.classList.toggle("danger-state",dangerActive);
     ui.combo.textContent=`KOMBO ×${state.combo}`;ui.combo.classList.toggle("hidden",state.combo<=1);
   }
@@ -765,23 +765,23 @@
 
   function startRival(name,x,y){
     world.runtime.bossStarted=true;
-    world.rival={name,displayName:name==="karel"?"KRYSTALOVÝ KAREL":"FETÁK FRANTA",x,y,r:30,hits:0,maxHits:name==="karel"?3:2,speed:name==="karel"?150:166,baseSpeed:name==="karel"?150:166,angle:0,target:{x:rand(250,1550),y:rand(220,950)},throwTimer:1.15,active:true,flashlight:name==="karel",vision:name==="karel"?245:0,baseVision:name==="karel"?245:0,halfAngle:name==="karel"?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:1.15,trail:[]};
+    world.rival={name,displayName:name==="karel"?"KRYSTALOVÝ KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:name==="karel"?3:2,speed:name==="karel"?150:166,baseSpeed:name==="karel"?150:166,angle:0,target:{x:rand(250,1550),y:rand(220,950)},throwTimer:1.15,active:true,flashlight:name==="karel",vision:name==="karel"?245:0,baseVision:name==="karel"?245:0,halfAngle:name==="karel"?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:1.15,trail:[]};
     bossIntroTimer=2.35;
     const isKarel=name==="karel";
-    if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KRYSTALOVÝ KAREL":"FETÁK FRANTA";
-    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel rozebírá chráněný profil a utíká s ježkem. Neútoč naslepo: po sprintu se vyčerpá, tehdy mu vezmi nález zpět.":"Franta veze poslední certifikát k překupníkům ve Slávii. Přeruš jeho únik po každém sprintu a vrať důkaz o původu.";
+    if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";
+    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel rozebírá chráněný profil a utíká s ježkem. Neútoč naslepo: po sprintu se vyčerpá, tehdy mu vezmi nález zpět.":"Franta sbírá vltavíny kvůli penězům a chce je kolem akce zpeněžit. Dožeň ho po sprintu a doraz do Slavie dřív než on.";
     ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");
     audio.sfx("boss");haptic([35,40,35]);shake=Math.max(shake,7);flash=.1;flashColor="190,100,75";
-    toast(isKarel?"Krystalový Karel utíká s ježkem!":"Franta bere poslední certifikát!","bad",1900);
+    toast(isKarel?"Krystalový Karel utíká s ježkem!":"Franta vyráží se svou sbírkou do Slavie!","bad",1900);
   }
   function hitRival(){
     const r=world.rival;if(!r||!r.active)return;
-    if(r.stunTimer<=0){toast(r.name==="karel"?"Je příliš rychlý · počkej na jeho zastavení":"Franta uhýbá · přeruš jeho sprint a chyť ho v pauze","bad",950);return;}
+    if(r.stunTimer<=0){toast(r.name==="karel"?"Je příliš rychlý · počkej na jeho zastavení":"Franta má náskok · počkej, až zpomalí, a dožeň ho","bad",950);return;}
     r.hits++;r.stunTimer=0;r.hitFlash=.28;r.phase=Math.min(3,r.hits+1);audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
     r.speed=r.baseSpeed*(1+r.hits*.16);if(r.flashlight){r.vision=r.baseVision+r.hits*34;r.halfAngle=.5+r.hits*.08;}
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
-    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");if(r.name==="karel")addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);else{state.score+=1800;toast("Certifikát je zpět · důkaz zachráněn","rare");audio.sfx("win");}}
-    else toast(`Zastavení ${r.hits}/${r.maxHits} · ${r.name==="karel"?"Karel zrychluje":"Franta mění únikovou trasu"}`,"good",1100);
+    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");if(r.name==="karel")addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);else{state.score+=1800;toast("Máš náskok · cesta do Slavie je volná","rare");audio.sfx("win");}}
+    else toast(r.name==="karel"?`Zastavení ${r.hits}/${r.maxHits} · Karel zrychluje`:`Dohnání ${r.hits}/${r.maxHits} · Franta znovu zrychluje`,"good",1100);
   }
 
   function tryExit(){if(!goalComplete()){toast(levelGoal(),"bad");return;}finishLevel();}
@@ -927,7 +927,7 @@
     if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.stunTimer>0?92:66);
     if(world.exit)check("exit",world.exit,world.exit.x,world.exit.y,88);
     const actionButton=$("actionButton");
-    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=map[nearest.kind]||["◎","AKCE"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);actionButton.setAttribute("aria-label",nearest.kind==="exit"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
+    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=nearest.kind==="rival"&&nearest.ref.name==="franta"?["↟","DOHNAT"]:(map[nearest.kind]||["◎","AKCE"]);ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);actionButton.setAttribute("aria-label",nearest.kind==="exit"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
     else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";actionButton.classList.remove("ready","boss-ready");actionButton.setAttribute("aria-label",scanCooldown>0?`Radar připraven za ${Math.ceil(scanCooldown)} s`:"Spustit radar");hideHint();}
   }
 
@@ -1252,7 +1252,7 @@
     ctx.save();ctx.translate(r.x,r.y);const bob=r.dashTime>0?Math.sin(performance.now()*.05)*4:0;ctx.translate(0,bob);ctx.scale(r.stunTimer>0?1.16:1.28, r.stunTimer>0?1.1:1.28);drawActor(0,0,"rival",r.angle,"",true);ctx.restore();
     if(r.stunTimer>0){ctx.save();ctx.translate(r.x,r.y-62);ctx.fillStyle="#9ff3bc";ctx.font="bold 22px sans-serif";ctx.textAlign="center";ctx.fillText("✦  ✦  ✦",0,0);ctx.restore();}
     if(r.hitFlash>0){ctx.save();ctx.translate(r.x,r.y);ctx.strokeStyle=`rgba(255,138,114,${r.hitFlash*2.4})`;ctx.lineWidth=6;ctx.beginPath();ctx.arc(0,-8,31+r.hitFlash*14,0,Math.PI*2);ctx.stroke();ctx.restore();}
-    const label=r.displayName||(r.name==="karel"?"KRYSTALOVÝ KAREL":"FETÁK FRANTA");ctx.save();ctx.translate(r.x,r.y-92);const w=Math.max(164,label.length*8.7);ctx.fillStyle="rgba(25,12,12,.9)";roundRect(ctx,-w/2,-19,w,30,10);ctx.fill();ctx.strokeStyle=r.stunTimer>0?"#89efad":r.name==="karel"?"#f2cb72":"#ff7c8a";ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle=r.stunTimer>0?"#d9ffe6":r.name==="karel"?"#ffe8b4":"#ffd4dc";ctx.textAlign="center";ctx.font="bold 17px Inter, sans-serif";ctx.fillText(label,0,2);ctx.restore();
+    const label=r.displayName||(r.name==="karel"?"KRYSTALOVÝ KAREL":"FRANTA");ctx.save();ctx.translate(r.x,r.y-92);const w=Math.max(164,label.length*8.7);ctx.fillStyle="rgba(25,12,12,.9)";roundRect(ctx,-w/2,-19,w,30,10);ctx.fill();ctx.strokeStyle=r.stunTimer>0?"#89efad":r.name==="karel"?"#f2cb72":"#ff7c8a";ctx.lineWidth=2.5;ctx.stroke();ctx.fillStyle=r.stunTimer>0?"#d9ffe6":r.name==="karel"?"#ffe8b4":"#ffd4dc";ctx.textAlign="center";ctx.font="bold 17px Inter, sans-serif";ctx.fillText(label,0,2);ctx.restore();
   }
 
   function drawPatrol(p){

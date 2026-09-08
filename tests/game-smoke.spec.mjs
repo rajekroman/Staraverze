@@ -4,6 +4,20 @@ const LEVELS = ["chlum", "locenice", "nesmen", "besednice", "malse"];
 const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
+test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli penězům", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const source = await page.evaluate(async () => (await fetch("/game.js")).text());
+  expect(source).toContain("Ty vltavíny nehledáš kvůli penězům");
+  expect(source).toContain("vystavit na akci Na zelené vlně v KD Slavie");
+  expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
+  expect(source).toContain("utratit peníze za drogy");
+  expect(source).toContain("kolem akce čeká kupce");
+  expect(source).not.toContain("sběratel Franta");
+  expect(source).not.toContain("SBĚRATEL FRANTA");
+  expect(source).not.toContain("FETÁK FRANTA");
+  expect(source).not.toContain("playerName");
+});
+
 test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
@@ -660,7 +674,7 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
     { timeout: 5_000 }
   ).toBe("franta");
   await expect(page.locator("#objectiveLabel")).toHaveText("Dožeň Frantu");
-  await expect(page.locator("#bossName")).toHaveText("FETÁK FRANTA");
+  await expect(page.locator("#bossName")).toHaveText("FRANTA");
 
   for (let hit = 1; hit <= 2; hit += 1) {
     await page.evaluate(() => {
@@ -668,7 +682,7 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
       window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
       window.__lovecDebug.setBossStun(5);
     });
-    await expect(page.locator("#actionText")).toHaveText("CHYTIT");
+    await expect(page.locator("#actionText")).toHaveText("DOHNAT");
     await page.keyboard.press("Space");
 
     if (hit === 1) {
