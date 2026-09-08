@@ -5,11 +5,31 @@ const VISUAL_TEST = /visual-regression\.spec\.mjs/;
 const MOTION_TEST = /motion-evidence\.spec\.mjs/;
 const EXCAVATOR_MOTION_TEST = /excavator-motion-evidence\.spec\.mjs/;
 const CAR_MOTION_TEST = /car-motion-evidence\.spec\.mjs/;
-const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST, CAR_MOTION_TEST];
+const PUBLISH_TEST = /publish-smoke\.spec\.mjs/;
+const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST, CAR_MOTION_TEST, PUBLISH_TEST];
+const NEVER = /a^/;
 const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
 const baseURL = `http://127.0.0.1:${port}`;
 const webRoot = process.env.PLAYWRIGHT_ROOT || ".";
 const webRootArg = JSON.stringify(webRoot);
+
+function normalizeBasePath(value) {
+  const trimmed = String(value || "/").trim();
+  if (!trimmed || trimmed === "/") return "/";
+  const parts = trimmed.split("/").filter(Boolean);
+  if (!parts.length || parts.some(part => part === "." || part === ".." || part.includes("\\"))) {
+    throw new Error(`Invalid PLAYWRIGHT_BASE_PATH: ${value}`);
+  }
+  return `/${parts.join("/")}/`;
+}
+
+const webBasePath = normalizeBasePath(process.env.PLAYWRIGHT_BASE_PATH || "/");
+const publishMode = webBasePath !== "/";
+const basePathArg = JSON.stringify(webBasePath);
+const serverCommand = publishMode
+  ? `node tools/serve-publish.mjs ${port} ${webRootArg} ${basePathArg}`
+  : `python3 -m http.server ${port} --bind 127.0.0.1 --directory ${webRootArg}`;
+const serverURL = `${baseURL}${webBasePath}index.html`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -88,6 +108,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 }, video: "on", trace: "off", screenshot: "off" }
     },
     {
+      name: "publish-chromium",
+      testMatch: PUBLISH_TEST,
+      testIgnore: publishMode ? NEVER : PUBLISH_TEST,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
+    },
+    {
       name: "offline-chromium",
       testMatch: OFFLINE_TEST,
       use: {
@@ -98,8 +124,8 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: `python3 -m http.server ${port} --bind 127.0.0.1 --directory ${webRootArg}`,
-    url: `${baseURL}/index.html`,
+    command: serverCommand,
+    url: serverURL,
     reuseExistingServer: false,
     timeout: 15_000
   }
