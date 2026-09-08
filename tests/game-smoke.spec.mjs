@@ -788,3 +788,156 @@ test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ pa
   await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
   expect(errors).toEqual([]);
 });
+
+
+test("přístupné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
+  await page.goto("/");
+  const modalIds = ["briefScreen","digScreen","identifyScreen","dialogScreen","perkScreen","juryScreen","resultScreen","pauseScreen","howScreen","recordsScreen"];
+  for (const id of modalIds) {
+    const attrs = await page.locator(`#${id}`).evaluate(element => ({
+      role: element.getAttribute("role"),
+      modal: element.getAttribute("aria-modal"),
+      labelledby: element.getAttribute("aria-labelledby"),
+      describedby: element.getAttribute("aria-describedby"),
+      inert: element.hasAttribute("inert"),
+      hidden: element.getAttribute("aria-hidden")
+    }));
+    expect(attrs.role, id).toBe("dialog");
+    expect(attrs.modal, id).toBe("true");
+    expect(attrs.labelledby, id).toBeTruthy();
+    expect(attrs.inert, id).toBe(true);
+    expect(attrs.hidden, id).toBe("true");
+    const label = await page.locator(`#${id}`).getAttribute("aria-labelledby");
+    await expect(page.locator(`#${label}`), `${id} label`).toHaveCount(1);
+    if (attrs.describedby) await expect(page.locator(`#${attrs.describedby}`), `${id} description`).toHaveCount(1);
+  }
+  await expect(page.locator("#theftAlert")).toHaveAttribute("role","alert");
+  await expect(page.locator("#bossIntro")).toHaveAttribute("role","status");
+});
+
+test("fokus se přesune do modálu, zůstane uvnitř a vrátí se na spouštěč", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#howButton").focus();
+  await page.locator("#howButton").click();
+  await expect(page.locator("#howScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#closeHowButton")).toBeFocused();
+
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#closeHowButton")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.locator("#closeHowButton")).toBeFocused();
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#howButton")).toBeFocused();
+
+  await page.locator("#recordsButton").click();
+  await expect(page.locator("#closeRecordsButton")).toBeFocused();
+  await page.locator("#closeRecordsButton").click();
+  await expect(page.locator("#recordsButton")).toBeFocused();
+});
+
+test("Escape bezpečně pauzne a obnoví gameplay i kopání s návratem fokusu", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await page.locator("#game").focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#resumeButton")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#game")).toBeFocused();
+
+  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+  await page.locator("#digButton").focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#digButton")).toBeFocused();
+});
+
+test("skryté herní ovládání nelze zaměřit během modálu", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await page.locator("#actionButton").focus();
+  expect(await page.evaluate(() => document.activeElement?.id)).not.toBe("actionButton");
+  await page.locator("#pauseButton").focus();
+  expect(await page.evaluate(() => document.activeElement?.id)).not.toBe("pauseButton");
+  await expect(page.locator("#controls")).toHaveAttribute("inert","");
+});
+
+test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await page.locator("#moveZone").dispatchEvent("pointerdown",{pointerId:41,pointerType:"touch",clientX:20,clientY:20,bubbles:true,cancelable:true});
+  await page.locator("#moveZone").dispatchEvent("pointermove",{pointerId:41,pointerType:"touch",clientX:90,clientY:40,bubbles:true,cancelable:true});
+  const moving = await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(Math.abs(moving.x)+Math.abs(moving.y)).toBeGreaterThan(0);
+
+  await page.locator("#moveZone").dispatchEvent("pointerdown",{pointerId:42,pointerType:"touch",clientX:70,clientY:70,bubbles:true,cancelable:true});
+  await page.locator("#moveZone").dispatchEvent("pointercancel",{pointerId:42,pointerType:"touch",bubbles:true,cancelable:true});
+  const stillMoving = await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(Math.abs(stillMoving.x)+Math.abs(stillMoving.y)).toBeGreaterThan(0);
+
+  await page.locator("#moveZone").dispatchEvent("pointercancel",{pointerId:41,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
+});
+
+test("viewport zůstává zoomovatelný a blokace gest je jen na herních ovladačích", async ({ page }) => {
+  await page.goto("/");
+  const audit = await page.evaluate(() => {
+    const viewport = document.querySelector('meta[name="viewport"]')?.content || "";
+    return {
+      viewport,
+      htmlTouch: getComputedStyle(document.documentElement).touchAction,
+      bodyTouch: getComputedStyle(document.body).touchAction,
+      appTouch: getComputedStyle(document.getElementById("app")).touchAction,
+      gameTouch: getComputedStyle(document.getElementById("game")).touchAction,
+      joystickTouch: getComputedStyle(document.getElementById("moveZone")).touchAction,
+      actionTouch: getComputedStyle(document.getElementById("actionButton")).touchAction,
+      digTouch: getComputedStyle(document.getElementById("digButton")).touchAction
+    };
+  });
+  expect(audit.viewport).not.toMatch(/user-scalable\s*=\s*no/i);
+  expect(audit.viewport).not.toMatch(/maximum-scale\s*=\s*(?:0|1(?:\.0*)?)(?:,|$)/i);
+  for (const value of [audit.htmlTouch,audit.bodyTouch,audit.appTouch,audit.gameTouch]) expect(value).toContain("pinch-zoom");
+  expect(audit.joystickTouch).toBe("none");
+  expect(audit.actionTouch).toBe("none");
+  expect(audit.digTouch).toBe("none");
+});
+
+test("zahrabávání po pauze zruší rozpracované držení a odmění právě jednou", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startFillChallenge());
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().kind)).toBe("fill");
+
+  await page.keyboard.down("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+  await page.keyboard.press("Escape");
+  await page.keyboard.up("Space");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+
+  await page.keyboard.press("Escape");
+  for (let transfer=1;transfer<=3;transfer+=1) {
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
+    await page.keyboard.down("Space");
+    await page.keyboard.up("Space");
+    if (transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
+  }
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  const after = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(after.world.filled).toBe(1);
+  expect(after.world.open).toBe(0);
+  const score = after.state.score;
+  await page.waitForTimeout(500);
+  const stable = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(stable.world.filled).toBe(1);
+  expect(stable.state.score).toBe(score);
+});

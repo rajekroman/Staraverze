@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Přístupné modály a mobilní zoom
+
+- všechny interaktivní překryvy mají jednotnou dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu a inertní neaktivní obsah;
+- Escape bezpečně obsluhuje pauzu, návod, rekordy a dialog bez přeskočení povinného určení, perku nebo poroty;
+- globální blokování pinch-to-zoom bylo odstraněno; `touch-action:none` zůstává pouze na joysticku a herních tlačítkách, která potřebují kontinuální pointer;
+- joystick, akční tlačítko a kopací/zahrabávací tlačítko drží vlastní aktivní pointer a vždy se uvolní při `pointercancel`, ztrátě fokusu, skrytí stránky nebo změně orientace;
+- HUD už není celý živý region; stručné stavové zprávy používají cílené `status`/alert regiony;
+- PWA cache byla zvýšena na `runtime-6`.
+
 ## Příběhové role hráče a Franty
 
 - hlavní postava zůstává záměrně bezejmenná: je to přímo hráč, opravdový sběratel, který vltavíny nehledá kvůli penězům, ale chce sestavit nejlepší sbírku a vystavit ji na Na zelené vlně;
