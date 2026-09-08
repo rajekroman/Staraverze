@@ -317,6 +317,25 @@ test("hlavní postava drží svislou siluetu a zrcadlí se jen do stran", async 
   expect(errors).toEqual([]);
 });
 
+test("pěší NPC drží svislou siluetu a používají stejné směrové pózy jako hráč", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+
+  await expect.poll(() => page.evaluate(() => {
+    const patrol=window.__lovecDebug.patrolSnapshot().find(item => item.type === "farmer");
+    return patrol ? { facing: patrol.facing, pose: patrol.pose, moving: patrol.moving } : null;
+  })).toEqual({ facing: -1, pose: "back", moving: true });
+
+  const actorSource = await page.evaluate(async () => {
+    const source = await (await fetch("./game.js")).text();
+    return source.slice(source.indexOf("function drawActor"), source.indexOf("function drawPlayer"));
+  });
+  expect(actorSource).toContain("ctx.scale(facing,1)");
+  expect(actorSource).not.toContain("ctx.rotate(");
+  expect(errors).toEqual([]);
+});
+
 test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
