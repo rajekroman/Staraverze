@@ -1215,6 +1215,61 @@
     ctx.strokeStyle="rgba(58,43,31,.42)";ctx.lineWidth=7;ctx.lineCap="round";
     for(const off of [-12,12]){ctx.beginPath();ctx.moveTo(290,320+off);ctx.bezierCurveTo(650,350+off,1020,430+off,1570,455+off);ctx.stroke();}
     ctx.strokeStyle="rgba(215,202,169,.08)";ctx.lineWidth=2;for(let i=0;i<7;i++){const x=180+i*245,y=320+(i%3)*190;ctx.beginPath();ctx.ellipse(x,y,65,12,(i%4)*.12,0,Math.PI*2);ctx.stroke();}
+    if(world.id==="chlum"&&!world.referenceScene){
+      // Locality identity: broad headlands and remises interrupt the otherwise open ploughed field.
+      const edge=ctx.createLinearGradient(0,0,150,0);edge.addColorStop(0,"rgba(58,79,45,.92)");edge.addColorStop(1,"rgba(102,112,73,.08)");
+      ctx.fillStyle=edge;ctx.beginPath();ctx.moveTo(0,178);ctx.bezierCurveTo(42,250,54,410,31,570);ctx.bezierCurveTo(15,735,71,910,0,1125);ctx.closePath();ctx.fill();
+      const edgeR=ctx.createLinearGradient(world.w,0,world.w-150,0);edgeR.addColorStop(0,"rgba(50,73,43,.88)");edgeR.addColorStop(1,"rgba(104,106,67,.06)");
+      ctx.fillStyle=edgeR;ctx.beginPath();ctx.moveTo(world.w,205);ctx.bezierCurveTo(world.w-42,330,world.w-18,470,world.w-61,620);ctx.bezierCurveTo(world.w-88,760,world.w-35,930,world.w,1090);ctx.closePath();ctx.fill();
+
+      // Low shrub groups make the field edge readable as a South-Bohemian remise, not a decorative border.
+      const hedge=(x,y,s)=>{
+        ctx.fillStyle="rgba(0,0,0,.16)";ctx.beginPath();ctx.ellipse(x,y+10,34*s,9*s,0,0,Math.PI*2);ctx.fill();
+        for(const q of [[-18,-2,18],[3,-12,22],[22,-1,16]]){
+          const g=ctx.createRadialGradient(x+q[0]*s-5,y+q[1]*s-6,2,x+q[0]*s,y+q[1]*s,q[2]*s);
+          g.addColorStop(0,"#66825a");g.addColorStop(.55,"#405f40");g.addColorStop(1,"#29462f");
+          ctx.fillStyle=g;ctx.beginPath();ctx.arc(x+q[0]*s,y+q[1]*s,q[2]*s,0,Math.PI*2);ctx.fill();
+        }
+      };
+      hedge(105,365,1.12);hedge(125,820,1.0);hedge(1615,475,1.12);hedge(1585,880,1.18);
+
+      // Compacted headland lanes interrupt the furrows where machinery turns.
+      ctx.fillStyle="rgba(139,116,79,.42)";
+      for(const q of [[330,252,175,26,-.08],[820,265,155,24,.04],[1320,246,190,27,-.05],[520,1015,170,25,.06],[1160,1040,205,28,-.03]]){
+        ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(q[4]);ctx.beginPath();ctx.ellipse(0,0,q[2],q[3],0,0,Math.PI*2);ctx.fill();ctx.restore();
+      }
+      ctx.strokeStyle="rgba(67,50,35,.34)";ctx.lineWidth=4;
+      for(const q of [[330,252,160,-.08],[820,265,140,.04],[1320,246,175,-.05]]){
+        ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(q[3]);
+        for(const yy of [-8,8]){ctx.beginPath();ctx.moveTo(-q[2],yy);ctx.lineTo(q[2],yy);ctx.stroke();}
+        ctx.restore();
+      }
+
+      // Two long paired tyre routes cross multiple furrow bands. Patchy linework prevents a rail-like silhouette.
+      ctx.strokeStyle="rgba(58,43,31,.32)";ctx.lineWidth=3.6;ctx.lineCap="round";ctx.setLineDash([34,16]);
+      for(const off of [-9,9]){
+        ctx.beginPath();ctx.moveTo(350+off,248);ctx.bezierCurveTo(405+off,430,472+off,725,575+off,1110);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(1495+off,250);ctx.bezierCurveTo(1452+off,470,1410+off,760,1315+off,1112);ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.strokeStyle="rgba(210,182,132,.1)";ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(350,250);ctx.bezierCurveTo(405,430,472,725,575,1110);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(1495,250);ctx.bezierCurveTo(1452,470,1410,760,1315,1112);ctx.stroke();
+      // Short tread impressions read as machinery ruts rather than road markings.
+      ctx.strokeStyle="rgba(48,35,27,.2)";ctx.lineWidth=2;
+      for(let n=0;n<7;n++){
+        const y=365+n*108,xa=390+n*23,xb=1468-n*20;
+        ctx.beginPath();ctx.moveTo(xa-14,y-4);ctx.lineTo(xa+13,y+4);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(xb-13,y+3);ctx.lineTo(xb+13,y-4);ctx.stroke();
+      }
+
+      // Sparse unworked patches break the ploughed rhythm without creating diggable holes.
+      for(const q of [[735,490,58,18,.1],[1095,690,72,20,-.08],[815,875,54,16,.04]]){
+        ctx.save();ctx.translate(q[0],q[1]);ctx.rotate(q[4]);
+        ctx.fillStyle="rgba(151,128,88,.28)";ctx.beginPath();ctx.ellipse(0,0,q[2],q[3],0,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="rgba(214,187,137,.16)";ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+      }
+    }
   }
   function drawMeadow(){
     const g=ctx.createLinearGradient(0,0,0,world.h);g.addColorStop(0,"#5d6f54");g.addColorStop(.25,"#74806a");g.addColorStop(1,"#b8a782");ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
