@@ -993,50 +993,60 @@ test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvoln
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(0);
     window.__lovecDebug.setPlayer(60,60);
+    const controls = document.getElementById("controls");
+    controls.classList.remove("hidden");
+    controls.style.display = "flex";
+    controls.style.pointerEvents = "auto";
   });
   const button = page.locator("#actionButton");
+  const box = await button.boundingBox();
+  expect(box).toBeTruthy();
 
-  await button.dispatchEvent("pointerdown",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
   await button.dispatchEvent("pointerdown",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await button.dispatchEvent("pointercancel",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
-  await button.dispatchEvent("pointercancel",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
-
-  await button.dispatchEvent("pointerdown",{pointerId:53,pointerType:"touch",bubbles:true,cancelable:true});
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
   await expect(button).not.toHaveClass(/active/);
+  await page.mouse.up();
+
+  await page.mouse.down();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
 });
 
 test("kopací tlačítko po blur, pagehide a změně orientace nezůstane zamčené starým pointerem", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startFillChallenge());
   const button = page.locator("#digButton");
+  const box = await button.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
-  let pointerId = 61;
   for (const lifecycleEvent of ["blur","pagehide","orientationchange"]) {
-    await button.dispatchEvent("pointerdown",{pointerId,pointerType:"touch",bubbles:true,cancelable:true});
+    await page.mouse.down();
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
     await expect(button).toHaveClass(/pressed/);
 
-    await button.dispatchEvent("pointerdown",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
-    await button.dispatchEvent("pointercancel",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointerdown",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointercancel",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
 
     await page.evaluate(name => window.dispatchEvent(new Event(name)), lifecycleEvent);
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
     await expect(button).not.toHaveClass(/pressed/);
-    pointerId += 1;
+    await page.mouse.up();
   }
 
-  await button.dispatchEvent("pointerdown",{pointerId:70,pointerType:"touch",bubbles:true,cancelable:true});
+  await page.mouse.down();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
-  await button.dispatchEvent("pointercancel",{pointerId:70,pointerType:"touch",bubbles:true,cancelable:true});
+  await page.mouse.up();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
 });
 
