@@ -595,6 +595,31 @@
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
+  function generateNesmenReference(){
+    currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
+    state=freshState();state.levelIndex=2;
+    const portrait=viewport.h>viewport.w*1.18;
+    const w=portrait?720:Math.round(700*viewport.w/Math.max(1,viewport.h));
+    const h=portrait?Math.round(720*viewport.h/Math.max(1,viewport.w)):700;
+    const layout={
+      w,h,player:[w*.54,h*.55],hut:[w*.17,h*.78],
+      trees:[[w*.12,h*.18,1.35],[w*.86,h*.2,1.4],[w*.83,h*.74,1.3]],
+      ferns:[[w*.34,h*.37,1.15],[w*.7,h*.35,1.0],[w*.25,h*.66,1.1],[w*.68,h*.72,1.2]],
+      profile:[w*.57,h*.38],log:[w*.42,h*.72],stump:[w*.78,h*.57]
+    };
+    world={id:"nesmen",theme:"forest",w:layout.w,h:layout.h,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{permit:true,dug:0,filled:0,open:0},rain:0,referenceScene:true};
+    player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
+    addProp("hut",layout.hut[0],layout.hut[1],{scale:.9,visualScale:2.25,reference:true});
+    layout.trees.forEach((q,i)=>addProp(i===1?"pine":"tree",q[0],q[1],{scale:q[2],reference:true}));
+    layout.ferns.forEach(q=>addProp("fern",q[0],q[1],{scale:q[2],reference:true}));
+    addProp("log",layout.log[0],layout.log[1],{scale:1.0,angle:.2,reference:true});
+    addProp("stump",layout.stump[0],layout.stump[1],{scale:1.0,reference:true});
+    addHotspot(layout.profile[0],layout.profile[1],{rarity:"common",documented:true,needsFill:true,marked:true,revealed:true,angle:-.08});
+    buildTerrainCache(world);
+    camera.x=0;camera.y=0;nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
+    return {level:world.id,reference:true,portrait,player:{x:player.x,y:player.y}};
+  }
+
   function generateLoceniceReference(){
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
     state=freshState();state.levelIndex=1;
@@ -1355,10 +1380,53 @@
       for(let i=0;i<22;i++){const y=180+i*48;ctx.strokeStyle=i%2?"rgba(91,69,50,.28)":"rgba(218,191,145,.18)";ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(120+(i%4)*35,y);ctx.bezierCurveTo(600,y-30,1100,y+35,1680,y-10);ctx.stroke();}
       return;
     }
-    const sandy = world.id === "nesmen";const g=ctx.createLinearGradient(0,0,0,world.h);g.addColorStop(0,sandy?"#60724a":"#4a5a3d");g.addColorStop(1,sandy?"#455636":"#33412b");ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
-    for(let i=0;i<220;i++){const x=(i*113)%world.w,y=(i*71)%world.h;ctx.fillStyle=sandy?(i%2?"rgba(202,182,138,.07)":"rgba(30,56,35,.12)"):(i%2?"rgba(76,98,60,.12)":"rgba(29,49,35,.14)");ctx.beginPath();ctx.arc(x,y,2+(i%7),0,Math.PI*2);ctx.fill();}
-    if(sandy){for(let i=0;i<18;i++){const x=130+(i*147)%1550,y=100+(i*193)%960,w=150+(i%4)*30,h=82+(i%3)*18;ctx.fillStyle=i%2?"rgba(210,184,132,.16)":"rgba(235,213,170,.10)";ctx.beginPath();ctx.ellipse(x,y,w,h,(i%5)*.22,0,Math.PI*2);ctx.fill();}}
-    ctx.strokeStyle=sandy?"#8f7650":"#6d563a";ctx.lineWidth=112;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(150,1100);ctx.bezierCurveTo(500,900,520,580,890,620);ctx.bezierCurveTo(1250,660,1330,330,1660,130);ctx.stroke();ctx.strokeStyle=sandy?"rgba(227,209,170,.72)":"rgba(177,157,118,.36)";ctx.lineWidth=sandy?66:58;ctx.stroke();
+    if(world.id==="nesmen"){
+      // Nesměň: cool, damp forest floor. Dark soil dominates; moss and water sheen sit on top.
+      const g=ctx.createLinearGradient(0,0,0,world.h);
+      g.addColorStop(0,"#3c493d");g.addColorStop(.32,"#41483a");g.addColorStop(1,"#332f28");
+      ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
+
+      // Dark wet soil texture, deterministic and precomputed into the terrain cache.
+      for(let i=0;i<260;i++){
+        const x=(i*113+31)%world.w,y=(i*79+i*i*2)%world.h,r=1.5+(i%5)*.75;
+        ctx.fillStyle=i%4===0?"rgba(169,157,126,.08)":i%3===0?"rgba(27,35,29,.28)":"rgba(74,63,50,.22)";
+        ctx.beginPath();ctx.ellipse(x,y,r*1.8,r,(i%8)*.2,0,Math.PI*2);ctx.fill();
+      }
+
+      // Irregular moss islands make the locality readable without adding collision.
+      for(let i=0;i<18;i++){
+        const x=65+(i*191)%Math.max(140,world.w-120),y=70+(i*149)%Math.max(170,world.h-130);
+        const w=62+(i%4)*27,h=22+(i%3)*9,ang=((i%7)-3)*.09;
+        ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+        const moss=ctx.createLinearGradient(-w,0,w,0);moss.addColorStop(0,"rgba(75,96,61,.12)");moss.addColorStop(.48,"rgba(99,121,74,.34)");moss.addColorStop(1,"rgba(45,72,47,.1)");
+        ctx.fillStyle=moss;ctx.beginPath();ctx.moveTo(-w*.92,0);ctx.bezierCurveTo(-w*.6,-h,w*.16,-h*.75,w*.94,-h*.08);ctx.bezierCurveTo(w*.6,h*.8,-w*.35,h*1.06,-w*.92,0);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(157,177,116,.1)";ctx.lineWidth=1;ctx.stroke();ctx.restore();
+      }
+
+      // Short cool highlights imply moisture without turning the place into standing water.
+      ctx.strokeStyle="rgba(164,192,177,.14)";ctx.lineWidth=1.4;ctx.lineCap="round";
+      for(let i=0;i<26;i++){
+        const x=40+(i*157)%Math.max(90,world.w-80),y=55+(i*107)%Math.max(120,world.h-100),len=9+(i%4)*5;
+        ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y+(i%2));ctx.stroke();
+      }
+
+      // Narrow muddy forest track; subdued enough not to become the visual identity by itself.
+      ctx.strokeStyle="rgba(57,47,38,.34)";ctx.lineWidth=48;ctx.lineCap="round";
+      ctx.beginPath();ctx.moveTo(world.w*.08,world.h*.92);ctx.bezierCurveTo(world.w*.27,world.h*.76,world.w*.37,world.h*.52,world.w*.53,world.h*.56);ctx.bezierCurveTo(world.w*.72,world.h*.62,world.w*.79,world.h*.31,world.w*.93,world.h*.1);ctx.stroke();
+      ctx.strokeStyle="rgba(123,112,87,.2)";ctx.lineWidth=18;ctx.stroke();
+
+      // Fine root/twig seams break large soil areas and support the wet woodland material.
+      ctx.strokeStyle="rgba(47,37,30,.34)";ctx.lineWidth=1.8;
+      for(let i=0;i<14;i++){
+        const x=world.w*(.12+((i*19)%73)/100),y=world.h*(.16+((i*29)%69)/100);
+        ctx.beginPath();ctx.moveTo(x-20,y+4);ctx.bezierCurveTo(x-5,y-6,x+7,y+7,x+25,y-2);ctx.stroke();
+      }
+      return;
+    }
+
+    const g=ctx.createLinearGradient(0,0,0,world.h);g.addColorStop(0,"#4a5a3d");g.addColorStop(1,"#33412b");ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
+    for(let i=0;i<220;i++){const x=(i*113)%world.w,y=(i*71)%world.h;ctx.fillStyle=i%2?"rgba(76,98,60,.12)":"rgba(29,49,35,.14)";ctx.beginPath();ctx.arc(x,y,2+(i%7),0,Math.PI*2);ctx.fill();}
+    ctx.strokeStyle="#6d563a";ctx.lineWidth=112;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(150,1100);ctx.bezierCurveTo(500,900,520,580,890,620);ctx.bezierCurveTo(1250,660,1330,330,1660,130);ctx.stroke();ctx.strokeStyle="rgba(177,157,118,.36)";ctx.lineWidth=58;ctx.stroke();
   }
   function drawCity(){
     const g=ctx.createLinearGradient(0,0,0,world.h);g.addColorStop(0,"#9cb2bb");g.addColorStop(.2,"#7c8f8d");g.addColorStop(1,"#59605b");ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
@@ -1416,7 +1484,19 @@
       ctx.globalAlpha=1;
     }
     else if(p.type==="bush"){ctx.fillStyle="rgba(0,0,0,.2)";ellipse(0,12,28,10);ctx.fillStyle="#3c743c";for(const q of [[-14,-2,17],[10,-8,20],[0,-20,19]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,Math.PI*2);ctx.fill();}ctx.fillStyle="rgba(212,231,166,.34)";for(const q of [[-17,-6,2],[3,-19,2],[13,-8,1.7]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,Math.PI*2);ctx.fill();}}
-    else if(p.type==="fern"){ctx.strokeStyle="#2b6a3f";ctx.lineWidth=3;for(const a of [-.85,-.45,-.1,.2,.55,.9]){ctx.beginPath();ctx.moveTo(0,16);ctx.quadraticCurveTo(a*10,-2,a*16,-24);ctx.stroke();}}
+    else if(p.type==="fern"){
+      const wet=world.id==="nesmen";
+      ctx.fillStyle=wet?"rgba(0,0,0,.18)":"rgba(0,0,0,0)";if(wet){ctx.beginPath();ctx.ellipse(0,14,18,6,0,0,Math.PI*2);ctx.fill();}
+      ctx.strokeStyle=wet?"#356d43":"#2b6a3f";ctx.lineWidth=wet?2.4:3;ctx.lineCap="round";
+      for(const a of [-.9,-.58,-.28,0,.3,.6,.92]){
+        ctx.beginPath();ctx.moveTo(0,16);ctx.quadraticCurveTo(a*9,-2,a*17,-25);ctx.stroke();
+        if(wet){
+          const ex=a*12,ey=-11;ctx.strokeStyle="rgba(116,153,92,.56)";ctx.lineWidth=1.2;
+          ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-5,ey-3);ctx.moveTo(ex,ey);ctx.lineTo(ex+5,ey-4);ctx.stroke();
+          ctx.strokeStyle="#356d43";ctx.lineWidth=2.4;
+        }
+      }
+    }
     else if(p.type==="grass"){ctx.strokeStyle="#88a864";ctx.lineWidth=2;for(const a of [-7,-3,0,4,8]){ctx.beginPath();ctx.moveTo(a,14);ctx.quadraticCurveTo(a*.4,-2,a*1.2,-18-(Math.abs(a)%3));ctx.stroke();}}
     else if(p.type==="stump"){ctx.fillStyle="rgba(0,0,0,.2)";ellipse(0,12,18,7);ctx.fill();ctx.fillStyle="#6d4d32";roundRect(ctx,-14,-8,28,24,6);ctx.fill();ctx.fillStyle="#c7a06a";ctx.beginPath();ctx.ellipse(0,-8,14,7,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#8f6d45";ctx.lineWidth=2;ctx.stroke();}
     else if(p.type==="log"){ctx.rotate(p.angle||0);ctx.fillStyle="#6a4b31";roundRect(ctx,-30,-8,60,16,7);ctx.fill();ctx.fillStyle="#5a3f2b";ctx.beginPath();ctx.arc(-24,0,7,0,Math.PI*2);ctx.arc(24,0,7,0,Math.PI*2);ctx.fill();}
@@ -2071,13 +2151,19 @@
   }
 
   function drawHotspot(h){
-    ctx.save();ctx.translate(h.x,h.y);const pulse=1+Math.sin(performance.now()*.006+h.x)*.08;ctx.scale(pulse,pulse);ctx.rotate(h.angle||0);
+    ctx.save();ctx.translate(h.x,h.y);const pulse=world.referenceScene?1:1+Math.sin(performance.now()*.006+h.x)*.08;ctx.scale(pulse,pulse);ctx.rotate(h.angle||0);
     ctx.strokeStyle=h.special?"#f2cb72":"#72e5a1";ctx.lineWidth=3;ctx.setLineDash([7,6]);
     if(h.needsFill||h.special==="hedgehog"){
       const w=h.w||82,hh=h.h||44;
       ctx.fillStyle=h.special?"rgba(242,203,114,.15)":"rgba(114,229,161,.11)";organicPitPath(ctx,w+16,hh+13,h.x+h.y,.1);ctx.fill();ctx.stroke();ctx.setLineDash([]);
       ctx.strokeStyle=h.special?"rgba(255,231,164,.72)":"rgba(177,245,205,.72)";ctx.lineWidth=1.7;organicPitPath(ctx,w*.72,hh*.58,h.x-h.y,.08);ctx.stroke();
       ctx.fillStyle=h.special?"rgba(255,222,132,.32)":"rgba(151,228,177,.25)";for(let n=0;n<6;n++){const a=n/6*Math.PI*2+(h.x%19)*.03;ctx.beginPath();ctx.arc(Math.cos(a)*w*.42,Math.sin(a)*hh*.4,1.7+n%2,0,Math.PI*2);ctx.fill();}
+      if(world.id==="nesmen"&&!h.special){
+        // Four low wooden stakes and muted cord clarify that this is a small permitted profile, not an open pit.
+        const pts=[[-w*.48,-hh*.45],[w*.48,-hh*.45],[w*.48,hh*.45],[-w*.48,hh*.45]];
+        ctx.strokeStyle="rgba(189,171,126,.66)";ctx.lineWidth=1.2;ctx.beginPath();pts.forEach((q,i)=>{const n=pts[(i+1)%pts.length];ctx.moveTo(q[0],q[1]-4);ctx.lineTo(n[0],n[1]-4);});ctx.stroke();
+        ctx.fillStyle="#6b5136";for(const q of pts){roundRect(ctx,q[0]-2,q[1]-8,4,13,1);ctx.fill();}
+      }
       if(h.special){ctx.fillStyle="#f4d37f";ctx.font="bold 15px sans-serif";ctx.textAlign="center";ctx.fillText("JEŽKOVÝ PROFIL",0,-hh/2-12);}
     }else{
       ctx.beginPath();ctx.arc(0,0,27,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=h.special?"rgba(242,203,114,.12)":"rgba(114,229,161,.1)";ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();
@@ -2289,6 +2375,7 @@
         startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
         startScaleReference(){const result=generateScaleReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startLoceniceReference(){const result=generateLoceniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
+        startNesmenReference(){const result=generateNesmenReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         spawnBoss(name="karel"){if(!world)return null;startRival(name,player.x+240,player.y-120);return world.rival;},
         hitBoss(){hitRival();return world?.rival?{active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase}:null;},
         setPlayer(x,y){player.x=x;player.y=y;return {x:player.x,y:player.y};},
