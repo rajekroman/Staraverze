@@ -8,6 +8,7 @@
 - Stromy a borovice mají prostorovější stínování a koruny překrývající postavu částečně zprůhlední.
 - Chvění a záblesk doznívají i během kopání. Systémové omezení pohybu vypne třes a celoplošné záblesky a stabilizuje déšť, zrno i varovný rám.
 - Průběžný HUD omezil nadbytečné DOM aktualizace. Audio nepřenastavuje tentýž zdroj při každém úderu.
+- Opožděná odměna za třetí přesný úder má na mobilu bezpečnou rezervu pro gesto pauzy, takže pomalejší landscape viewport nemůže nález dokončit před Escape.
 - PWA cache `runtime-1` chrání cizí cache na stejné doméně a ukládá jen známé úspěšné odpovědi. Základní statické soubory čte z verzované cache.
 - Audit, omezení ověření a další priority jsou v `PRODUCTION_AUDIT.md`. Stávající obrazová brána pokrývá Chlum, radar a kopání; starší zmínka o referencích všech pěti map neodpovídá aktuální sadě.
 

@@ -656,7 +656,8 @@
     if(good){
       shake=Math.max(shake,3);digHits++;digTimeLeft=Math.min(7,digTimeLeft+.5);digSpeed+=.28;digDir*=-1;audio.sfx("perfect");haptic([12,28,16]);$("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");setDigFeedback(`Přesně · tempo ${digHits}/3 · +0,5 s`,"good");
       const card=$("digScreen").querySelector(".dig-card");card.classList.remove("hit");void card.offsetWidth;card.classList.add("hit");
-      digZoneCenter=rand(.28,.72);updateDigZone();if(digHits>=3)digFinishDelay=.15;
+      // Leave enough time for a pause gesture on slower mobile viewports before awarding the find.
+      digZoneCenter=rand(.28,.72);updateDigZone();if(digHits>=3)digFinishDelay=.35;
     }else{
       shake=Math.max(shake,6);flash=.1;flashColor="255,105,96";digTimeLeft=Math.max(.3,digTimeLeft-.6);state.stats.misses++;state.heat=clamp(state.heat+Math.max(3,7-state.perks.quiet*1.5),0,100);audio.sfx("bad");haptic([28,35,28]);setDigFeedback("Vedle · −0,6 s · sleduj zelené pole","bad");toast("Vedle – drž rytmus!","bad",520);
     }
