@@ -432,7 +432,7 @@
   function addObstacle(x,y,w,h,o={}){world.obstacles.push({x,y,w,h,...o});}
   function addHotspot(x,y,o={}){const profile=Boolean(o.needsFill||o.special==="hedgehog");world.hotspots.push({x,y,r:profile?42:24,w:profile?74:0,h:profile?42:0,angle:profile?rand(-.22,.22):0,revealed:Boolean(o.revealed),active:true,ttl:0,...o});}
   function addItem(type,x,y,o={}){world.items.push({type,x,y,r:20,active:true,visualVariant:Math.abs(Math.round((x*17+y*31)%4)),...o});}
-  function addPatrol(type,points,o={}){const p=points[0];world.patrols.push({type,x:p.x,y:p.y,points,index:1,speed:o.speed||80,vision:o.vision||180,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,active:true,...o});}
+  function addPatrol(type,points,o={}){const p=points[0];world.patrols.push({type,x:p.x,y:p.y,points,index:1,speed:o.speed||80,vision:o.vision||180,angle:0,visualAngle:0,turnAmount:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,wheelRotation:0,distanceTravelled:0,workPhase:0,working:Boolean(o.working),active:true,...o});}
 
   function generateLevel(index){
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
@@ -477,7 +477,7 @@
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
     for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
-    addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.5});
+    addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.5,working:true,variant:0});
     addPatrol("farmer",[{x:1580,y:920},{x:1480,y:650},{x:1660,y:520}],{speed:65,vision:140,requires:"permit"});
     world.exit={x:1650,y:150,r:54,label:"Odjezd"};
   }
@@ -560,7 +560,7 @@
     addProp("farm",layout.farm[0],layout.farm[1],{scale:3.0,reference:true});
     addProp("bench",layout.bench[0],layout.bench[1],{scale:1.15,reference:true});
     addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:4.0,reference:true});
-    addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:2.5,reference:true});
+    addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:2.5,reference:true,working:true,variant:1});
     addProp("tree",layout.tree[0],layout.tree[1],{scale:2.5,variant:1,reference:true});
     addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:2.0,angle:0,reference:true});
     buildTerrainCache(world);
@@ -993,14 +993,34 @@
     for(const p of world.patrols){
       if(!p.active)continue;
       const target=p.points[p.index],dx=target.x-p.x,dy=target.y-p.y,d=Math.hypot(dx,dy)||1;
-      p.x+=dx/d*p.speed*dt;p.y+=dy/d*p.speed*dt;
-      applyHumanoidDirection(p,dx,dy);
-      p.moving=p.speed>0&&d>1;
-      p.motionRatio=p.moving?clamp(p.speed/160,0,1):0;
-      p.motionPhase=(p.motionPhase||0)+dt*(p.moving?2.8+p.motionRatio*8:0);
-      p.wheelRotation=(p.wheelRotation||0)+dt*p.speed*.018;
+      const previousX=p.x,previousY=p.y;
+      const travel=Math.min(Math.max(0,p.speed)*dt,d);
+      p.x+=dx/d*travel;p.y+=dy/d*travel;
+      const movedDistance=Math.hypot(p.x-previousX,p.y-previousY);
+      const movementAngle=Math.atan2(dy,dx);
+      const vehicle=p.type==="tractor"||p.type==="bike"||p.type==="car";
+      if(vehicle){
+        p.angle=movementAngle;
+        if(!Number.isFinite(p.visualAngle))p.visualAngle=movementAngle;
+        if(movedDistance>.02){
+          const delta=Math.atan2(Math.sin(movementAngle-p.visualAngle),Math.cos(movementAngle-p.visualAngle));
+          const maxTurn=(p.type==="tractor"?1.9:3.4)*dt;
+          p.visualAngle+=clamp(delta,-maxTurn,maxTurn);
+          p.turnAmount=approach(p.turnAmount||0,clamp(delta*2.2,-1,1),3.4*dt);
+        }else p.turnAmount=approach(p.turnAmount||0,0,4.2*dt);
+      }else applyHumanoidDirection(p,dx,dy);
+      p.moving=p.speed>0&&movedDistance>.02;
+      const actualSpeed=dt>0?movedDistance/dt:0;
+      p.motionRatio=p.moving?clamp(actualSpeed/160,0,1):0;
+      p.motionPhase=(p.motionPhase||0)+movedDistance*.085;
+      p.distanceTravelled=(p.distanceTravelled||0)+movedDistance;
+      if(vehicle){
+        const wheelRadius=(p.type==="tractor"?20:p.type==="bike"?9:6)*(p.scale||1);
+        p.wheelRotation=(p.wheelRotation||0)+(wheelRadius>0?movedDistance/wheelRadius:0);
+      }
+      if(p.working&&p.moving)p.workPhase=(p.workPhase||0)+movedDistance*.075;
       if(d<12)p.index=(p.index+1)%p.points.length;
-      if(p.type==="tractor"||p.type==="bike"||p.type==="car"){const rr=p.type==="tractor"?48*(p.scale||1):25*(p.scale||1);if(Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
+      if(vehicle){const rr=p.type==="tractor"?48*(p.scale||1):25*(p.scale||1);if(Math.hypot(p.x-player.x,p.y-player.y)<rr+player.r)caught(p.type==="tractor"?"Traktor tě srazil":"Pozor na provoz");continue;}
       let suspicious=true;if(p.requires==="permit"&&world.runtime.permit)suspicious=false;if(p.type==="ranger"&&world.runtime.open<=0)suspicious=false;if(p.type==="police"&&world.runtime.papers>=3&&!world.rival?.active)suspicious=false;
       p.seesPlayer=false;
       if(!suspicious||!p.vision)continue;
@@ -1484,51 +1504,79 @@
   function drawPatrol(p){
     if(p.vision)drawVisionCone(p,p.vision,p.halfAngle||.57,p.seesPlayer,false);
     if(p.type==="tractor"){
-      const now=performance.now(),spin=p.wheelRotation||0,sc=p.scale||1.25,motion=p.motionRatio||0,bounce=Math.sin(p.motionPhase||0)*(.18+motion*1.05);
-      ctx.save();ctx.translate(p.x,p.y+bounce);ctx.rotate(p.angle);ctx.scale(sc,sc);
+      const spin=p.wheelRotation||0,sc=p.scale||1.25,motion=p.motionRatio||0;
+      const visualAngle=Number.isFinite(p.visualAngle)?p.visualAngle:p.angle;
+      const suspension=motion>.02?Math.sin(p.motionPhase||0)*motion*1.15:0;
+      const pitch=motion>.02?Math.sin((p.motionPhase||0)*.47)*motion*.012:0;
+      const workOsc=p.working&&p.moving?Math.sin(p.workPhase||0)*1.8:0;
+      const variant=p.variant||0;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(visualAngle);ctx.scale(sc,sc);
 
-      // Short dark ruts keep the machine visually tied to the Chlum soil without changing collision geometry.
+      // Ground contact stays fixed; only the sprung tractor body moves vertically.
       ctx.save();ctx.translate(-39,29);ctx.strokeStyle="rgba(49,34,24,.3)";ctx.lineWidth=3.2;ctx.lineCap="round";
       for(const y of [-10,10]){ctx.beginPath();ctx.moveTo(-34,y);ctx.lineTo(22,y);ctx.stroke();for(let x=-28;x<20;x+=12){ctx.beginPath();ctx.moveTo(x-4,y-3);ctx.lineTo(x+4,y+3);ctx.stroke();}}
       ctx.restore();
+      ctx.fillStyle="rgba(0,0,0,.29)";ctx.beginPath();ctx.ellipse(-2,28,57,18,0,0,Math.PI*2);ctx.fill();
 
-      ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(-2,27,54,18,0,0,Math.PI*2);ctx.fill();
-
-      // Rear wheel is deliberately dominant, matching the readable silhouette of a compact Czech field tractor.
       const wheel=(x,y,r,hub,phase)=>{
-        ctx.fillStyle="#181b19";ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle="#343834";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,r-3,0,Math.PI*2);ctx.stroke();
-        ctx.fillStyle="#a85736";ctx.beginPath();ctx.arc(x,y,hub+3,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle="#c58a61";ctx.beginPath();ctx.arc(x,y,hub,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#171a18";ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="#40413b";ctx.lineWidth=3;ctx.beginPath();ctx.arc(x,y,r-3,0,Math.PI*2);ctx.stroke();
+        ctx.strokeStyle="rgba(183,173,144,.22)";ctx.lineWidth=1.4;
+        for(let n=0;n<10;n++){const a=phase+n*Math.PI/5;ctx.beginPath();ctx.arc(x,y,r-1,a,a+.19);ctx.stroke();}
+        ctx.fillStyle="#9b4c32";ctx.beginPath();ctx.arc(x,y,hub+3,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle="#c18a63";ctx.beginPath();ctx.arc(x,y,hub,0,Math.PI*2);ctx.fill();
         ctx.strokeStyle="rgba(36,35,31,.76)";ctx.lineWidth=2;
         for(let n=0;n<6;n++){const a=phase+n*Math.PI/3;ctx.beginPath();ctx.moveTo(x+Math.cos(a)*hub,y+Math.sin(a)*hub);ctx.lineTo(x+Math.cos(a)*(r-5),y+Math.sin(a)*(r-5));ctx.stroke();}
       };
-      wheel(-31,22,20,6,spin);wheel(29,23,14,5,-spin*1.28);
+      wheel(-31,22,20,6,spin);wheel(29,23,14,5,-spin*(20/14));
 
+      // Rear three-point linkage and cultivator are visual only; collision geometry is unchanged.
+      if(p.working){
+        ctx.strokeStyle="#4a4035";ctx.lineWidth=4;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-45,7);ctx.lineTo(-61,13+workOsc*.25);ctx.moveTo(-43,13);ctx.lineTo(-61,13+workOsc*.25);ctx.stroke();
+        ctx.strokeStyle="#6a5948";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-62,13+workOsc*.25);ctx.lineTo(-81,16+workOsc*.35);ctx.stroke();
+        ctx.strokeStyle="#403a32";ctx.lineWidth=2.5;for(const x of [-78,-70,-62]){ctx.beginPath();ctx.moveTo(x,15+workOsc*.35);ctx.lineTo(x-4,27);ctx.stroke();}
+        if(p.moving&&motion>.05){
+          const spray=.45+.55*Math.sin((p.workPhase||0)*1.35);
+          ctx.fillStyle=`rgba(174,126,77,${.1+spray*.11})`;
+          for(const x of [-88,-76,-64]){ctx.beginPath();ctx.ellipse(x,29+Math.sin((p.workPhase||0)+x)*1.5,2.2+spray*2,1.2,0,0,Math.PI*2);ctx.fill();}
+        }
+      }
+
+      ctx.save();ctx.translate(0,suspension);ctx.rotate(pitch);
       ctx.fillStyle="#983c28";roundRect(ctx,-49,-19,79,34,8);ctx.fill();
-      const hood=ctx.createLinearGradient(-48,-16,17,8);hood.addColorStop(0,"#c45a35");hood.addColorStop(.55,"#a9442d");hood.addColorStop(1,"#7f3024");
-      ctx.fillStyle=hood;roundRect(ctx,-48,-17,43,18,5);ctx.fill();
+      const hood=ctx.createLinearGradient(-48,-16,17,8);hood.addColorStop(0,variant===1?"#b94d31":"#c45a35");hood.addColorStop(.55,"#a9442d");hood.addColorStop(1,"#7f3024");
+      ctx.fillStyle=hood;roundRect(ctx,-48,-17,variant===1?47:43,18,variant===1?7:5);ctx.fill();
       ctx.strokeStyle="rgba(247,186,130,.35)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-42,-12);ctx.lineTo(-10,-12);ctx.stroke();
       ctx.fillStyle="#6d2b22";for(let x=-40;x<-12;x+=7)ctx.fillRect(x,-6,4,2);
+      if(variant===1){ctx.strokeStyle="rgba(60,35,28,.58)";ctx.lineWidth=1.4;for(let y=-13;y<-2;y+=4){ctx.beginPath();ctx.moveTo(-45,y);ctx.lineTo(-39,y);ctx.stroke();}}
+
+      // Fenders and panel seams make the body read as metal volume, not a flat icon.
+      ctx.fillStyle="#7d3226";ctx.beginPath();ctx.arc(-31,20,24,Math.PI,Math.PI*2);ctx.lineTo(-7,20);ctx.lineTo(-55,20);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#8d3828";ctx.beginPath();ctx.arc(29,22,17,Math.PI,Math.PI*2);ctx.lineTo(46,22);ctx.lineTo(12,22);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="rgba(238,158,108,.25)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-46,-1);ctx.lineTo(18,-1);ctx.stroke();
 
       ctx.fillStyle="#743124";roundRect(ctx,-12,-27,38,38,7);ctx.fill();
       ctx.fillStyle="#263f48";roundRect(ctx,-8,-43,32,29,5);ctx.fill();
       const glass=ctx.createLinearGradient(-7,-41,20,-18);glass.addColorStop(0,"rgba(224,241,239,.5)");glass.addColorStop(1,"rgba(93,132,141,.35)");
       ctx.fillStyle=glass;roundRect(ctx,-5,-39,12,18,2);ctx.fill();roundRect(ctx,10,-39,10,18,2);ctx.fill();
       ctx.strokeStyle="rgba(12,28,31,.7)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(8,-40);ctx.lineTo(8,-19);ctx.stroke();
+      ctx.fillStyle="rgba(232,214,178,.16)";ctx.fillRect(-4,-38,3,15);
 
       ctx.fillStyle="#2a2b28";roundRect(ctx,24,-38,5,31,2);ctx.fill();
       ctx.fillStyle="#343530";ctx.beginPath();ctx.ellipse(26,-40,5,2.4,0,0,Math.PI*2);ctx.fill();
-      const smoke=Math.max(0,Math.sin(now*.004+p.x*.02));
-      ctx.fillStyle=`rgba(82,82,76,${.05+smoke*.07})`;ctx.beginPath();ctx.arc(29,-49-smoke*4,5+smoke*2,0,Math.PI*2);ctx.fill();
+      if(p.moving&&motion>.04){
+        const smoke=.25+.75*(.5+.5*Math.sin((p.motionPhase||0)*.7));
+        ctx.fillStyle=`rgba(82,82,76,${.035+smoke*.075})`;ctx.beginPath();ctx.arc(29,-49-smoke*3.5,4+smoke*2,0,Math.PI*2);ctx.fill();
+      }
 
       ctx.fillStyle="#ead595";ctx.beginPath();ctx.arc(34,-4,5.2,0,Math.PI*2);ctx.fill();
       ctx.fillStyle="rgba(255,239,174,.18)";ctx.beginPath();ctx.arc(37,-4,12,0,Math.PI*2);ctx.fill();
-
-      if(motion>.05){const spray=.45+.55*Math.sin((p.motionPhase||0)*1.7);ctx.fillStyle=`rgba(174,126,77,${.12+spray*.1})`;for(const x of [-42,-28,38]){ctx.beginPath();ctx.ellipse(x,30+Math.sin((p.motionPhase||0)+x)*2,2+spray*2,1.2,0,0,Math.PI*2);ctx.fill();}}
-
       ctx.strokeStyle="#6f2a20";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-5,11);ctx.lineTo(20,11);ctx.stroke();
       ctx.fillStyle="#d8c09a";roundRect(ctx,-1,-4,11,8,2);ctx.fill();
+
+      // Wear is geometry/material detail only; no random frame-to-frame noise.
+      ctx.strokeStyle="rgba(69,42,31,.3)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-38,6);ctx.lineTo(-20,4);ctx.moveTo(4,7);ctx.lineTo(17,5);ctx.stroke();
+      ctx.restore();
       ctx.restore();return;
     }
     if(p.type==="car"||p.type==="bike"){
@@ -1809,7 +1857,19 @@
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
-        patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio})):[];},
+        setPatrolMotion(type="tractor",options={}){
+          if(!world)return null;
+          const p=world.patrols.find(item=>item.active&&item.type===type);if(!p)return null;
+          if(Number.isFinite(options.x))p.x=options.x;if(Number.isFinite(options.y))p.y=options.y;
+          if(Array.isArray(options.points)&&options.points.length){p.points=options.points.map(point=>({x:Number(point.x),y:Number(point.y)}));p.index=clamp(Number.isFinite(options.index)?Math.round(options.index):1,0,p.points.length-1);}
+          else if(Number.isFinite(options.index))p.index=clamp(Math.round(options.index),0,p.points.length-1);
+          if(Number.isFinite(options.speed))p.speed=Math.max(0,options.speed);
+          if(Number.isFinite(options.angle)){p.angle=options.angle;p.visualAngle=options.angle;}
+          if(typeof options.working==="boolean")p.working=options.working;
+          if(options.resetMotion){p.motionPhase=0;p.workPhase=0;p.wheelRotation=0;p.distanceTravelled=0;p.motionRatio=0;p.moving=false;p.turnAmount=0;}
+          return {type:p.type,x:p.x,y:p.y,speed:p.speed,index:p.index,working:p.working,angle:p.angle,visualAngle:p.visualAngle,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled};
+        },
+        patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
         snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
