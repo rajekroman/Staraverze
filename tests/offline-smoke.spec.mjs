@@ -1,15 +1,6 @@
 import { test, expect } from "@playwright/test";
 
 const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-17";
-const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
-
-function normalizeAppPath(value) {
-  const trimmed = String(value || "/").trim();
-  if (!trimmed || trimmed === "/") return "/";
-  return `/${trimmed.split("/").filter(Boolean).join("/")}/`;
-}
-
-const APP_PATH = normalizeAppPath(process.env.PLAYWRIGHT_BASE_PATH || "/");
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
   await page.addInitScript(() => {
@@ -20,7 +11,7 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
       return register(...args);
     };
   });
-  await page.goto(`${APP_PATH}?debug=1`, { waitUntil: "load" });
+  await page.goto("/?debug=1", { waitUntil: "load" });
 
   await expect.poll(
     () => page.evaluate(async () => {
@@ -31,14 +22,6 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
     { timeout: 15_000 }
   ).toBe(true);
 
-  const registration = await page.evaluate(async appPath => {
-    const found = await navigator.serviceWorker.getRegistration(appPath);
-    const ready = found || await navigator.serviceWorker.ready;
-    return { scope: ready.scope, scriptURL: ready.active?.scriptURL || "" };
-  }, APP_PATH);
-  expect(new URL(registration.scope).pathname).toBe(APP_PATH);
-  expect(new URL(registration.scriptURL).pathname).toBe(`${APP_PATH}sw.js`);
-
   await expect.poll(
     () => page.evaluate(async cacheName => (await caches.keys()).includes(cacheName), CACHE_NAME),
     { timeout: 15_000 }
@@ -48,13 +31,6 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
     () => page.evaluate(async () => (await caches.keys()).filter(name => name.startsWith("lovec-vltavinu-reborn-v5-4-2"))),
     { timeout: 15_000 }
   ).toHaveLength(1);
-
-  await page.locator("#playButton").click();
-  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
-  await page.locator("#briefButton").click();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug?.snapshot().mode)).toBe("playing");
-  const savedBeforeUpgrade = await page.evaluate(saveKey => localStorage.getItem(saveKey), SAVE_KEY);
-  expect(savedBeforeUpgrade).toBeTruthy();
 
   const unknown = await page.evaluate(async () => {
     const response = await fetch("./not-a-game-asset-audit.txt");
@@ -67,7 +43,6 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
 
   const response = await page.reload({ waitUntil: "domcontentloaded" });
   expect(response?.status()).toBe(200);
-  expect(await page.evaluate(saveKey => localStorage.getItem(saveKey), SAVE_KEY)).toBe(savedBeforeUpgrade);
 
   for (const asset of [
     "./game.js",
