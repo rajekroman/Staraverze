@@ -381,7 +381,7 @@
   function showOnly(screen){
     if(screen&&document.activeElement instanceof HTMLElement&&document.activeElement!==document.body)lastFocused=document.activeElement;
     Object.values(screens).forEach(s=>s.classList.remove("visible"));
-    if(screen){screen.classList.add("visible");requestAnimationFrame(()=>{const target=screen.querySelector("button:not([disabled]),[href],input,select,textarea");target?.focus();});}
+    if(screen){screen.classList.add("visible");requestAnimationFrame(()=>{const target=screen.querySelector("button.primary-button:not([disabled]),button:not(.icon-button):not([disabled]),[href],input,select,textarea");target?.focus();});}
     else if(lastFocused?.isConnected)requestAnimationFrame(()=>lastFocused.focus());
   }
   function setPlaying(on){if(!on)resetControls();hud.classList.toggle("hidden",!on);controls.classList.toggle("hidden",!on||!isTouch);app.classList.toggle("playing",on);}
