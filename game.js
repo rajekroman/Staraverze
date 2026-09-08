@@ -355,7 +355,11 @@
   let theftAlertUntil = 0;
   let theftAlertShown = false;
   let restoredWorld = false;
-  let lastFocused=null;
+  let activeScreen=null;
+  const focusOrigins=new WeakMap();
+  const screenParents=new WeakMap();
+  const modalScreens=new Set(Object.values(screens).filter(screen=>screen!==screens.title));
+  const FOCUSABLE='button:not([disabled]),[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
   function save() {
     const payload={version:APP_VERSION,state,world:world?JSON.parse(JSON.stringify(world)):null,player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose}};
@@ -382,13 +386,57 @@
   function getRecords(){try{const rows=JSON.parse(storage.get(RECORD_KEY)||"[]");return Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object").slice(0,10):[];}catch{return[];}}
   function addRecord(score,title){const rows=getRecords();rows.push({score,title,stones:state.stones.length,date:new Date().toISOString()});rows.sort((a,b)=>b.score-a.score);storage.set(RECORD_KEY,JSON.stringify(rows.slice(0,10)));}
 
-  function showOnly(screen){
-    if(screen&&document.activeElement instanceof HTMLElement&&document.activeElement!==document.body)lastFocused=document.activeElement;
-    Object.values(screens).forEach(s=>s.classList.remove("visible"));
-    if(screen){screen.classList.add("visible");requestAnimationFrame(()=>{const target=screen.querySelector("button.primary-button:not([disabled]),button:not(.icon-button):not([disabled]),[href],input,select,textarea");target?.focus();});}
-    else if(lastFocused?.isConnected)requestAnimationFrame(()=>lastFocused.focus());
+  function focusableElements(screen){return [...screen.querySelectorAll(FOCUSABLE)].filter(el=>el instanceof HTMLElement&&!el.hasAttribute("disabled")&&el.getClientRects().length>0);}
+  function focusElement(element){if(!(element instanceof HTMLElement)||!element.isConnected)return false;try{element.focus({preventScroll:true});}catch{element.focus();}return document.activeElement===element;}
+  function focusInitial(screen){
+    const preferred=screen.querySelector("[data-autofocus]")||screen.querySelector("button.primary-button:not([disabled]),a.primary-button:not([aria-disabled='true'])")||focusableElements(screen)[0]||screen;
+    focusElement(preferred);
   }
-  function setPlaying(on){if(!on)resetControls();hud.classList.toggle("hidden",!on);controls.classList.toggle("hidden",!on||!isTouch);app.classList.toggle("playing",on);}
+  function syncGameplayAccessibility(blocked=Boolean(activeScreen)){
+    for(const node of [canvas,hud,controls]){
+      const inaccessible=blocked||(node!==canvas&&node.classList.contains("hidden"));
+      node.toggleAttribute("inert",inaccessible);
+      if(inaccessible)node.setAttribute("aria-hidden","true");else node.removeAttribute("aria-hidden");
+    }
+  }
+  function showOnly(screen,{capture=true,focus=true,focusTarget=null}={}){
+    const previous=activeScreen;
+    const origin=document.activeElement;
+    if(screen&&screen!==previous&&capture){if(origin instanceof HTMLElement&&origin!==document.body&&origin.isConnected)focusOrigins.set(screen,origin);else focusOrigins.delete(screen);}
+    Object.values(screens).forEach(candidate=>{
+      const visible=candidate===screen;
+      candidate.classList.toggle("visible",visible);
+      candidate.toggleAttribute("inert",!visible);
+      if(visible)candidate.removeAttribute("aria-hidden");else candidate.setAttribute("aria-hidden","true");
+    });
+    activeScreen=screen||null;
+    syncGameplayAccessibility(Boolean(activeScreen));
+    if(screen&&focus)requestAnimationFrame(()=>{
+      const target=focusTarget instanceof HTMLElement&&screen.contains(focusTarget)&&focusTarget.isConnected&&focusTarget.getClientRects().length>0?focusTarget:null;
+      if(!target||!focusElement(target))focusInitial(screen);
+    });
+    else if(!screen&&previous)requestAnimationFrame(()=>{
+      const target=focusOrigins.get(previous);
+      if(!(target instanceof HTMLElement)||!target.isConnected||target.getClientRects().length===0||target.closest("[inert]"))focusElement(canvas);
+      else focusElement(target);
+    });
+  }
+  function openAuxiliary(screen){screenParents.set(screen,activeScreen||screens.title);showOnly(screen);}
+  function closeAuxiliary(screen){
+    const parent=screenParents.get(screen)||screens.title;
+    const origin=focusOrigins.get(screen);
+    showOnly(parent,{capture:false,focusTarget:origin});
+  }
+  function trapModalFocus(event){
+    if(event.key!=="Tab"||!modalScreens.has(activeScreen))return false;
+    const items=focusableElements(activeScreen);
+    if(!items.length){event.preventDefault();focusElement(activeScreen);return true;}
+    const first=items[0],lastItem=items[items.length-1],current=document.activeElement;
+    if(event.shiftKey&&(current===first||!activeScreen.contains(current))){event.preventDefault();focusElement(lastItem);return true;}
+    if(!event.shiftKey&&(current===lastItem||!activeScreen.contains(current))){event.preventDefault();focusElement(first);return true;}
+    return false;
+  }
+  function setPlaying(on){if(!on)resetControls();hud.classList.toggle("hidden",!on);controls.classList.toggle("hidden",!on||!isTouch);app.classList.toggle("playing",on);syncGameplayAccessibility(Boolean(activeScreen));}
   function haptic(pattern=12){try{navigator.vibrate?.(pattern);}catch{}}
   function toast(text,type="",duration=1500){clearTimeout(toastTimer);ui.toast.textContent=text;ui.toast.className=`toast show ${type}`;toastTimer=setTimeout(()=>ui.toast.className="toast",duration);}
   function showTheftAlert(){
@@ -547,7 +595,6 @@
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
-
   function generateScaleReference(){
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
     state=freshState();state.levelIndex=0;
@@ -692,7 +739,7 @@
     showDialog(npc.name,npc.avatar,"Drž se úkolu a sleduj okolí.");
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
-  function closeDialog(){screens.dialog.classList.remove("visible");dialogueCallback?.();dialogueCallback=null;mode="playing";setPlaying(true);updateHUD(true);}
+  function closeDialog(){dialogueCallback?.();dialogueCallback=null;mode="playing";setPlaying(true);showOnly(null);updateHUD(true);}
 
   function configureDigScreen(kind,target){
     const filling=kind==="fill";
@@ -770,14 +817,14 @@
   function failDig(){
     if(mode!=="dig")return;
     const filling=digKind==="fill";
-    currentDig=null;digHolding=false;screens.dig.classList.remove("visible");mode="playing";setPlaying(true);
+    currentDig=null;digHolding=false;mode="playing";setPlaying(true);showOnly(null);
     if(!filling)state.heat=clamp(state.heat+4,0,100);
     audio.sfx("bad");
     toast(filling?"Zahrabání se nepovedlo – zkus to znovu":"Rytmus se rozpadl – zkus profil znovu","bad",1100);
     findNearest();updateHUD(true);
   }
   function finishDig(){
-    if(mode!=="dig"||digKind!=="dig"||!currentDig||!currentDig.active)return;const h=currentDig;h.active=false;state.stats.digs++;screens.dig.classList.remove("visible");mode="playing";setPlaying(true);
+    if(mode!=="dig"||digKind!=="dig"||!currentDig||!currentDig.active)return;const h=currentDig;h.active=false;state.stats.digs++;mode="playing";setPlaying(true);showOnly(null);
     if(h.needsFill){
       world.runtime.dug++;
       world.runtime.open=(world.runtime.open||0)+1;
@@ -831,7 +878,7 @@
     }
   }
   function resolveSample(choice){
-    if(!currentSample)return;const correct=choice===currentSample.sample.real;currentSample.active=!correct;currentSample.hidden=!correct;world.runtime.identified++;screens.identify.classList.remove("visible");mode="playing";setPlaying(true);
+    if(!currentSample)return;const correct=choice===currentSample.sample.real;currentSample.active=!correct;currentSample.hidden=!correct;world.runtime.identified++;mode="playing";setPlaying(true);showOnly(null);
     if(correct){world.runtime.correct++;state.stats.correct++;boostCombo();state.score+=220*state.combo;audio.sfx("good");toast("Správně","good");if(currentSample.sample.real){world.runtime.real++;addStone(makeStone("Ločenice",Math.random()<.2?"good":"common",true,state.perks.eye*3),currentSample.x,currentSample.y);}}
     else{state.heat=clamp(state.heat+12-state.perks.quiet*2,0,100);breakCombo();audio.sfx("bad");toast("Špatné určení · vzorek zůstává na místě. Znovu ho vyhledej radarem.","bad",2600);}
     currentSample=null;updateHUD(true);save();
@@ -851,8 +898,7 @@
     boostCombo();
     audio.sfx("impactWet");
     burst(hole.x,hole.y,"#9a744c",12);
-    screens.dig.classList.remove("visible");
-    mode="playing";setPlaying(true);
+    mode="playing";setPlaying(true);showOnly(null);
     currentDig=null;digHolding=false;nearest=null;
     toast("Profil zahrabán","good");
     findNearest();updateHUD(true);save();
@@ -902,7 +948,7 @@
     else if(jury>=17500){title="Výstavní uznání";text="Porota ocenila kvalitu kamenů i cestu napříč jihočeskými lokalitami.";}
     state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");
     $("resultTitle").textContent=title;$("resultScore").textContent=jury.toLocaleString("cs-CZ");$("resultText").textContent=text;
-    $("resultStats").innerHTML=`<div><span>KAMENY</span><strong>${state.stones.length}</strong></div><div><span>VZÁCNÉ</span><strong>${state.stats.rare}</strong></div><div><span>DOPADENÍ</span><strong>${state.caught}</strong></div>`;showOnly(screens.result);mode="result";
+    $("resultStats").innerHTML=`<div><span>KAMENY</span><strong>${state.stones.length}</strong></div><div><span>VZÁCNÉ</span><strong>${state.stats.rare}</strong></div><div><span>DOPADENÍ</span><strong>${state.caught}</strong></div>`;mode="result";showOnly(screens.result);
   }
 
   function caught(reason){
@@ -939,7 +985,7 @@
     }
   }
 
-  function update(dt){
+  function update(dt,elapsed=dt){
     if(document.hidden)return;
     audio.update(dt,mode==="playing");
     if(mode==="playing"||mode==="dig"){
@@ -973,7 +1019,7 @@
       if(digTimeLeft<=0)failDig();return;
     }
     if(mode!=="playing"||!world)return;
-    if(world.runtime.bossDelay>0){world.runtime.bossDelay=Math.max(0,world.runtime.bossDelay-dt);if(world.runtime.bossDelay===0&&!world.runtime.bossStarted)startRival("franta",1120,300);}
+    if(world.runtime.bossDelay>0){world.runtime.bossDelay=Math.max(0,world.runtime.bossDelay-elapsed);if(world.runtime.bossDelay===0&&!world.runtime.bossStarted)startRival("franta",1120,300);}
     scanCooldown=Math.max(0,scanCooldown-dt);player.invuln=Math.max(0,player.invuln-dt);dangerActive=false;dangerSource="";dangerRate=0;dangerCatchAfter=Infinity;bossIntroTimer=Math.max(0,bossIntroTimer-dt);if(bossIntroTimer<=0){ui.bossIntro?.classList.remove("show");ui.bossIntro?.classList.add("hidden");}
     if(theftAlertShown&&performance.now()>=theftAlertUntil)hideTheftAlert();dangerBeatTimer=Math.max(0,dangerBeatTimer-dt);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0&&state.combo>1){state.combo--;state.comboTimer=5;}
     if(theftAlertShown){
@@ -1215,9 +1261,9 @@
     else if(p.type==="fallenpine"){ctx.rotate(p.angle||0);ctx.fillStyle="#8b5737";roundRect(ctx,-50,-5,100,10,5);ctx.fill();ctx.strokeStyle="#385b3f";ctx.lineWidth=3;for(let x=-35;x<45;x+=16){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x-8,-15);ctx.moveTo(x+5,0);ctx.lineTo(x+12,13);ctx.stroke();}}
     else if(p.type==="trackscar"){ctx.rotate(p.angle||0);ctx.strokeStyle="rgba(68,48,34,.55)";ctx.lineWidth=5;for(const y of [-10,10]){ctx.beginPath();ctx.moveTo(-55,y);ctx.lineTo(55,y);ctx.stroke();for(let x=-48;x<50;x+=14){ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+7,y+4);ctx.stroke();}}}
     else if(p.type==="excavator"){ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.25)";ctx.beginPath();ctx.ellipse(0,22,58,16,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#36322d";roundRect(ctx,-42,8,74,18,8);ctx.fill();ctx.strokeStyle="#5a554d";ctx.lineWidth=4;for(let x=-34;x<28;x+=14){ctx.beginPath();ctx.moveTo(x,10);ctx.lineTo(x+8,24);ctx.stroke();}ctx.fillStyle="#d6a52e";roundRect(ctx,-26,-18,48,32,7);ctx.fill();ctx.fillStyle="#35434a";roundRect(ctx,-14,-34,28,22,4);ctx.fill();ctx.fillStyle="rgba(194,225,235,.35)";ctx.fillRect(-10,-31,11,12);ctx.strokeStyle="#d6a52e";ctx.lineWidth=10;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(20,-12);ctx.lineTo(50,-40);ctx.lineTo(78,-18);ctx.stroke();ctx.fillStyle="#6e5432";ctx.beginPath();ctx.moveTo(70,-25);ctx.lineTo(91,-16);ctx.lineTo(75,-3);ctx.closePath();ctx.fill();}
+    else if(p.type==="bench"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,18,50,10,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#3d413e";ctx.lineWidth=5;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-34,3);ctx.lineTo(-30,24);ctx.moveTo(34,3);ctx.lineTo(30,24);ctx.moveTo(-36,-13);ctx.lineTo(-36,8);ctx.moveTo(36,-13);ctx.lineTo(36,8);ctx.stroke();ctx.fillStyle="#8b6543";roundRect(ctx,-49,-8,98,15,4);ctx.fill();roundRect(ctx,-47,-32,94,14,4);ctx.fill();ctx.fillStyle="rgba(238,203,151,.24)";ctx.fillRect(-43,-29,86,3);ctx.fillRect(-45,-5,90,3);ctx.strokeStyle="#5b3d2b";ctx.lineWidth=1.4;for(const x of [-24,0,24]){ctx.beginPath();ctx.moveTo(x,-31);ctx.lineTo(x,-19);ctx.moveTo(x,-7);ctx.lineTo(x,5);ctx.stroke();}}
     else if(p.type==="plazatree"){ctx.fillStyle="rgba(0,0,0,.16)";ctx.beginPath();ctx.ellipse(0,15,24,8,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#6a5140";ctx.fillRect(-4,-32,8,50);ctx.fillStyle="#507044";for(const q of [[-12,-35,18],[12,-38,20],[0,-55,22]]){ctx.beginPath();ctx.arc(q[0],q[1],q[2],0,Math.PI*2);ctx.fill();}}
     else if(p.type==="plaza"){ctx.fillStyle="rgba(232,233,228,.5)";roundRect(ctx,-190,-70,380,140,16);ctx.fill();for(let i=-160;i<=160;i+=40){ctx.strokeStyle="rgba(110,115,112,.18)";ctx.beginPath();ctx.moveTo(i,-70);ctx.lineTo(i,70);ctx.stroke();}for(let i=0;i<8;i++){const x=-140+i*40;ctx.fillStyle=i%2?"#48535c":"#7a6a5d";ctx.beginPath();ctx.arc(x,5+(i%3)*10,5,0,Math.PI*2);ctx.fill();}}
-    else if(p.type==="bench"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,18,50,10,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#3d413e";ctx.lineWidth=5;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(-34,3);ctx.lineTo(-30,24);ctx.moveTo(34,3);ctx.lineTo(30,24);ctx.moveTo(-36,-13);ctx.lineTo(-36,8);ctx.moveTo(36,-13);ctx.lineTo(36,8);ctx.stroke();ctx.fillStyle="#8b6543";roundRect(ctx,-49,-8,98,15,4);ctx.fill();roundRect(ctx,-47,-32,94,14,4);ctx.fill();ctx.fillStyle="rgba(238,203,151,.24)";ctx.fillRect(-43,-29,86,3);ctx.fillRect(-45,-5,90,3);ctx.strokeStyle="#5b3d2b";ctx.lineWidth=1.4;for(const x of [-24,0,24]){ctx.beginPath();ctx.moveTo(x,-31);ctx.lineTo(x,-19);ctx.moveTo(x,-7);ctx.lineTo(x,5);ctx.stroke();}}
     else if(p.type==="npc")drawActor(0,0,p.role==="owner"?"ranger":"farmer",0,p.name,true,{pose:"front",facing:1,moving:false,motionRatio:0,motionPhase:0});
     else if(p.type==="pit"){const r=p.r||28;drawExcavationProfile(r*2,r*1.1,p.x+p.y,{lip:"#a27a4f",wall:"#775035",deep:"#251b14",line:"#d0ad7d"});}
     else if(p.type==="sign"){ctx.fillStyle="rgba(0,0,0,.18)";ellipse(0,20,18,6);ctx.fill();ctx.fillStyle="#744e2f";ctx.fillRect(-4,-30,8,50);ctx.fillStyle="#d5c49d";roundRect(ctx,-42,-52,84,28,5);ctx.fill();ctx.strokeStyle="rgba(255,240,190,.5)";ctx.stroke();ctx.fillStyle="#3f3427";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText(p.text||"",0,-34);}
@@ -1658,57 +1704,79 @@
     ctx.closePath();
   }
 
-  function loop(now){const dt=Math.min(.035,(now-last)/1000||.016);last=now;update(dt);render();requestAnimationFrame(loop);}
+  function loop(now){const elapsed=(now-last)/1000||.016,dt=Math.min(.035,elapsed);last=now;update(dt,elapsed);render();requestAnimationFrame(loop);}
 
   function setupControls(){
-    const zone=$("moveZone"),stick=$("stick"),action=$("actionButton");let pid=null;const keys=new Set();
+    const zone=$("moveZone"),stick=$("stick"),action=$("actionButton");let pid=null,actionPid=null;const keys=new Set();
     const syncKeyboard=()=>{input.x=(keys.has("KeyD")||keys.has("ArrowRight")?1:0)-(keys.has("KeyA")||keys.has("ArrowLeft")?1:0);input.y=(keys.has("KeyS")||keys.has("ArrowDown")?1:0)-(keys.has("KeyW")||keys.has("ArrowUp")?1:0);};
-    resetControls=()=>{if(pid!==null&&zone.hasPointerCapture?.(pid)){try{zone.releasePointerCapture(pid);}catch{}}pid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");};
+    const releaseCapture=(element,id)=>{if(id!==null&&element.hasPointerCapture?.(id)){try{element.releasePointerCapture(id);}catch{}}};
+    const cancelFillHold=()=>{if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}};
+    resetControls=()=>{releaseCapture(zone,pid);releaseCapture(action,actionPid);pid=null;actionPid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");cancelFillHold();};
     const move=e=>{const r=zone.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=r.width*.33,len=Math.hypot(dx,dy)||1,s=Math.min(1,max/len),x=dx*s,y=dy*s;input.x=x/max;input.y=y/max;stick.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px))`;};
-    zone.addEventListener("pointerdown",e=>{pid=e.pointerId;zone.setPointerCapture(pid);move(e);});zone.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e);});
-    const end=e=>{if(e.pointerId!==pid)return;pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";};zone.addEventListener("pointerup",end);zone.addEventListener("pointercancel",end);
-    action.addEventListener("pointerdown",e=>{e.preventDefault();input.pressed=true;action.classList.add("active");haptic(8);performAction();});const stop=()=>{input.pressed=false;action.classList.remove("active");};action.addEventListener("pointerup",stop);action.addEventListener("pointercancel",stop);
+    zone.addEventListener("pointerdown",e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;zone.setPointerCapture?.(pid);move(e);});
+    zone.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e);});
+    const endMove=e=>{if(e.pointerId!==pid)return;releaseCapture(zone,pid);pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";};
+    zone.addEventListener("pointerup",endMove);zone.addEventListener("pointercancel",endMove);zone.addEventListener("lostpointercapture",e=>{if(e.pointerId===pid){pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";}});
+    action.addEventListener("pointerdown",e=>{if(actionPid!==null)return;e.preventDefault();actionPid=e.pointerId;action.setPointerCapture?.(actionPid);input.pressed=true;action.classList.add("active");haptic(8);performAction();});
+    const stopAction=e=>{if(e.pointerId!==actionPid)return;releaseCapture(action,actionPid);actionPid=null;input.pressed=false;action.classList.remove("active");};
+    action.addEventListener("pointerup",stopAction);action.addEventListener("pointercancel",stopAction);action.addEventListener("lostpointercapture",e=>{if(e.pointerId===actionPid){actionPid=null;input.pressed=false;action.classList.remove("active");}});
     addEventListener("keydown",e=>{
-      if(e.code==="Escape"&&!e.repeat){if(mode==="pause")resume();else pause();return;}
+      if(e.key==="Tab"&&modalScreens.has(activeScreen)){trapModalFocus(e);return;}
+      if(e.code==="Escape"&&!e.repeat){
+        if(activeScreen===screens.pause)resume();
+        else if(activeScreen===screens.how)closeAuxiliary(screens.how);
+        else if(activeScreen===screens.records)closeAuxiliary(screens.records);
+        else if(activeScreen===screens.dialog)closeDialog();
+        else if(mode==="playing"||mode==="dig")pause();
+        return;
+      }
       if(mode!=="playing"&&mode!=="dig")return;
-      if(e.target instanceof HTMLButtonElement&&e.target.offsetParent!==null&&!["digButton","actionButton"].includes(e.target.id))return;
+      if(e.target instanceof HTMLButtonElement&&e.target.offsetParent!==null&&!["digButton","actionButton"].includes(e.target.id)&&!["KeyA","KeyD","KeyW","KeyS","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.code))return;
       if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code))e.preventDefault();
       if(e.code==="Space"&&!e.repeat){if(mode==="dig")digPress();else performAction();}
       if(mode==="playing"&&["KeyA","KeyD","KeyW","KeyS","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.code)){keys.add(e.code);syncKeyboard();}
     });
     addEventListener("keyup",e=>{if(e.code==="Space"&&mode==="dig"&&digKind==="fill"){e.preventDefault();digRelease();}keys.delete(e.code);syncKeyboard();});
     addEventListener("blur",resetControls);
+    addEventListener("pagehide",resetControls);
   }
 
   function pause(){if(mode!=="playing"&&mode!=="dig")return;pausedMode=mode;if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}mode="pause";audio.pauseMusic();setPlaying(false);showOnly(screens.pause);}
-  function resume(){if(mode!=="pause")return;mode=pausedMode;if(mode==="playing")lastFocused=null;showOnly(mode==="dig"?screens.dig:null);audio.resumeMusic();setPlaying(mode==="playing");if(mode==="playing"){try{canvas.focus({preventScroll:true});}catch{canvas.focus();}}last=performance.now();}
+  function resume(){
+    if(mode!=="pause")return;
+    const returning=pausedMode;
+    mode=returning;
+    audio.resumeMusic();
+    setPlaying(returning==="playing");
+    if(returning==="dig"){
+      const target=focusOrigins.get(screens.pause);
+      showOnly(screens.dig,{capture:false,focusTarget:target});
+    }else showOnly(null);
+    last=performance.now();
+  }
   function toMenu(){save();audio.pauseMusic();currentDig=null;digHolding=false;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();}
-  function showRecords(){const list=$("recordsList"),rows=getRecords();list.innerHTML="";if(!rows.length){list.innerHTML="<li><span>–</span><div>Zatím žádná dokončená výprava</div></li>";}else rows.forEach((r,i)=>{const li=document.createElement("li");li.innerHTML=`<b>${i+1}.</b><div><strong>${escapeHtml(r.title)}</strong><small>${r.stones} kamenů · ${new Date(r.date).toLocaleDateString("cs-CZ")}</small></div><strong>${Number(r.score).toLocaleString("cs-CZ")}</strong>`;list.append(li);});showOnly(screens.records);}
+  function showRecords(){const list=$("recordsList"),rows=getRecords();list.innerHTML="";if(!rows.length){list.innerHTML="<li><span>–</span><div>Zatím žádná dokončená výprava</div></li>";}else rows.forEach((r,i)=>{const li=document.createElement("li");li.innerHTML=`<b>${i+1}.</b><div><strong>${escapeHtml(r.title)}</strong><small>${r.stones} kamenů · ${new Date(r.date).toLocaleDateString("cs-CZ")}</small></div><strong>${Number(r.score).toLocaleString("cs-CZ")}</strong>`;list.append(li);});openAuxiliary(screens.records);}
 
   function bindUI(){
     $("digPauseButton").addEventListener("click",pause);
     $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
-    const digButton=$("digButton");digButton.addEventListener("pointerdown",event=>{event.preventDefault();digButton.classList.add("pressed");digPress();});const releaseDigButton=event=>{digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("pointerleave",releaseDigButton);digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
+    const digButton=$("digButton");let digPointer=null;
+    digButton.addEventListener("pointerdown",event=>{if(digPointer!==null)return;event.preventDefault();digPointer=event.pointerId;digButton.setPointerCapture?.(digPointer);digButton.classList.add("pressed");digPress();});
+    const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;if(digButton.hasPointerCapture?.(digPointer)){try{digButton.releasePointerCapture(digPointer);}catch{}}digPointer=null;digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
+    digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
+    digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();$("soundButton").textContent=state.sound?"♫":"×";save();});
-    $("howButton").addEventListener("click",()=>showOnly(screens.how));$("closeHowButton").addEventListener("click",()=>showOnly(screens.title));
-    $("recordsButton").addEventListener("click",showRecords);$("resultRecordsButton").addEventListener("click",showRecords);$("closeRecordsButton").addEventListener("click",()=>showOnly(mode==="result"?screens.result:screens.title));
-  }
-
-  function lockPageGestures(){
-    const prevent=e=>e.preventDefault();
-    document.addEventListener("gesturestart",prevent,{passive:false});
-    document.addEventListener("gesturechange",prevent,{passive:false});
-    document.addEventListener("gestureend",prevent,{passive:false});
-    document.addEventListener("touchmove",e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+    $("howButton").addEventListener("click",()=>openAuxiliary(screens.how));$("closeHowButton").addEventListener("click",()=>closeAuxiliary(screens.how));
+    $("recordsButton").addEventListener("click",showRecords);$("resultRecordsButton").addEventListener("click",showRecords);$("closeRecordsButton").addEventListener("click",()=>closeAuxiliary(screens.records));
   }
 
   function boot(){
-    resize();lockPageGestures();setupControls();bindUI();migrateLegacySave();refreshContinue();
+    resize();setupControls();bindUI();migrateLegacySave();refreshContinue();showOnly(screens.title,{capture:false,focus:false});
     const params=new URLSearchParams(location.search);
     if(params.has("new"))startNew();
-    else if(params.has("help"))showOnly(screens.how);
+    else if(params.has("help"))openAuxiliary(screens.how);
     if(params.has("debug")){
       window.__lovecDebug={
         startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
@@ -1723,6 +1791,7 @@
         setBossStun(value=1){if(!world?.rival)return null;world.rival.stunTimer=value;return world.rival.stunTimer;},
         triggerTheft(){if(!world)return null;showTheftAlert();startRival("karel",player.x+180,player.y-100);return {shown:theftAlertShown,boss:world.rival?.name};},
         startDigChallenge(index=2){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);if(world.id==="nesmen")world.runtime.permit=true;const hotspot=world.hotspots.find(item=>item.active);if(!hotspot)return null;hotspot.revealed=true;startDig(hotspot);return {mode,level:world.id};},
+        startFillChallenge(index=2){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);if(world.id==="nesmen")world.runtime.permit=true;const hole={type:"hole",x:player.x+80,y:player.y,r:46,w:74,h:42,angle:0,active:true};world.items.push(hole);world.runtime.open=(world.runtime.open||0)+1;startFill(hole);return {mode,level:world.id};},
         setDigMarker(value=digZoneCenter){digMarker=clamp(value,0,1);return digMarker;},
         setDigSpeed(value=0){digSpeed=Math.max(0,Number(value)||0);return digSpeed;},
         setDigTime(value=4){digTimeLeft=clamp(value,0,7);return digTimeLeft;},
@@ -1747,14 +1816,15 @@
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
+        fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio})):[];},
         snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
-    addEventListener("orientationchange",()=>setTimeout(resize,120));
+    addEventListener("orientationchange",()=>{resetControls();setTimeout(resize,120);});
     visualViewport?.addEventListener("resize",()=>requestAnimationFrame(resize));
-    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();pause();}});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();pause();}else if(activeScreen)requestAnimationFrame(()=>focusInitial(activeScreen));});
     if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
     requestAnimationFrame(loop);
   }
