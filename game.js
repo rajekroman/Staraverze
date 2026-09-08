@@ -1702,7 +1702,7 @@
         return;
       }
       if(mode!=="playing"&&mode!=="dig")return;
-      if(e.target instanceof HTMLButtonElement&&e.target.offsetParent!==null&&!["digButton","actionButton"].includes(e.target.id))return;
+      if(e.target instanceof HTMLButtonElement&&e.target.offsetParent!==null&&!["digButton","actionButton"].includes(e.target.id)&&!["KeyA","KeyD","KeyW","KeyS","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.code))return;
       if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code))e.preventDefault();
       if(e.code==="Space"&&!e.repeat){if(mode==="dig")digPress();else performAction();}
       if(mode==="playing"&&["KeyA","KeyD","KeyW","KeyS","ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.code)){keys.add(e.code);syncKeyboard();}
