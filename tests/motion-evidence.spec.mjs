@@ -11,6 +11,7 @@ test("tractor start stop turn and field-work evidence", async ({ page }) => {
       x:620,y:430,speed:0,angle:0,working:true,resetMotion:true,
       points:[{x:620,y:430},{x:930,y:430},{x:930,y:680}],index:1
     });
+    window.__lovecDebug.snapCameraToPlayer();
     document.getElementById("hud")?.classList.add("hidden");
     document.getElementById("controls")?.classList.add("hidden");
   });
