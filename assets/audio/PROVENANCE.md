@@ -1,6 +1,8 @@
 # Audio replacement provenance
 
-The active soundtrack and effect files in this directory are the supplied production set. The original `LICENSE.md` and `v73-audio-build-audit.json` are kept beside the payload so the exact bytes and declared provenance travel with the build.
+The active soundtrack and effect files in this directory are the supplied production set.
+`LICENSE.md` and this `PROVENANCE.md` travel with the public audio payload.
+`v73-audio-build-audit.json` remains in the source repository as an internal integrity record and is intentionally excluded from the runtime package.
 
 The four shared effects below were supplied from the earlier `pr297` asset bundle. The same bytes were present in the other supplied work directories; the SHA-256 values confirm that one canonical copy is sufficient:
 

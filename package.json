@@ -11,7 +11,7 @@
     "test:visual": "playwright test tests/visual-regression.spec.mjs",
     "build:publish": "node tools/build-publish.mjs",
     "validate:publish": "node tools/validate-publish.mjs",
-    "test:publish": "npm run build:publish && npm run validate:publish && PLAYWRIGHT_ROOT=dist PLAYWRIGHT_PORT=4191 playwright test tests/game-smoke.spec.mjs --project=desktop-chromium && PLAYWRIGHT_ROOT=dist PLAYWRIGHT_PORT=4192 playwright test --project=offline-chromium",
+    "test:publish": "npm run build:publish && npm run validate:publish && PLAYWRIGHT_ROOT=dist PLAYWRIGHT_BASE_PATH=/Staraverze/ PLAYWRIGHT_PORT=4191 playwright test --project=publish-chromium && PLAYWRIGHT_ROOT=dist PLAYWRIGHT_BASE_PATH=/Staraverze/ PLAYWRIGHT_PORT=4192 playwright test --project=publish-offline-chromium",
     "test": "npm run validate && npm run test:browser"
   },
   "devDependencies": {

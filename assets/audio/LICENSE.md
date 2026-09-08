@@ -1,11 +1,12 @@
 # Audio asset provenance and license
 
-The canonical v7.3 production audio set is the 21 files listed in
-`v73-audio-build-audit.json` beside this document. The audit records each
-active file's byte size, SHA-256, provenance declaration and, where verified,
-technical metadata.
+The canonical production-audio inventory is tracked in
+`v73-audio-build-audit.json` in the source repository. That file is an internal
+integrity audit and is intentionally excluded from the public runtime package.
+This `LICENSE.md` and `PROVENANCE.md` are distribution notices and must travel
+with the published audio assets.
 
-This directory now contains **mixed provenance**. A blanket CC0 statement no
+This directory contains **mixed provenance**. A blanket CC0 statement no
 longer applies to every MP3 after the direct production-audio replacements.
 
 ## Project-original procedural / CC0-1.0
@@ -48,14 +49,14 @@ Canonical production payload: **2361176 bytes**, below the project-wide 5 MB
 audio ceiling.
 
 Technical codec/bitrate/duration fields are asserted only for binaries whose
-`technical_metadata_verified` field is `true` in the audit. Replaced binaries
-remain integrity-verified by byte size and SHA-256 until their technical audio
-metadata is independently measured.
+`technical_metadata_verified` field is `true` in the source-repository audit.
+Replaced binaries remain integrity-verified by byte size and SHA-256 until
+their technical audio metadata is independently measured.
 
 ## Unregistered alternates
 
 `ambient-nesmen2.mp3` and `ambient-slavia2.mp3` are currently unregistered
-alternates. They are not part of the canonical 21-file manifest/offline set and
-no license assertion is made for them here.
+alternates. They are not part of the canonical manifest/offline set and no
+license assertion is made for them here.
 
 Manual speaker/headphones listen-through remains mandatory before release.
