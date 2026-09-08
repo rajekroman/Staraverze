@@ -990,9 +990,10 @@ test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", asyn
 
 test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvolní", async ({ page }) => {
   await openDebug(page);
-  // Pointer lifecycle is independent of the desktop layout. Keep gameplay in dig mode
-  // so performAction() is a no-op and the test observes only the action-button pointer state.
-  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+  // Pointer lifecycle is independent of the desktop layout. Use an active gameplay
+  // reference scene so the controls are not inert; synthetic pointer events then test
+  // the handler without depending on the touch controls being visually shown on desktop.
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
   const button = page.locator("#actionButton");
 
   await button.dispatchEvent("pointerdown",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
