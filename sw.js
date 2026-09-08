@@ -1,4 +1,4 @@
-const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-4";
+const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-5";
 const CORE = [
   "./","./index.html","./style.css","./game.js","./manifest.webmanifest",
   "./icon-180.png","./icon-192.png","./icon-512.png",
