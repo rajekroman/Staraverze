@@ -110,6 +110,15 @@ async function capture(page, scene) {
   if (expected) expect(visualDistance(fp, expected), key).toBeLessThanOrEqual(1.25);
 }
 
+test("campaign menu visual baseline", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
+  await expect(page.locator(".nzv-brand-lockup")).toBeVisible();
+  await expect(page.locator("#campaignEventCard")).toBeVisible();
+  await expect(page.locator("#playButton")).toBeVisible();
+  await capture(page, "menu");
+});
+
 test("Chlum visual baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
