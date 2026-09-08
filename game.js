@@ -402,7 +402,7 @@
   function showOnly(screen,{capture=true,focus=true,focusTarget=null}={}){
     const previous=activeScreen;
     const origin=document.activeElement;
-    if(screen&&screen!==previous&&capture&&origin instanceof HTMLElement&&origin!==document.body&&origin.isConnected)focusOrigins.set(screen,origin);
+    if(screen&&screen!==previous&&capture){if(origin instanceof HTMLElement&&origin!==document.body&&origin.isConnected)focusOrigins.set(screen,origin);else focusOrigins.delete(screen);}
     Object.values(screens).forEach(candidate=>{
       const visible=candidate===screen;
       candidate.classList.toggle("visible",visible);
@@ -1786,8 +1786,9 @@
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
+        fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio})):[];},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length,open:world.runtime.open||0,filled:world.runtime.filled||0}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));

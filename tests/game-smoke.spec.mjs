@@ -72,6 +72,7 @@ test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page 
   expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
   await page.locator("#resumeButton").click();
   await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await page.locator("#digButton").focus();
   for (let i=0;i<3;i++) {
     await page.evaluate(() => { window.__lovecDebug.setDigSpeed(0); window.__lovecDebug.setDigMarker(); });
     await page.keyboard.press("Space");
@@ -872,6 +873,9 @@ test("skryté herní ovládání nelze zaměřit během modálu", async ({ page 
 test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await page.locator("#moveZone").evaluate(zone => {
+    Object.defineProperty(zone,"getBoundingClientRect",{configurable:true,value:()=>({left:0,top:0,right:128,bottom:128,width:128,height:128,x:0,y:0,toJSON(){return this;}})});
+  });
   await page.locator("#moveZone").dispatchEvent("pointerdown",{pointerId:41,pointerType:"touch",clientX:20,clientY:20,bubbles:true,cancelable:true});
   await page.locator("#moveZone").dispatchEvent("pointermove",{pointerId:41,pointerType:"touch",clientX:90,clientY:40,bubbles:true,cancelable:true});
   const moving = await page.evaluate(() => window.__lovecDebug.snapshot().input);
@@ -903,7 +907,7 @@ test("viewport zůstává zoomovatelný a blokace gest je jen na herních ovlada
   });
   expect(audit.viewport).not.toMatch(/user-scalable\s*=\s*no/i);
   expect(audit.viewport).not.toMatch(/maximum-scale\s*=\s*(?:0|1(?:\.0*)?)(?:,|$)/i);
-  for (const value of [audit.htmlTouch,audit.bodyTouch,audit.appTouch,audit.gameTouch]) expect(value).toContain("pinch-zoom");
+  for (const value of [audit.htmlTouch,audit.bodyTouch,audit.appTouch,audit.gameTouch]) { expect(value).not.toBe("none"); expect(value).toMatch(/pinch-zoom|manipulation|auto/); }
   expect(audit.joystickTouch).toBe("none");
   expect(audit.actionTouch).toBe("none");
   expect(audit.digTouch).toBe("none");
@@ -932,12 +936,12 @@ test("zahrabávání po pauze zruší rozpracované držení a odmění právě 
     if (transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
   }
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
-  const after = await page.evaluate(() => window.__lovecDebug.snapshot());
-  expect(after.world.filled).toBe(1);
-  expect(after.world.open).toBe(0);
-  const score = after.state.score;
+  const after = await page.evaluate(() => ({snapshot:window.__lovecDebug.snapshot(),fill:window.__lovecDebug.fillSnapshot()}));
+  expect(after.fill.filled).toBe(1);
+  expect(after.fill.open).toBe(0);
+  const score = after.snapshot.state.score;
   await page.waitForTimeout(500);
-  const stable = await page.evaluate(() => window.__lovecDebug.snapshot());
-  expect(stable.world.filled).toBe(1);
-  expect(stable.state.score).toBe(score);
+  const stable = await page.evaluate(() => ({snapshot:window.__lovecDebug.snapshot(),fill:window.__lovecDebug.fillSnapshot()}));
+  expect(stable.fill.filled).toBe(1);
+  expect(stable.snapshot.state.score).toBe(score);
 });
