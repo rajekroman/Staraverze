@@ -596,10 +596,12 @@ test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async (
       await page.evaluate(() => window.__lovecDebug.setDigSpeed(0));
       await page.keyboard.down("Space");
       await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer - 1);
       await page.evaluate(() => {
         const snapshot = window.__lovecDebug.digSnapshot();
         window.__lovecDebug.setDigMarker(snapshot.zoneCenter);
       });
+      await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer - 1);
       await page.keyboard.up("Space");
 
       if (transfer < 3) {
