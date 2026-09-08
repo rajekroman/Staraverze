@@ -1300,14 +1300,14 @@
     g.addColorStop(0,"#d9cca9");g.addColorStop(.38,"#ceb991");g.addColorStop(1,"#bca37c");
     ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
 
-    // Broad light sand shelves are the primary locality signature.
-    for(let i=0;i<22;i++){
-      const x=55+(i*181)%Math.max(120,world.w-90),y=55+(i*137)%Math.max(160,world.h-100);
-      const w=74+(i%5)*34,h=28+(i%4)*12,ang=((i%7)-3)*.07;
+    // Broad light sand shelves are the primary locality signature; asymmetric shapes avoid a repeated oval pattern.
+    for(let i=0;i<13;i++){
+      const x=70+(i*211)%Math.max(140,world.w-120),y=65+(i*157)%Math.max(180,world.h-120);
+      const w=92+(i%4)*42,h=19+(i%3)*8,ang=((i%7)-3)*.065;
       ctx.save();ctx.translate(x,y);ctx.rotate(ang);
-      const sand=ctx.createLinearGradient(-w,0,w,0);sand.addColorStop(0,"rgba(236,220,181,.18)");sand.addColorStop(.48,"rgba(246,232,198,.5)");sand.addColorStop(1,"rgba(193,169,127,.16)");
-      ctx.fillStyle=sand;ctx.beginPath();ctx.ellipse(0,0,w,h,0,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle="rgba(255,242,213,.24)";ctx.lineWidth=1.3;ctx.stroke();ctx.restore();
+      const sand=ctx.createLinearGradient(-w,0,w,0);sand.addColorStop(0,"rgba(231,213,175,.12)");sand.addColorStop(.5,"rgba(244,229,195,.38)");sand.addColorStop(1,"rgba(194,170,128,.1)");
+      ctx.fillStyle=sand;ctx.beginPath();ctx.moveTo(-w*.92,0);ctx.bezierCurveTo(-w*.56,-h*1.15,w*.2,-h*.75,w*.94,-h*.08);ctx.bezierCurveTo(w*.58,h*.9,-w*.28,h*1.05,-w*.92,0);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="rgba(255,242,213,.14)";ctx.lineWidth=1;ctx.stroke();ctx.restore();
     }
 
     // Pine-needle mats: warm short strokes, grouped but deterministic.
@@ -1326,10 +1326,10 @@
       for(const o of [-3,1,4]){ctx.beginPath();ctx.moveTo(x+o,y+5);ctx.quadraticCurveTo(x+o-2,y,x+o+(o%2),y-7-(i%4));ctx.stroke();}
     }
 
-    // Wind-scoured shallow sandy path; narrower and less road-like than the old meadow track.
-    ctx.strokeStyle="rgba(137,113,80,.22)";ctx.lineWidth=38;ctx.lineCap="round";
+    // Wind-scoured shallow sandy footpath; deliberately thin and low-contrast so it cannot read as a road.
+    ctx.strokeStyle="rgba(128,105,76,.16)";ctx.lineWidth=25;ctx.lineCap="round";
     ctx.beginPath();ctx.moveTo(world.w*.08,world.h*.9);ctx.bezierCurveTo(world.w*.28,world.h*.75,world.w*.39,world.h*.52,world.w*.55,world.h*.55);ctx.bezierCurveTo(world.w*.72,world.h*.58,world.w*.78,world.h*.29,world.w*.94,world.h*.1);ctx.stroke();
-    ctx.strokeStyle="rgba(235,219,184,.54)";ctx.lineWidth=21;ctx.stroke();
+    ctx.strokeStyle="rgba(235,219,184,.35)";ctx.lineWidth=10;ctx.stroke();
 
     // Thin root-like seams in exposed sand support the close-ground texture without becoming obstacles.
     ctx.strokeStyle="rgba(111,78,49,.23)";ctx.lineWidth=2;
@@ -1501,7 +1501,7 @@
         ctx.strokeStyle="rgba(119,81,48,.4)";ctx.lineWidth=1.4;ctx.lineCap="round";
         for(let n=0;n<8;n++){const a=-1.2+n*.34,r=11+(n%3)*5;ctx.beginPath();ctx.moveTo(Math.cos(a)*4,12+Math.sin(a)*2);ctx.lineTo(Math.cos(a)*r,12+Math.sin(a)*r*.35);ctx.stroke();}
         if(p.rooted){
-          ctx.strokeStyle="rgba(105,69,43,.7)";ctx.lineWidth=3.2;
+          ctx.strokeStyle="rgba(105,69,43,.56)";ctx.lineWidth=2.5;
           for(const a of [-2.8,-2.25,-.45,.15]){ctx.beginPath();ctx.moveTo(Math.cos(a)*3,13);ctx.bezierCurveTo(Math.cos(a)*10,13+Math.sin(a)*4,Math.cos(a)*19,15+Math.sin(a)*8,Math.cos(a)*29,17+Math.sin(a)*10);ctx.stroke();}
           ctx.strokeStyle="rgba(208,170,112,.24)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-25,17);ctx.quadraticCurveTo(-13,11,-3,14);ctx.stroke();
         }
