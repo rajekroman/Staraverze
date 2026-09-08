@@ -282,6 +282,9 @@ test("pauza a ztráta fokusu vždy uvolní pohyb", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => ({ vx: window.__lovecDebug.snapshot().player.vx, vy: window.__lovecDebug.snapshot().player.vy }))).toEqual({ vx: 0, vy: 0 });
 
   await page.locator("#resumeButton").click();
+  await expect(page.locator("#pauseButton")).toBeFocused();
+  await page.locator("#game").focus();
+  await expect(page.locator("#game")).toBeFocused();
   await page.keyboard.down("KeyW");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.y)).toBe(-1);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
