@@ -965,7 +965,7 @@
     }
   }
 
-  function update(dt){
+  function update(dt,elapsed=dt){
     if(document.hidden)return;
     audio.update(dt,mode==="playing");
     if(mode==="playing"||mode==="dig"){
@@ -999,7 +999,7 @@
       if(digTimeLeft<=0)failDig();return;
     }
     if(mode!=="playing"||!world)return;
-    if(world.runtime.bossDelay>0){world.runtime.bossDelay=Math.max(0,world.runtime.bossDelay-dt);if(world.runtime.bossDelay===0&&!world.runtime.bossStarted)startRival("franta",1120,300);}
+    if(world.runtime.bossDelay>0){world.runtime.bossDelay=Math.max(0,world.runtime.bossDelay-elapsed);if(world.runtime.bossDelay===0&&!world.runtime.bossStarted)startRival("franta",1120,300);}
     scanCooldown=Math.max(0,scanCooldown-dt);player.invuln=Math.max(0,player.invuln-dt);dangerActive=false;dangerSource="";dangerRate=0;dangerCatchAfter=Infinity;bossIntroTimer=Math.max(0,bossIntroTimer-dt);if(bossIntroTimer<=0){ui.bossIntro?.classList.remove("show");ui.bossIntro?.classList.add("hidden");}
     if(theftAlertShown&&performance.now()>=theftAlertUntil)hideTheftAlert();dangerBeatTimer=Math.max(0,dangerBeatTimer-dt);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0&&state.combo>1){state.combo--;state.comboTimer=5;}
     if(theftAlertShown){
@@ -1675,7 +1675,7 @@
     ctx.closePath();
   }
 
-  function loop(now){const dt=Math.min(.035,(now-last)/1000||.016);last=now;update(dt);render();requestAnimationFrame(loop);}
+  function loop(now){const elapsed=(now-last)/1000||.016,dt=Math.min(.035,elapsed);last=now;update(dt,elapsed);render();requestAnimationFrame(loop);}
 
   function setupControls(){
     const zone=$("moveZone"),stick=$("stick"),action=$("actionButton");let pid=null,actionPid=null;const keys=new Set();
