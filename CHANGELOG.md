@@ -1,5 +1,11 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Příběhová korekce Franty
+
+- Franta je napříč příběhem popsaný jako konkurenční sběratel, který připravuje vlastní kolekci pro Na zelené vlně;
+- z Chlumu a Ločenic byly odstraněny formulace „překupník“ / „Frantovi překupníci“;
+- finále u KD Slavie už nemluví o prodeji certifikátu, ale o závodu dvou sběratelů na výstavu s doloženým původem kamenů.
+
 ## Hlavní menu — copy a vizuální hierarchie
 
 - úvodní text je přepsaný do přirozenější češtiny: hráč se vydává po stopách vltavínů, skládá sbírku a ve finále dorazí do KD Slavie na akci Na zelené vlně;
