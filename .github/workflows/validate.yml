@@ -124,6 +124,25 @@ jobs:
           path: test-results/
           retention-days: 7
 
+  excavator-motion:
+    name: Motion evidence - excavator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test tests/excavator-motion-evidence.spec.mjs --project=motion-excavator
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: motion-excavator
+          path: test-results/
+          retention-days: 7
+
   offline:
     name: Playwright - offline-chromium
     runs-on: ubuntu-latest
