@@ -143,6 +143,38 @@ test("Chlum visual baseline", async ({ page }) => {
   await capture(page, "chlum");
 });
 
+test("Chlum tractor front occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPlayer(820, 650);
+    window.__lovecDebug.setPatrolMotion("tractor", {
+      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,
+      points:[{x:820,y:600},{x:820,y:600}],index:1
+    });
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(300);
+  await capture(page, "chlum-tractor-front");
+});
+
+test("Chlum tractor rear occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPlayer(820, 550);
+    window.__lovecDebug.setPatrolMotion("tractor", {
+      x:820,y:600,speed:0,angle:0,working:true,resetMotion:true,
+      points:[{x:820,y:600},{x:820,y:600}],index:1
+    });
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(300);
+  await capture(page, "chlum-tractor-behind");
+});
+
 test("shared scale reference visual evidence", async ({ page }) => {
   await openDebug(page);
   const scene = await page.evaluate(() => {
