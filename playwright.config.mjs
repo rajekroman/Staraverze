@@ -6,7 +6,8 @@ const MOTION_TEST = /motion-evidence\.spec\.mjs/;
 const EXCAVATOR_MOTION_TEST = /excavator-motion-evidence\.spec\.mjs/;
 const CAR_MOTION_TEST = /car-motion-evidence\.spec\.mjs/;
 const PUBLISH_TEST = /publish-smoke\.spec\.mjs/;
-const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST, CAR_MOTION_TEST, PUBLISH_TEST];
+const PUBLISH_OFFLINE_TEST = /publish-offline\.spec\.mjs/;
+const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST, MOTION_TEST, EXCAVATOR_MOTION_TEST, CAR_MOTION_TEST, PUBLISH_TEST, PUBLISH_OFFLINE_TEST];
 const NEVER = /a^/;
 const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
 const baseURL = `http://127.0.0.1:${port}`;
@@ -112,6 +113,16 @@ export default defineConfig({
       testMatch: PUBLISH_TEST,
       testIgnore: publishMode ? NEVER : PUBLISH_TEST,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
+    },
+    {
+      name: "publish-offline-chromium",
+      testMatch: PUBLISH_OFFLINE_TEST,
+      testIgnore: publishMode ? NEVER : PUBLISH_OFFLINE_TEST,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        serviceWorkers: "allow"
+      }
     },
     {
       name: "offline-chromium",
