@@ -41,7 +41,7 @@ test("audit: chybně určený vzorek lze dohledat a opravit", async ({ page }) =
   await page.keyboard.press("Space");
   await page.keyboard.press("Space");
   await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
-  const real = ["Olivový úlomek","Hnědozelený splash","Drobný celotvar"].includes(await page.locator("#sampleTitle").textContent());
+  const real = ["Olivová kapka","Hnědozelená kapka","Drobný celotvar"].includes(await page.locator("#sampleTitle").textContent());
   await page.locator(real?"#glassButton":"#realButton").click();
   await page.evaluate(() => window.__lovecDebug.setScanCooldown(0));
   await page.keyboard.press("Space");
@@ -440,7 +440,7 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
 
 test("Ločenice projdou reálným radarem a určením pravého i chybně označeného vzorku", async ({ page }) => {
   const errors = watchErrors(page);
-  const realTitles = new Set(["Olivový úlomek", "Hnědozelený splash", "Drobný celotvar"]);
+  const realTitles = new Set(["Olivová kapka", "Hnědozelená kapka", "Drobný celotvar"]);
 
   async function openFirstSample() {
     await page.evaluate(() => {
@@ -605,6 +605,7 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
     await page.evaluate(() => {
       const player = window.__lovecDebug.snapshot().player;
       window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
+      window.__lovecDebug.setBossStun(5);
     });
     await expect(page.locator("#actionText")).toHaveText("CHYTIT");
     await page.keyboard.press("Space");

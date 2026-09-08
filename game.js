@@ -92,9 +92,9 @@
   ];
 
   const SAMPLES = [
-    { real: true, title: "Olivový úlomek", text: "Vltavín je přírodní impaktní sklo: olivová kapka s nepravidelným povrchem, jamkami a drobnými uzavřenými bublinkami." },
+    { real: true, title: "Olivová kapka", text: "Vltavín je přírodní impaktní sklo: olivová kapka s nepravidelným povrchem, jamkami a drobnými uzavřenými bublinkami." },
     { real: false, title: "Jasně zelený střep", text: "Falešné sklo bývá odlévané do formy: má nápadně jednotný odstín, hladší lesk a pravidelný opakovaný tvar." },
-    { real: true, title: "Hnědozelený splash", text: "Hnědozelená kapka má přirozené kanálky, krátery nebo ostré výstupky; uvnitř mohou být vidět stopy tečení skloviny." },
+    { real: true, title: "Hnědozelená kapka", text: "Hnědozelená kapka má přirozené kanálky, krátery nebo ostré výstupky; uvnitř mohou být vidět stopy tečení skloviny." },
     { real: false, title: "Lesklý odlitek", text: "Falešný odlitek prozradí stejná skulptace jako u dalších kusů, kulaté hrany a průmyslově hladký, příliš lesklý povrch." },
     { real: true, title: "Drobný celotvar", text: "Přírodní celotvar má neopakovatelnou skulptaci vzniklou pomalým rozpouštěním v půdě, ne pravidelný vzor z formy." },
     { real: false, title: "Lahvové sklo", text: "Obyčejné zelené sklo mívá ploché stěny, pravidelnou tloušťku a stejné hrany; samo o sobě nemá přírodní impaktní skulptaci." }
@@ -457,7 +457,7 @@
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
     for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
-    addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.25});
+    addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.5});
     addPatrol("farmer",[{x:1580,y:920},{x:1480,y:650},{x:1660,y:520}],{speed:65,vision:140,requires:"permit"});
     world.exit={x:1650,y:150,r:54,label:"Odjezd"};
   }
@@ -505,8 +505,8 @@
     for(let i=0;i<14;i++)addProp("earthbank",rand(280,1520),rand(190,1010),{scale:rand(.8,1.4),angle:rand(-.22,.22)});
     for(let i=0;i<11;i++)addProp("minepit",rand(310,1480),rand(260,960),{w:rand(82,160),h:rand(44,88),angle:rand(-.25,.25)});
     for(let i=0;i<11;i++)addProp("trackscar",rand(260,1500),rand(220,1020),{scale:rand(.9,1.35),angle:rand(-.35,.35)});
-    addProp("excavator",1040,370,{scale:1.28,angle:-.08});
-    addProp("excavator",430,690,{scale:.96,angle:.18});
+    addProp("excavator",1040,370,{scale:1.5,angle:-.08});
+    addProp("excavator",430,690,{scale:1.25,angle:.18});
     addProp("lamp",1100,340,{scale:1.25});addProp("lamp",500,660,{scale:1.15});addProp("lamp",1420,520,{scale:1.1});
     addProp("sign",250,980,{text:"Besednice"});
     [[410,850],[900,610],[1390,350]].forEach((p,i)=>addItem("clue",p[0],p[1],{hidden:true,label:["čerstvě odkrytá vrstva","hluboký otisk pásu","úlomek ježkové skulptace"][i]}));
@@ -755,7 +755,7 @@
   }
   function hitRival(){
     const r=world.rival;if(!r||!r.active)return;
-    if(r.name==="karel"&&r.stunTimer<=0){toast("Je příliš rychlý · počkej na jeho zastavení","bad",850);return;}
+    if(r.stunTimer<=0){toast(r.name==="karel"?"Je příliš rychlý · počkej na jeho zastavení":"Franta uhýbá · přeruš jeho sprint a chyť ho v pauze","bad",950);return;}
     r.hits++;r.stunTimer=0;r.hitFlash=.28;r.phase=Math.min(3,r.hits+1);audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
     r.speed=r.baseSpeed*(1+r.hits*.16);if(r.flashlight){r.vision=r.baseVision+r.hits*34;r.halfAngle=.5+r.hits*.08;}
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
