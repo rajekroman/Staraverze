@@ -142,6 +142,81 @@ test("audit: odložený Franta respektuje pauzu a neopustí svůj level", async 
   expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
 });
 
+test("audio: continue načte mute před prvním playbackem", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.auditAudio={plays:[],pauses:[]};
+    HTMLMediaElement.prototype.play=function(){window.auditAudio.plays.push(this.src);return Promise.resolve();};
+    HTMLMediaElement.prototype.pause=function(){window.auditAudio.pauses.push(this.src);};
+  });
+  await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
+  await page.evaluate(({ saveKey }) => {
+    localStorage.clear();
+    localStorage.setItem(saveKey, JSON.stringify({
+      version:"5.4.2",
+      state:{version:"5.4.2",levelIndex:0,stones:[],sound:false}
+    }));
+  }, { saveKey: SAVE_KEY });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.evaluate(() => { window.auditAudio.plays=[]; });
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+  const audioState=await page.evaluate(() => ({
+    audit:window.auditAudio,
+    engine:window.__lovecDebug.audioSnapshot(),
+    text:document.getElementById("soundButton").textContent,
+    pressed:document.getElementById("soundButton").getAttribute("aria-pressed")
+  }));
+  expect(audioState.audit.plays).toEqual([]);
+  expect(audioState.engine).toMatchObject({enabled:false,started:true,lifecyclePaused:true});
+  expect(audioState.text).toBe("×");
+  expect(audioState.pressed).toBe("false");
+});
+
+test("audio: pause a background zastaví celý lifecycle", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.auditAudio={plays:[],pauses:[]};
+    HTMLMediaElement.prototype.play=function(){window.auditAudio.plays.push(this.src);return Promise.resolve();};
+    HTMLMediaElement.prototype.pause=function(){window.auditAudio.pauses.push(this.src);};
+  });
+  await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
+  await page.locator("#playButton").click();
+  await page.locator("#briefButton").click();
+  await page.evaluate(() => { window.auditAudio.pauses=[]; });
+  await page.locator("#pauseButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(true);
+  expect((await page.evaluate(() => window.auditAudio.pauses.length))).toBeGreaterThan(1);
+  await page.locator("#resumeButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(false);
+  await page.evaluate(() => {
+    Object.defineProperty(document,"hidden",{configurable:true,value:true});
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(true);
+  await page.evaluate(() => { delete document.hidden; document.dispatchEvent(new Event("visibilitychange")); });
+});
+
+test("audio: rychlý theme switch se po mute nesmí opožděně znovu spustit", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.auditAudio={plays:[],pauses:[]};
+    HTMLMediaElement.prototype.play=function(){window.auditAudio.plays.push(this.src);return Promise.resolve();};
+    HTMLMediaElement.prototype.pause=function(){window.auditAudio.pauses.push(this.src);};
+  });
+  await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
+  await page.locator("#playButton").click();
+  await page.locator("#briefButton").click();
+  await page.evaluate(() => {
+    window.__lovecDebug.setAudioTheme("night");
+    window.__lovecDebug.setAudioTheme("city");
+  });
+  await page.locator("#soundButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().enabled)).toBe(false);
+  const playsAfterMute=await page.evaluate(() => window.auditAudio.plays.length);
+  await page.waitForTimeout(320);
+  expect(await page.evaluate(() => window.auditAudio.plays.length)).toBe(playsAfterMute);
+  expect(await page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(true);
+});
+
 test("audit: opakovaný úder nepřenačítá stejný zvuk", async ({ page }) => {
   await page.addInitScript(() => {
     window.auditAudio={assignments:[],plays:[]};

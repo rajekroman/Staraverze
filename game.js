@@ -115,6 +115,9 @@
       this.music.volume = .26;
       this.targetMusicVolume = .26;
       this.fadeTimer = 0;
+      this.musicToken = 0;
+      this.lifecyclePaused = false;
+      this.activeSources = new Set();
       this.musicTracks = {
         field: "./assets/audio/ambient/ambient-chlum.mp3",
         meadow: "./assets/audio/ambient/ambient-nesmen.mp3",
@@ -162,45 +165,79 @@
           this.ctx = new AC();
           this.master = this.ctx.createGain();
           this.sfxGain = this.ctx.createGain();
-          this.master.gain.value = .42;
+          this.master.gain.value = this.enabled ? .42 : 0;
           this.sfxGain.gain.value = .6;
           this.sfxGain.connect(this.master);
           this.master.connect(this.ctx.destination);
         }
       }
-      if (this.ctx?.state === "suspended") this.ctx.resume().catch(() => {});
       this.started = true;
+      if (!this.enabled) return;
+      this.lifecyclePaused = false;
+      if (this.ctx?.state === "suspended") this.ctx.resume().catch(() => {});
       this.playMusic();
+    }
+    setEnabled(value,{resume=true}={}) {
+      this.enabled = Boolean(value);
+      if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.enabled ? .42 : 0, this.ctx.currentTime, .03);
+      if (!this.enabled) {
+        this.pauseAll();
+      } else if (resume && this.started) {
+        this.resumeAll();
+      }
+      return this.enabled;
     }
     setTheme(theme) {
       const changed = this.theme !== theme;
       this.theme = theme;
-      if (changed && this.started) this.playMusic(true);
+      if (changed && this.started && this.enabled && !this.lifecyclePaused) this.playMusic(true);
     }
-    fadeMusic(target,duration=420,done=null){
+    fadeMusic(target,duration=420,done=null,token=this.musicToken){
       clearInterval(this.fadeTimer);
       const start=this.music.volume;const startAt=performance.now();
-      this.fadeTimer=setInterval(()=>{const p=Math.min(1,(performance.now()-startAt)/duration);this.music.volume=start+(target-start)*p;if(p>=1){clearInterval(this.fadeTimer);this.fadeTimer=0;done?.();}},24);
+      this.fadeTimer=setInterval(()=>{
+        if(token!==this.musicToken){clearInterval(this.fadeTimer);this.fadeTimer=0;return;}
+        const p=Math.min(1,(performance.now()-startAt)/duration);
+        this.music.volume=start+(target-start)*p;
+        if(p>=1){clearInterval(this.fadeTimer);this.fadeTimer=0;done?.();}
+      },24);
     }
     playMusic(restart = false) {
+      if(!this.enabled||this.lifecyclePaused)return;
+      const token=++this.musicToken;
       const src = this.musicTracks[this.theme] || this.musicTracks.field;
       let absolute=src;try{absolute=new URL(src,location.href).href;}catch{}
       const change=this.music.src!==absolute;
-      const switchTrack=()=>{if(change)this.music.src=src;if(restart||change){try{this.music.currentTime=0;}catch{}}this.music.volume=0;if(this.enabled){this.music.play().then(()=>this.fadeMusic(this.targetMusicVolume,650)).catch(()=>{});}};
-      if(change&&this.music.src&&this.music.volume>.01)this.fadeMusic(0,180,switchTrack);else switchTrack();
+      const switchTrack=()=>{
+        if(token!==this.musicToken||!this.enabled||this.lifecyclePaused)return;
+        if(change)this.music.src=src;
+        if(restart||change){try{this.music.currentTime=0;}catch{}}
+        this.music.volume=0;
+        this.music.play().then(()=>this.fadeMusic(this.targetMusicVolume,650,null,token)).catch(()=>{});
+      };
+      if(change&&this.music.src&&this.music.volume>.01)this.fadeMusic(0,180,switchTrack,token);else switchTrack();
     }
-    pauseMusic(){clearInterval(this.fadeTimer);this.fadeTimer=0;this.music.pause();}
-    resumeMusic(){if(this.enabled&&this.started)this.playMusic(false);}
-    toggle() {
-      this.enabled = !this.enabled;
-      if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.enabled ? .42 : 0, this.ctx.currentTime, .03);
-      if (this.enabled) this.playMusic();
-      else {
-        this.fadeMusic(0,160,()=>this.music.pause());
-        for (const clip of Object.values(this.effects)) { clip.pause(); try { clip.currentTime = 0; } catch {} }
-      }
-      return this.enabled;
+    pauseMusic(){this.musicToken+=1;clearInterval(this.fadeTimer);this.fadeTimer=0;this.music.pause();}
+    stopEffects(){
+      for (const clip of Object.values(this.effects)) { clip.pause(); try { clip.currentTime = 0; } catch {} }
+      for (const source of this.activeSources) { try { source.stop(); } catch {} }
+      this.activeSources.clear();
     }
+    pauseAll(){
+      this.lifecyclePaused=true;
+      this.pauseMusic();
+      this.stopEffects();
+      if(this.ctx?.state==="running")this.ctx.suspend().catch(()=>{});
+    }
+    resumeAll(){
+      if(!this.enabled||!this.started)return;
+      this.lifecyclePaused=false;
+      if(this.ctx?.state==="suspended")this.ctx.resume().catch(()=>{});
+      this.playMusic(false);
+    }
+    resumeMusic(){this.resumeAll();}
+    toggle() { return this.setEnabled(!this.enabled); }
+    snapshot(){return {enabled:this.enabled,started:this.started,lifecyclePaused:this.lifecyclePaused,contextState:this.ctx?.state||"none",activeSources:this.activeSources.size,theme:this.theme};}
     tone(freq, dur=.1, type="triangle", vol=.16, when=0, slide=0) {
       if (!this.enabled || !this.ctx || !this.sfxGain) return;
       const t = this.ctx.currentTime + when;
@@ -212,7 +249,9 @@
       gain.gain.setValueAtTime(.0001,t);
       gain.gain.linearRampToValueAtTime(vol,t+.008);
       gain.gain.exponentialRampToValueAtTime(.0001,t+dur);
-      osc.connect(gain); gain.connect(this.sfxGain); osc.start(t); osc.stop(t+dur+.03);
+      osc.connect(gain); gain.connect(this.sfxGain);
+      this.activeSources.add(osc);osc.addEventListener("ended",()=>this.activeSources.delete(osc),{once:true});
+      osc.start(t); osc.stop(t+dur+.03);
     }
     noise(dur=.08, vol=.08, cutoff=1200) {
       if (!this.enabled || !this.ctx || !this.sfxGain) return;
@@ -220,7 +259,8 @@
       for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
       const src=this.ctx.createBufferSource(), filter=this.ctx.createBiquadFilter(), g=this.ctx.createGain();
       src.buffer=b; filter.type="lowpass"; filter.frequency.value=cutoff; g.gain.value=vol;
-      src.connect(filter); filter.connect(g); g.connect(this.sfxGain); src.start();
+      src.connect(filter); filter.connect(g); g.connect(this.sfxGain);
+      this.activeSources.add(src);src.addEventListener("ended",()=>this.activeSources.delete(src),{once:true});src.start();
     }
     sfx(name) {
       const source = name === "boss" ? this.dangerTracks[this.theme] : this.effectTracks[name];
@@ -379,10 +419,16 @@
         player={...player,x:finiteNumber(saved.x,player.x,0,world.w),y:finiteNumber(saved.y,player.y,0,world.h),angle:finiteNumber(saved.angle,0,-Math.PI,Math.PI),facing:saved.facing<0?-1:1,pose:["front","back","side"].includes(saved.pose)?saved.pose:"front"};
         restoredWorld=true; buildTerrainCache(world); findNearest();
       }
-      audio.enabled=state.sound!==false; return true;
+      audio.setEnabled(state.sound!==false,{resume:false});syncSoundButton();return true;
     } catch { return false; }
   }
   function refreshContinue(){ $("continueButton").classList.toggle("hidden",!storage.get(SAVE_KEY)); }
+  function syncSoundButton(){
+    const button=$("soundButton");if(!button)return;
+    button.textContent=state.sound?"♫":"×";
+    button.setAttribute("aria-pressed",state.sound?"true":"false");
+    button.setAttribute("aria-label",state.sound?"Vypnout zvuk":"Zapnout zvuk");
+  }
   function getRecords(){try{const rows=JSON.parse(storage.get(RECORD_KEY)||"[]");return Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object").slice(0,10):[];}catch{return[];}}
   function addRecord(score,title){const rows=getRecords();rows.push({score,title,stones:state.stones.length,date:new Date().toISOString()});rows.sort((a,b)=>b.score-a.score);storage.set(RECORD_KEY,JSON.stringify(rows.slice(0,10)));}
 
@@ -690,9 +736,9 @@
   }
 
   function startNew(){
-    audio.start();audio.sfx("click");state=freshState();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);
+    state=freshState();audio.setEnabled(state.sound,{resume:false});audio.start();audio.sfx("click");syncSoundButton();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);
   }
-  function continueGame(){audio.start();if(!load()){startNew();return;}showBrief(state.levelIndex);}
+  function continueGame(){if(!load()){startNew();return;}audio.start();syncSoundButton();showBrief(state.levelIndex);}
   function showBrief(index){
     state.levelIndex=index;mode="brief";setPlaying(false);const l=LEVELS[index];
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
@@ -2430,12 +2476,12 @@
     addEventListener("pagehide",resetControls);
   }
 
-  function pause(){if(mode!=="playing"&&mode!=="dig")return;pausedMode=mode;if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}mode="pause";audio.pauseMusic();setPlaying(false);showOnly(screens.pause);}
+  function pause(){if(mode!=="playing"&&mode!=="dig")return;pausedMode=mode;if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}mode="pause";audio.pauseAll();setPlaying(false);showOnly(screens.pause);}
   function resume(){
     if(mode!=="pause")return;
     const returning=pausedMode;
     mode=returning;
-    audio.resumeMusic();
+    audio.resumeAll();
     setPlaying(returning==="playing");
     if(returning==="dig"){
       const target=focusOrigins.get(screens.pause);
@@ -2443,7 +2489,7 @@
     }else showOnly(null);
     last=performance.now();
   }
-  function toMenu(){save();audio.pauseMusic();currentDig=null;digHolding=false;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();}
+  function toMenu(){save();audio.pauseAll();currentDig=null;digHolding=false;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();}
   function showRecords(){const list=$("recordsList"),rows=getRecords();list.innerHTML="";if(!rows.length){list.innerHTML="<li><span>–</span><div>Zatím žádná dokončená výprava</div></li>";}else rows.forEach((r,i)=>{const li=document.createElement("li");li.innerHTML=`<b>${i+1}.</b><div><strong>${escapeHtml(r.title)}</strong><small>${r.stones} kamenů · ${new Date(r.date).toLocaleDateString("cs-CZ")}</small></div><strong>${Number(r.score).toLocaleString("cs-CZ")}</strong>`;list.append(li);});openAuxiliary(screens.records);}
 
   function bindUI(){
@@ -2456,13 +2502,13 @@
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
-    $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();$("soundButton").textContent=state.sound?"♫":"×";save();});
+    $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();syncSoundButton();save();});
     $("howButton").addEventListener("click",()=>openAuxiliary(screens.how));$("closeHowButton").addEventListener("click",()=>closeAuxiliary(screens.how));
     $("recordsButton").addEventListener("click",showRecords);$("resultRecordsButton").addEventListener("click",showRecords);$("closeRecordsButton").addEventListener("click",()=>closeAuxiliary(screens.records));
   }
 
   function boot(){
-    resize();setupControls();bindUI();migrateLegacySave();refreshContinue();showOnly(screens.title,{capture:false,focus:false});
+    resize();setupControls();bindUI();migrateLegacySave();refreshContinue();syncSoundButton();showOnly(screens.title,{capture:false,focus:false});
     const params=new URLSearchParams(location.search);
     if(params.has("new"))startNew();
     else if(params.has("help"))openAuxiliary(screens.how);
@@ -2473,6 +2519,8 @@
         startLoceniceReference(){const result=generateLoceniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startNesmenReference(){const result=generateNesmenReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startBesedniceReference(){const result=generateBesedniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
+        audioSnapshot(){return audio.snapshot();},
+        setAudioTheme(theme){audio.setTheme(theme);return audio.snapshot();},
         spawnBoss(name="karel"){if(!world)return null;startRival(name,player.x+240,player.y-120);return world.rival;},
         hitBoss(){hitRival();return world?.rival?{active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase}:null;},
         setPlayer(x,y){player.x=x;player.y=y;return {x:player.x,y:player.y};},
@@ -2552,7 +2600,7 @@
     addEventListener("resize",()=>requestAnimationFrame(resize));
     addEventListener("orientationchange",()=>{resetControls();setTimeout(resize,120);});
     visualViewport?.addEventListener("resize",()=>requestAnimationFrame(resize));
-    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();pause();}else if(activeScreen)requestAnimationFrame(()=>focusInitial(activeScreen));});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();if(mode==="playing"||mode==="dig")pause();else audio.pauseAll();}else if(activeScreen)requestAnimationFrame(()=>focusInitial(activeScreen));});
     if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
     requestAnimationFrame(loop);
   }
