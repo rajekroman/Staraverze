@@ -595,6 +595,30 @@
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
+  function generateBesedniceReference(){
+    currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
+    state=freshState();state.levelIndex=3;
+    const portrait=viewport.h>viewport.w*1.18;
+    const w=portrait?720:Math.round(700*viewport.w/Math.max(1,viewport.h));
+    const h=portrait?Math.round(720*viewport.h/Math.max(1,viewport.w)):700;
+    const layout={
+      w,h,player:[w*.5,h*.58],bank:[w*.24,h*.4],pit:[w*.68,h*.55],
+      tracks:[w*.52,h*.3],rocks:[[w*.18,h*.7],[w*.8,h*.3],[w*.76,h*.77]],
+      sign:[w*.14,h*.86]
+    };
+    world={id:"besednice",theme:"night",w:layout.w,h:layout.h,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{clues:0,hedgehog:false,bossStarted:false,bossHits:0,bossDefeated:false,chaseStarted:false},rain:0,referenceScene:true};
+    player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
+    addProp("earthbank",layout.bank[0],layout.bank[1],{scale:1.35,angle:-.08,reference:true});
+    addProp("minepit",layout.pit[0],layout.pit[1],{w:150,h:82,angle:.08,reference:true});
+    addProp("trackscar",layout.tracks[0],layout.tracks[1],{scale:1.2,angle:-.15,reference:true});
+    layout.rocks.forEach((q,i)=>addProp("rock",q[0],q[1],{scale:.9+i*.08,reference:true}));
+    addProp("sign",layout.sign[0],layout.sign[1],{text:"Besednice"});
+    addProp("lamp",w*.83,h*.64,{scale:1.05,reference:true});
+    buildTerrainCache(world);
+    camera.x=0;camera.y=0;nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
+    return {level:world.id,reference:true,portrait,player:{x:player.x,y:player.y}};
+  }
+
   function generateNesmenReference(){
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
     state=freshState();state.levelIndex=2;
@@ -1373,11 +1397,57 @@
   }
   function drawForest(){
     if(world.id==="besednice"){
-      const g=ctx.createLinearGradient(0,0,0,world.h);g.addColorStop(0,"#53614f");g.addColorStop(.12,"#59634f");g.addColorStop(.18,"#8b7b61");g.addColorStop(1,"#8c7155");ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
+      // Besednice: disturbed quarry slopes with readable terraces and geological bands.
+      const g=ctx.createLinearGradient(0,0,0,world.h);
+      g.addColorStop(0,"#445246");g.addColorStop(.12,"#4c5545");g.addColorStop(.2,"#786852");g.addColorStop(1,"#6d5847");
+      ctx.fillStyle=g;ctx.fillRect(0,0,world.w,world.h);
+
+      // Dark conifer horizon stays at the upper quarry edge.
       ctx.fillStyle="#24382a";ctx.fillRect(0,0,world.w,118);
-      for(let i=0;i<24;i++){const x=i*85;ctx.fillStyle=i%2?"#29452f":"#36553a";ctx.beginPath();ctx.moveTo(x,118);ctx.lineTo(x+38,32);ctx.lineTo(x+78,118);ctx.closePath();ctx.fill();}
-      for(let i=0;i<32;i++){const x=80+(i*157)%1650,y=145+(i*107)%980,w=110+(i%5)*33,h=44+(i%3)*18;ctx.fillStyle=i%2?"rgba(180,151,107,.32)":"rgba(117,91,65,.32)";ctx.beginPath();ctx.ellipse(x,y,w,h,(i%7)*.13,0,Math.PI*2);ctx.fill();}
-      for(let i=0;i<22;i++){const y=180+i*48;ctx.strokeStyle=i%2?"rgba(91,69,50,.28)":"rgba(218,191,145,.18)";ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(120+(i%4)*35,y);ctx.bezierCurveTo(600,y-30,1100,y+35,1680,y-10);ctx.stroke();}
+      for(let i=0;i<24;i++){
+        const x=i*85;ctx.fillStyle=i%2?"#29452f":"#36553a";
+        ctx.beginPath();ctx.moveTo(x,118);ctx.lineTo(x+38,32);ctx.lineTo(x+78,118);ctx.closePath();ctx.fill();
+      }
+
+      // Broad terrace benches: irregular edges, not parallel decorative stripes.
+      const terraceCols=["rgba(148,119,88,.34)","rgba(101,79,61,.31)","rgba(174,143,100,.25)","rgba(92,70,56,.28)","rgba(155,120,85,.27)"];
+      for(let i=0;i<5;i++){
+        const y=190+i*185,amp=18+(i%3)*7;
+        ctx.fillStyle=terraceCols[i];
+        ctx.beginPath();ctx.moveTo(0,y+amp*.4);
+        ctx.bezierCurveTo(world.w*.2,y-amp,world.w*.39,y+amp*.75,world.w*.56,y-amp*.25);
+        ctx.bezierCurveTo(world.w*.72,y-amp*.7,world.w*.86,y+amp,world.w,y-amp*.1);
+        ctx.lineTo(world.w,y+72+(i%2)*14);
+        ctx.bezierCurveTo(world.w*.78,y+58,world.w*.62,y+92,world.w*.43,y+68);
+        ctx.bezierCurveTo(world.w*.24,y+48,world.w*.12,y+96,0,y+67);
+        ctx.closePath();ctx.fill();
+
+        // Exposed cut edge carries two thin geological seams.
+        for(let n=0;n<2;n++){
+          ctx.strokeStyle=n===0?"rgba(225,194,148,.22)":"rgba(67,50,41,.3)";
+          ctx.lineWidth=n===0?2.2:1.6;
+          ctx.beginPath();ctx.moveTo(24,y+18+n*12);
+          ctx.bezierCurveTo(world.w*.27,y-4+n*12,world.w*.48,y+28+n*9,world.w*.69,y+5+n*12);
+          ctx.bezierCurveTo(world.w*.82,y-4+n*12,world.w*.92,y+24+n*8,world.w-22,y+8+n*10);ctx.stroke();
+        }
+      }
+
+      // Broken local strata patches interrupt the terraces and create a quarried, rocky surface.
+      for(let i=0;i<24;i++){
+        const x=55+(i*167)%Math.max(120,world.w-100),y=150+(i*131)%Math.max(220,world.h-190);
+        const w=65+(i%4)*26,h=16+(i%3)*7,ang=((i%9)-4)*.08;
+        ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+        ctx.fillStyle=i%3===0?"rgba(188,156,111,.17)":"rgba(79,61,51,.18)";
+        ctx.beginPath();ctx.moveTo(-w,2);ctx.lineTo(-w*.44,-h);ctx.lineTo(w*.28,-h*.55);ctx.lineTo(w,h*.1);ctx.lineTo(w*.36,h);ctx.lineTo(-w*.55,h*.65);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(224,195,151,.12)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-w*.72,0);ctx.lineTo(w*.68,-h*.1);ctx.stroke();ctx.restore();
+      }
+
+      // Deterministic angular rock chips reinforce the quarry material without becoming colliders.
+      for(let i=0;i<52;i++){
+        const x=28+(i*149)%Math.max(80,world.w-56),y=138+(i*83+i*i)%Math.max(180,world.h-160),r=2+(i%5)*1.1;
+        ctx.fillStyle=i%4===0?"rgba(205,179,137,.28)":"rgba(67,57,50,.38)";
+        ctx.beginPath();ctx.moveTo(x-r,y+r*.2);ctx.lineTo(x-r*.25,y-r);ctx.lineTo(x+r,y-r*.25);ctx.lineTo(x+r*.45,y+r);ctx.closePath();ctx.fill();
+      }
       return;
     }
     if(world.id==="nesmen"){
@@ -1577,7 +1647,16 @@
         ctx.fillStyle="#4a433b";roundRect(ctx,22,-60,10,24,2);ctx.fill();ctx.fillStyle="#2f2d29";ctx.fillRect(20,-61,14,4);
       }
     }
-    else if(p.type==="fieldpit"||p.type==="sandpit"||p.type==="minepit"){ctx.rotate(p.angle||0);const w=p.w||110,h=p.h||58;const palette=p.type==="sandpit"?{lip:"#d8c39a",wall:"#9d8861",deep:"#574d40",line:"#f2debb",material:"sand"}:p.type==="minepit"?{lip:"#956c4a",wall:"#694a33",deep:"#241a13",line:"#c7986a",material:"dark"}:{lip:"#b48858",wall:"#805a3a",deep:"#2a1d14",line:"#d9ad76",material:"field"};drawExcavationProfile(w,h,p.x+p.y,palette);}
+    else if(p.type==="fieldpit"||p.type==="sandpit"||p.type==="minepit"){
+      ctx.rotate(p.angle||0);const w=p.w||110,h=p.h||58;
+      const palette=p.type==="sandpit"?{lip:"#d8c39a",wall:"#9d8861",deep:"#574d40",line:"#f2debb",material:"sand"}:p.type==="minepit"?{lip:"#8e684d",wall:"#604738",deep:"#17110e",line:"#c49567",material:"dark"}:{lip:"#b48858",wall:"#805a3a",deep:"#2a1d14",line:"#d9ad76",material:"field"};
+      drawExcavationProfile(w,p.type==="minepit"?h*1.12:h,p.x+p.y,palette);
+      if(p.type==="minepit"){
+        // Additional dark core and rim chips read as a deeper disturbed quarry profile.
+        ctx.fillStyle="rgba(10,8,7,.2)";organicPitPath(ctx,w*.48,h*.28,p.x-p.y+203,.1);ctx.fill();
+        for(let n=0;n<8;n++){const a=n/8*Math.PI*2+(p.x%17)*.04,x=Math.cos(a)*w*.53,y=Math.sin(a)*h*.48;ctx.fillStyle=n%2?"#725744":"#ae8158";ctx.beginPath();ctx.moveTo(x-4,y+2);ctx.lineTo(x,y-4);ctx.lineTo(x+5,y+1);ctx.lineTo(x+1,y+4);ctx.closePath();ctx.fill();}
+      }
+    }
     else if(p.type==="soilheap"){ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,12,35,10,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#886747";ctx.beginPath();ctx.moveTo(-36,12);ctx.quadraticCurveTo(-12,-22,0,-12);ctx.quadraticCurveTo(18,-28,39,12);ctx.closePath();ctx.fill();ctx.fillStyle="rgba(188,151,100,.26)";ctx.beginPath();ctx.arc(-8,-4,5,0,Math.PI*2);ctx.arc(12,-7,4,0,Math.PI*2);ctx.fill();}
     else if(p.type==="stubble"){ctx.strokeStyle="#b7a271";ctx.lineWidth=2;for(let i=-4;i<=4;i+=2){ctx.beginPath();ctx.moveTo(i,9);ctx.lineTo(i-2,-9-(i%3));ctx.stroke();}}
     else if(p.type==="realpine"){
@@ -1602,7 +1681,22 @@
       ctx.fillStyle=col;for(const q of crowns){ctx.beginPath();ctx.moveTo(0,q[1]-q[2]);ctx.lineTo(-q[2],q[1]+q[2]);ctx.lineTo(q[2],q[1]+q[2]);ctx.closePath();ctx.fill();}
       if(loc){ctx.strokeStyle="rgba(180,205,163,.14)";ctx.lineWidth=1;for(const q of crowns){ctx.beginPath();ctx.moveTo(0,q[1]-q[2]+4);ctx.lineTo(-q[2]*.78,q[1]+q[2]*.72);ctx.stroke();}}
     }
-    else if(p.type==="sandmound"||p.type==="earthbank"){ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.18)";ctx.beginPath();ctx.ellipse(0,15,52,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=p.type==="sandmound"?"#c7b38a":"#9b7858";ctx.beginPath();ctx.moveTo(-55,15);ctx.quadraticCurveTo(-20,-25,0,-15);ctx.quadraticCurveTo(30,-32,58,15);ctx.closePath();ctx.fill();ctx.strokeStyle=p.type==="sandmound"?"rgba(238,220,177,.45)":"rgba(190,148,102,.35)";ctx.lineWidth=3;ctx.stroke();}
+    else if(p.type==="sandmound"||p.type==="earthbank"){
+      ctx.rotate(p.angle||0);ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(0,15,54,14,0,0,Math.PI*2);ctx.fill();
+      if(p.type==="sandmound"){
+        ctx.fillStyle="#c7b38a";ctx.beginPath();ctx.moveTo(-55,15);ctx.quadraticCurveTo(-20,-25,0,-15);ctx.quadraticCurveTo(30,-32,58,15);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(238,220,177,.45)";ctx.lineWidth=3;ctx.stroke();
+      }else{
+        const bank=ctx.createLinearGradient(0,-28,0,18);bank.addColorStop(0,"#aa815b");bank.addColorStop(.45,"#856247");bank.addColorStop(1,"#5f493a");
+        ctx.fillStyle=bank;ctx.beginPath();ctx.moveTo(-57,15);ctx.lineTo(-45,-4);ctx.lineTo(-18,-25);ctx.lineTo(9,-17);ctx.lineTo(29,-29);ctx.lineTo(58,14);ctx.closePath();ctx.fill();
+        // Three visible material bands give the bank a cut geological face.
+        for(const q of [[-44,-2,44,-9],[ -48,7,48,1],[-38,13,43,10]]){
+          ctx.strokeStyle=q[1]<0?"rgba(218,178,126,.42)":"rgba(69,49,39,.48)";ctx.lineWidth=2;
+          ctx.beginPath();ctx.moveTo(q[0],q[1]);ctx.quadraticCurveTo(0,q[1]-4,q[2],q[3]);ctx.stroke();
+        }
+        ctx.fillStyle="rgba(213,179,130,.33)";for(const q of [[-32,-10,4],[13,-15,5],[34,4,3],[-9,4,3]]){ctx.beginPath();ctx.ellipse(q[0],q[1],q[2],q[2]*.55,.2,0,Math.PI*2);ctx.fill();}
+      }
+    }
     else if(p.type==="fallenpine"){ctx.rotate(p.angle||0);ctx.fillStyle="#8b5737";roundRect(ctx,-50,-5,100,10,5);ctx.fill();ctx.strokeStyle="#385b3f";ctx.lineWidth=3;for(let x=-35;x<45;x+=16){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x-8,-15);ctx.moveTo(x+5,0);ctx.lineTo(x+12,13);ctx.stroke();}}
     else if(p.type==="trackscar"){ctx.rotate(p.angle||0);ctx.strokeStyle="rgba(68,48,34,.55)";ctx.lineWidth=5;for(const y of [-10,10]){ctx.beginPath();ctx.moveTo(-55,y);ctx.lineTo(55,y);ctx.stroke();for(let x=-48;x<50;x+=14){ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+7,y+4);ctx.stroke();}}}
     else if(p.type==="excavator"){
@@ -2378,6 +2472,7 @@
         startScaleReference(){const result=generateScaleReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startLoceniceReference(){const result=generateLoceniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startNesmenReference(){const result=generateNesmenReference();mode="playing";showOnly(null);setPlaying(true);return result;},
+        startBesedniceReference(){const result=generateBesedniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         spawnBoss(name="karel"){if(!world)return null;startRival(name,player.x+240,player.y-120);return world.rival;},
         hitBoss(){hitRival();return world?.rival?{active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase}:null;},
         setPlayer(x,y){player.x=x;player.y=y;return {x:player.x,y:player.y};},
