@@ -990,20 +990,14 @@ test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", asyn
 
 test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvolní", async ({ page }) => {
   await openDebug(page);
-  await page.evaluate(() => {
-    window.__lovecDebug.startScaleReference();
-    const controls = document.getElementById("controls");
-    controls.classList.remove("hidden");
-    controls.style.setProperty("display","flex","important");
-    controls.style.setProperty("pointer-events","auto","important");
-  });
+  // Pointer lifecycle is independent of the desktop layout. Keep gameplay in dig mode
+  // so performAction() is a no-op and the test observes only the action-button pointer state.
+  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
   const button = page.locator("#actionButton");
-  const box = await button.boundingBox();
-  expect(box).toBeTruthy();
 
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
+  await button.dispatchEvent("pointerdown",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
+  await expect(button).toHaveClass(/active/);
 
   await button.dispatchEvent("pointerdown",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await button.dispatchEvent("pointercancel",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
@@ -1012,11 +1006,10 @@ test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvoln
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
   await expect(button).not.toHaveClass(/active/);
-  await page.mouse.up();
 
-  await page.mouse.down();
+  await button.dispatchEvent("pointerdown",{pointerId:53,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
-  await page.mouse.up();
+  await button.dispatchEvent("pointercancel",{pointerId:53,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
 });
 
