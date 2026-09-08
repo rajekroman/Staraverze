@@ -363,6 +363,18 @@ test("Malše street hard-props evidence", async ({ page }) => {
   await capture(page, "malse-street-props");
 });
 
+test("Ločenice sandy pine identity evidence", async ({ page }) => {
+  await openDebug(page);
+  const scene = await page.evaluate(() => {
+    const result=window.__lovecDebug.startLoceniceReference();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+    return result;
+  });
+  expect(scene).toMatchObject({ level: "locenice", reference: true });
+  await capture(page, "locenice-identity");
+});
+
 test("shared scale reference visual evidence", async ({ page }) => {
   await openDebug(page);
   const scene = await page.evaluate(() => {
