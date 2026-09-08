@@ -52,13 +52,13 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Po bouřce vyrazil na pole i překupník Franta. Radar odhalí vltavíny ukryté v brázdách dřív, než je sebere cizí technika.",
+      text: "Po bouřce vyrazil na pole i sběratel Franta, který chystá vlastní kolekci na akci Na zelené vlně. Radar odhalí vltavíny ukryté v brázdách dřív, než je překryje technika nebo objeví konkurence.",
       why: "Bez silného začátku nebudeš mít co vystavit. Tahle lokalita má odstartovat tvou sbírku pro akci Na zelené vlně.",
       goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
     {
       id: "locenice", name: "Ločenice", title: "Písčitá hrana", theme: "meadow",
-      text: "V borovém lese se šíří padělky z dílny Frantových překupníků. Rozliš pravé vltavíny od falešného skla podle povrchu a lomu světla.",
+      text: "V borovém lese se mezi nálezy pletou i kusy falešného skla. Rozliš pravé vltavíny od napodobenin podle povrchu a lomu světla.",
       why: "Potřebuješ rozšířit sbírku o ověřené kusy. Ločenice prověří oko sběratele, ne jen rychlost pohybu.",
       goal: "Správně urči 5 vzorků a najdi 3 pravé kusy.", music: "meadow"
     },
@@ -76,7 +76,7 @@
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Franta chce poslední certifikát prodat přímo před KD Slávií. Posbírej dokumentaci, zastav jeho únik a doraz na výstavu s důkazem o původu.",
+      text: "Franta už se svou sbírkou míří do KD Slávie. Posbírej dokumentaci, dožeň ho a doraz na výstavu s kompletně doloženým původem svých kamenů.",
       why: "Tady končí lov a začíná prezentace. Bez dokumentů a silné sbírky neuspěješ před porotou ani vystavovateli.",
       goal: "Seber 3 složky, dožeň Frantu a vstup do KD Slávie.", music: "city"
     }
