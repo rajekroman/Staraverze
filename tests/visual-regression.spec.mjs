@@ -258,10 +258,10 @@ test("Chlum agricultural identity evidence", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(0);
-    window.__lovecDebug.setPlayer(1040, 720);
+    window.__lovecDebug.setPlayer(1510, 470);
     window.__lovecDebug.setPatrolMotion("tractor", {
-      x:1420,y:430,speed:0,angle:0,working:true,resetMotion:true,collisionEnabled:false,
-      points:[{x:1420,y:430},{x:1420,y:430}],index:1
+      x:1280,y:330,speed:0,angle:0,working:true,resetMotion:true,collisionEnabled:false,
+      points:[{x:1280,y:330},{x:1280,y:330}],index:1
     });
     window.__lovecDebug.snapCameraToPlayer();
     document.getElementById("hud")?.classList.add("hidden");
