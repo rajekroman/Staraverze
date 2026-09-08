@@ -72,7 +72,9 @@ test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page 
   expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
   await page.locator("#resumeButton").click();
   await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#digPauseButton")).toBeFocused();
   await page.locator("#digButton").focus();
+  await expect(page.locator("#digButton")).toBeFocused();
   for (let i=0;i<3;i++) {
     await page.evaluate(() => { window.__lovecDebug.setDigSpeed(0); window.__lovecDebug.setDigMarker(); });
     await page.keyboard.press("Space");
