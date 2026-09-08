@@ -1,4 +1,4 @@
-const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-4";
+const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-5";
 const CORE = [
   "./","./index.html","./style.css","./game.js","./manifest.webmanifest",
   "./icon-180.png","./icon-192.png","./icon-512.png",
@@ -12,10 +12,8 @@ const CORE = [
   "./assets/audio/effects/dig-miss.mp3","./assets/audio/effects/dig-perfect.mp3",
   "./assets/audio/effects/finding-a.mp3","./assets/audio/effects/finding-b.mp3",
   "./assets/audio/effects/finding-c.mp3","./assets/audio/effects/finding-chime.mp3",
-  "./assets/audio/effects/journey-loop.mp3","./assets/audio/effects/ui-click.mp3",
-  "./assets/audio/effects/ui-close.mp3","./assets/audio/effects/ui-open.mp3",
-  "./assets/audio/effects/ui-result.mp3",
-  "./assets/ui/na-zelene-vlne.jpg","./assets/ui/nzv-logo-purple.png"
+  "./assets/audio/effects/ui-click.mp3","./assets/audio/effects/ui-result.mp3",
+  "./assets/ui/nzv-logo-purple.png"
 ];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
@@ -32,7 +30,6 @@ self.addEventListener("fetch", e => {
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
     const fallback = await cache.match(navigation ? "./index.html" : e.request);
-    // Versioned core assets are immutable within a release. Never cache arbitrary URLs or error/partial responses.
     if (!navigation && fallback) return fallback;
     try {
       const response = await fetch(e.request);

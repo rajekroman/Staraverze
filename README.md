@@ -32,6 +32,16 @@ npm run test:offline
 npm run test:visual
 ```
 
+### Čistý GitHub Pages publish
+
+```sh
+npm run build:publish
+npm run validate:publish
+npm run test:publish
+```
+
+`npm run build:publish` vždy znovu vytvoří ignorovaný adresář `dist/` pouze z explicitního seznamu runtime souborů. GitHub Pages nahrává výhradně tento adresář; testy, nástroje a interní dokumentace zůstávají jen ve zdrojovém repozitáři.
+
 Aktuální zjištění, skutečně provedené opravy a neuzavřené release podmínky:
 [produkční audit](PRODUCTION_AUDIT.md).
 

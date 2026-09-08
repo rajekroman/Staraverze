@@ -21,6 +21,27 @@ jobs:
       - run: npm ci
       - run: npm run validate
 
+  publish:
+    name: Clean Pages publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:publish
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: publish-test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   browser:
     name: Playwright - ${{ matrix.project }}
     runs-on: ubuntu-latest
@@ -57,7 +78,6 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
-
 
   visual:
     name: Visual regression - ${{ matrix.project }}
