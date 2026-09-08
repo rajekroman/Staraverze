@@ -11,7 +11,7 @@ test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async
   await expect(page.locator("#campaignEventCard")).toContainText("České Budějovice");
   await expect(page.locator("#campaignEventCard")).toContainText("KD SLAVIE");
   await expect(page.locator(".campaign-storyline")).toContainText("FINÁLE NA AKCI");
-  await expect(page.locator("#titleScreen .subtitle")).toContainText("Vydej se po stopách vltavínů");
+  await expect(page.locator("#titleScreen .subtitle")).toContainText("Nasbírej nejkrásnější vltavíny a doraz s nimi na akci");
   await expect(page.locator("#playButton")).toContainText("VYRAZIT ZA VLTAVÍNY");
   await expect(page.locator('a[href="https://www.nazelenevlne.cz"]')).toHaveCount(3);
   await expect(page.locator(".nzv-brand-lockup img")).toHaveAttribute("src", "./assets/ui/nzv-logo-purple.png");
