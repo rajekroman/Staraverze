@@ -7,10 +7,12 @@ const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
-  await expect(page.locator("#campaignEventCard")).toContainText("19. 9. 2026");
-  await expect(page.locator("#campaignEventCard")).toContainText("ČESKÉ BUDĚJOVICE");
+  await expect(page.locator("#campaignEventCard")).toContainText("19. ZÁŘÍ 2026");
+  await expect(page.locator("#campaignEventCard")).toContainText("České Budějovice");
   await expect(page.locator("#campaignEventCard")).toContainText("KD SLAVIE");
-  await expect(page.locator(".campaign-storyline")).toContainText("DORAZ NA AKCI");
+  await expect(page.locator(".campaign-storyline")).toContainText("FINÁLE NA AKCI");
+  await expect(page.locator("#titleScreen .subtitle")).toContainText("Vydej se po stopách vltavínů");
+  await expect(page.locator("#playButton")).toContainText("VYRAZIT ZA VLTAVÍNY");
   await expect(page.locator('a[href="https://www.nazelenevlne.cz"]')).toHaveCount(3);
   await expect(page.locator(".nzv-brand-lockup img")).toHaveAttribute("src", "./assets/ui/nzv-logo-purple.png");
   await expect(page.locator(".nzv-brand-lockup")).toBeVisible();
