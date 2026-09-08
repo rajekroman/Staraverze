@@ -131,6 +131,23 @@ test("Chlum visual baseline", async ({ page }) => {
   await capture(page, "chlum");
 });
 
+test("shared scale reference visual evidence", async ({ page }) => {
+  await openDebug(page);
+  const scene = await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  expect(scene).toMatchObject({ level: "chlum", reference: true });
+  await capture(page, "scale-reference");
+});
+
+test("Malše / Slávie identity baseline", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.setPlayer(1420, 430);
+  });
+  await page.waitForTimeout(700);
+  await capture(page, "malse-slavie");
+});
+
 test("radar reveal visual baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
