@@ -22,8 +22,10 @@ Tento PR mění pouze kresbu props `farm` a `hut`. World pozice, gameplay, průc
 
 ## Měřítko a gameplay
 
-- původní `scale` v kampani se nemění: statek Chlum `.82`, chata Nesměň `.9`;
-- referenční statek zůstává `scale: 3.0`;
+- původní gameplay `scale` v kampani se nemění: statek Chlum `.82`, chata Nesměň `.9`;
+- renderer používá oddělený `visualScale`: statek `2.5`, chata `2.25`, aby budovy nepůsobily jako modely vůči hráči;
+- referenční statek zůstává `scale: 3.0` bez dodatečného `visualScale`;
+- `visualScale` neovlivňuje world souřadnice ani collision logiku;
 - změna rendereru nepřidává ani nemění žádnou collision geometrii;
 - world souřadnice budov a hráče v kampani se nemění.
 
