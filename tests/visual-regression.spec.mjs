@@ -366,6 +366,18 @@ test("Malše street hard-props evidence", async ({ page }) => {
   await capture(page, "malse-street-props");
 });
 
+test("Nesměň wet forest identity evidence", async ({ page }) => {
+  await openDebug(page);
+  const scene = await page.evaluate(() => {
+    const result=window.__lovecDebug.startNesmenReference();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+    return result;
+  });
+  expect(scene).toMatchObject({ level: "nesmen", reference: true });
+  await capture(page, "nesmen-identity");
+});
+
 test("Ločenice sandy pine identity evidence", async ({ page }) => {
   await openDebug(page);
   const scene = await page.evaluate(() => {
