@@ -1232,7 +1232,7 @@
           ctx.fillStyle=g;ctx.beginPath();ctx.arc(x+q[0]*s,y+q[1]*s,q[2]*s,0,Math.PI*2);ctx.fill();
         }
       };
-      hedge(68,365,1.05);hedge(74,820,.9);hedge(1718,475,1.0);hedge(1695,880,1.12);
+      hedge(105,365,1.12);hedge(125,820,1.0);hedge(1615,475,1.12);hedge(1585,880,1.18);
 
       // Compacted headland lanes interrupt the furrows where machinery turns.
       ctx.fillStyle="rgba(139,116,79,.42)";
@@ -1246,15 +1246,23 @@
         ctx.restore();
       }
 
-      // Two long paired tyre routes cross multiple furrow bands; their curves are deterministic.
-      ctx.strokeStyle="rgba(54,39,29,.5)";ctx.lineWidth=6;ctx.lineCap="round";
-      for(const off of [-10,10]){
-        ctx.beginPath();ctx.moveTo(365+off,245);ctx.bezierCurveTo(430+off,455,485+off,740,590+off,1110);ctx.stroke();
-        ctx.beginPath();ctx.moveTo(1485+off,248);ctx.bezierCurveTo(1420+off,490,1430+off,735,1328+off,1115);ctx.stroke();
+      // Two long paired tyre routes cross multiple furrow bands. Patchy linework prevents a rail-like silhouette.
+      ctx.strokeStyle="rgba(58,43,31,.32)";ctx.lineWidth=3.6;ctx.lineCap="round";ctx.setLineDash([34,16]);
+      for(const off of [-9,9]){
+        ctx.beginPath();ctx.moveTo(350+off,248);ctx.bezierCurveTo(405+off,430,472+off,725,575+off,1110);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(1495+off,250);ctx.bezierCurveTo(1452+off,470,1410+off,760,1315+off,1112);ctx.stroke();
       }
-      ctx.strokeStyle="rgba(197,167,116,.12)";ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(365,250);ctx.bezierCurveTo(430,455,485,740,590,1110);ctx.stroke();
-      ctx.beginPath();ctx.moveTo(1485,250);ctx.bezierCurveTo(1420,490,1430,735,1328,1115);ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle="rgba(210,182,132,.1)";ctx.lineWidth=1.4;
+      ctx.beginPath();ctx.moveTo(350,250);ctx.bezierCurveTo(405,430,472,725,575,1110);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(1495,250);ctx.bezierCurveTo(1452,470,1410,760,1315,1112);ctx.stroke();
+      // Short tread impressions read as machinery ruts rather than road markings.
+      ctx.strokeStyle="rgba(48,35,27,.2)";ctx.lineWidth=2;
+      for(let n=0;n<7;n++){
+        const y=365+n*108,xa=390+n*23,xb=1468-n*20;
+        ctx.beginPath();ctx.moveTo(xa-14,y-4);ctx.lineTo(xa+13,y+4);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(xb-13,y+3);ctx.lineTo(xb+13,y-4);ctx.stroke();
+      }
 
       // Sparse unworked patches break the ploughed rhythm without creating diggable holes.
       for(const q of [[735,490,58,18,.1],[1095,690,72,20,-.08],[815,875,54,16,.04]]){
