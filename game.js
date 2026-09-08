@@ -1299,7 +1299,7 @@
       // Plinth and small step tie the facade to the plaza.
       ctx.fillStyle="#d6cdb4";ctx.beginPath();ctx.moveTo(-190,58);ctx.lineTo(190,58);ctx.lineTo(205,70);ctx.lineTo(-205,70);ctx.closePath();ctx.fill();
       ctx.strokeStyle="rgba(118,110,94,.35)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-205,70);ctx.lineTo(205,70);ctx.stroke();
-    }}
+    }
     ctx.restore();
   }
 
