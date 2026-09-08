@@ -1,10 +1,12 @@
 # Lovec vltavínů Reborn 5.4.2
 
-## Příběhová korekce Franty
+## Příběhové role hráče a Franty
 
-- Franta je napříč příběhem popsaný jako konkurenční sběratel, který připravuje a na Na zelené vlně vystavuje vlastní kolekci;
-- z Chlumu a Ločenic byly odstraněny formulace „překupník“ / „Frantovi překupníci“;
-- finále u KD Slavie už nemluví o prodeji certifikátu, ale o závodu dvou sběratelů na výstavu s doloženým původem kamenů;\n- hlavní postava zůstává záměrně bezejmenná — je to přímo hráč a příběhové texty ji oslovují ve druhé osobě.
+- hlavní postava zůstává záměrně bezejmenná: je to přímo hráč, opravdový sběratel, který vltavíny nehledá kvůli penězům, ale chce sestavit nejlepší sbírku a vystavit ji na Na zelené vlně;
+- Franta je jasně odlišený antagonista: vltavíny sbírá kvůli prodeji a penězům na drogy, nikoli kvůli sběratelství nebo výstavě;
+- Chlum vysvětluje rozdílnou motivaci obou postav už při prvním briefingu;
+- finále u KD Slavie staví proti sobě hráčovu výstavní sbírku a Frantovu snahu nálezy zpeněžit kolem akce;
+- odstraněno označení „FETÁK FRANTA“ i zavádějící „SBĚRATEL FRANTA“; v HUD je jednoduše „FRANTA“.
 
 ## Hlavní menu — copy a vizuální hierarchie
 
