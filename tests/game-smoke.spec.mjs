@@ -4,6 +4,16 @@ const LEVELS = ["chlum", "locenice", "nesmen", "besednice", "malse"];
 const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
+test("Franta je v příběhu sběratel a vystavovatel, ne překupník", async ({ page }) => {
+  await page.goto("/game.js");
+  const source = await page.locator("body").innerText();
+  expect(source).toContain("sběratel Franta");
+  expect(source).toContain("Franta už se svou sbírkou míří do KD Slávie");
+  expect(source).not.toContain("překupník Franta");
+  expect(source).not.toContain("Frantových překupníků");
+  expect(source).not.toContain("certifikát prodat");
+});
+
 test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
