@@ -137,6 +137,34 @@ test("Chlum visual baseline", async ({ page }) => {
   await capture(page, "chlum");
 });
 
+test("Besednice excavator front occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.setPlayer(900, 660);
+    window.__lovecDebug.setExcavatorState(0,{x:900,y:600,angle:0,turretAngle:.08,turretTarget:.08,workPhase:1.35,workSpeed:0,working:false,variant:0});
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(150);
+  await capture(page, "besednice-excavator-front");
+});
+
+test("Besednice excavator rear occlusion evidence", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.setPlayer(900, 535);
+    window.__lovecDebug.setExcavatorState(0,{x:900,y:600,angle:0,turretAngle:.08,turretTarget:.08,workPhase:1.35,workSpeed:0,working:false,variant:0});
+    window.__lovecDebug.snapCameraToPlayer();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+  });
+  await page.waitForTimeout(150);
+  await capture(page, "besednice-excavator-behind");
+});
+
 test("shared scale reference visual evidence", async ({ page }) => {
   await openDebug(page);
   const scene = await page.evaluate(() => {
