@@ -5,6 +5,8 @@ const VISUAL_TEST = /visual-regression\.spec\.mjs/;
 const NON_STANDARD_TESTS = [OFFLINE_TEST, VISUAL_TEST];
 const port = Number(process.env.PLAYWRIGHT_PORT || 4173);
 const baseURL = `http://127.0.0.1:${port}`;
+const webRoot = process.env.PLAYWRIGHT_ROOT || ".";
+const webRootArg = JSON.stringify(webRoot);
 
 export default defineConfig({
   testDir: "./tests",
@@ -78,7 +80,7 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: `python3 -m http.server ${port} --bind 127.0.0.1`,
+    command: `python3 -m http.server ${port} --bind 127.0.0.1 --directory ${webRootArg}`,
     url: `${baseURL}/index.html`,
     reuseExistingServer: false,
     timeout: 15_000
