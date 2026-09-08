@@ -1214,7 +1214,18 @@
       ctx.strokeStyle=i%3?"rgba(203,244,239,.2)":"rgba(116,215,222,.28)";
       ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+width,y);ctx.stroke();
     }
-    ctx.fillStyle="#787a72";ctx.fillRect(420,0,120,world.h);ctx.fillStyle="#b6b2a7";ctx.fillRect(540,0,340,world.h);for(let y=0;y<world.h;y+=78){ctx.fillStyle="rgba(255,255,255,.1)";ctx.fillRect(540,y+18,340,6);}
+    // Malše edge: a readable stone embankment instead of a flat grey strip.
+    ctx.fillStyle="#4d514c";ctx.fillRect(416,0,8,world.h);
+    const wall=ctx.createLinearGradient(420,0,540,0);wall.addColorStop(0,"#777970");wall.addColorStop(.45,"#96958a");wall.addColorStop(1,"#777a73");ctx.fillStyle=wall;ctx.fillRect(420,0,120,world.h);
+    ctx.fillStyle="rgba(31,43,42,.34)";ctx.fillRect(420,0,9,world.h);
+    for(let y=10,row=0;y<world.h;y+=28,row++){for(let x=428+(row%2)*18;x<536;x+=36){ctx.fillStyle=(row+Math.floor(x/36))%3===0?"rgba(218,211,190,.19)":"rgba(52,54,50,.16)";roundRect(ctx,x,y,31,20,3);ctx.fill();ctx.strokeStyle="rgba(229,224,205,.12)";ctx.lineWidth=1;ctx.stroke();}}
+    ctx.fillStyle="rgba(229,225,211,.38)";ctx.fillRect(424,0,112,5);
+    ctx.strokeStyle="rgba(43,49,46,.5)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(538,0);ctx.lineTo(538,world.h);ctx.stroke();
+
+    // Broken cream reflections echo the historic riverside architecture without changing gameplay geometry.
+    ctx.save();ctx.globalAlpha=.22;for(let n=0;n<13;n++){const y=92+n*55,shift=(n%3)*17;ctx.fillStyle=n%3===0?"#e7dfc7":"#c7d6cf";ctx.fillRect(58+shift,y,150-(n%4)*18,3+(n%2)*2);ctx.fillRect(245-shift*.4,y+11,105+(n%3)*16,2);}ctx.restore();
+
+    ctx.fillStyle="#b6b2a7";ctx.fillRect(540,0,340,world.h);for(let y=0;y<world.h;y+=78){ctx.fillStyle="rgba(255,255,255,.1)";ctx.fillRect(540,y+18,340,6);}
     ctx.fillStyle="#42464a";ctx.fillRect(880,0,210,world.h);ctx.fillStyle="#8c8e87";ctx.fillRect(1090,0,710,world.h);ctx.strokeStyle="#eadfb8";ctx.setLineDash([28,25]);ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(985,0);ctx.lineTo(985,world.h);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle="#a3a69e";ctx.fillRect(1090,0,710,420);for(let y=40;y<400;y+=60){ctx.strokeStyle="rgba(255,255,255,.15)";ctx.beginPath();ctx.moveTo(1090,y);ctx.lineTo(1800,y);ctx.stroke();}
   }
@@ -1270,21 +1281,72 @@
     else if(p.type==="lamp"){ctx.fillStyle="#3c4344";ctx.fillRect(-3,-55,6,70);ctx.fillStyle="rgba(255,224,142,.12)";ctx.beginPath();ctx.arc(0,-57,25,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ffe6a0";ctx.beginPath();ctx.arc(0,-57,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#b5c1a1";ctx.lineWidth=2;ctx.stroke();}
     else if(p.type==="bridge"){ctx.fillStyle="#4f6f78";roundRect(ctx,-115,-28,230,56,16);ctx.fill();ctx.strokeStyle="#a8cad0";ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,25,105,Math.PI,0);ctx.stroke();}
     else if(p.type==="slavie"){
-      ctx.fillStyle="rgba(0,0,0,.24)";ctx.beginPath();ctx.ellipse(0,68,220,28,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle="#e9ebe6";ctx.beginPath();ctx.moveTo(-215,-110);ctx.lineTo(-78,-110);ctx.lineTo(-78,52);ctx.lineTo(-215,52);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#ffffff";ctx.beginPath();ctx.moveTo(-215,-110);ctx.lineTo(-50,-110);ctx.lineTo(-20,-88);ctx.lineTo(-20,52);ctx.lineTo(-215,52);ctx.closePath();ctx.fill();
-      ctx.fillStyle="rgba(168,215,220,.58)";ctx.beginPath();ctx.moveTo(-205,-4);ctx.lineTo(-40,-4);ctx.lineTo(-40,46);ctx.lineTo(-205,46);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="rgba(255,255,255,.65)";ctx.lineWidth=2;for(let x=-190;x<-45;x+=22){ctx.beginPath();ctx.moveTo(x,-4);ctx.lineTo(x,46);ctx.stroke();}
-      ctx.fillStyle="#d8d6cf";ctx.beginPath();ctx.moveTo(-10,-82);ctx.lineTo(178,-82);ctx.lineTo(178,52);ctx.lineTo(-10,52);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#c6c4bd";ctx.beginPath();ctx.moveTo(178,-82);ctx.lineTo(198,-70);ctx.lineTo(198,52);ctx.lineTo(178,52);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="#9b9b98";ctx.lineWidth=3;ctx.strokeRect(-10,-82,188,134);
-      ctx.fillStyle="#ece7df";ctx.beginPath();ctx.moveTo(-16,-82);ctx.lineTo(84,-138);ctx.lineTo(188,-82);ctx.closePath();ctx.fill();ctx.strokeStyle="#a5a5a2";ctx.stroke();
-      ctx.strokeStyle="#9d9d9a";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-4,-56);ctx.lineTo(172,-56);ctx.moveTo(-4,-18);ctx.lineTo(172,-18);ctx.stroke();
-      ctx.fillStyle="#4a5962";for(let yy=-70;yy<26;yy+=38)for(let xx=12;xx<=150;xx+=34){roundRect(ctx,xx-8,yy,16,24,3);ctx.fill();}
-      ctx.fillStyle="#43382f";roundRect(ctx,72,8,30,44,3);ctx.fill();
-      ctx.fillStyle="#f5f5f2";ctx.beginPath();ctx.moveTo(-65,-104);ctx.lineTo(-35,-104);ctx.lineTo(-35,-138);ctx.lineTo(-65,-138);ctx.closePath();ctx.fill();
-      ctx.fillStyle="#2d6b4b";roundRect(ctx,-55,-127,104,18,5);ctx.fill();ctx.fillStyle="#edf7f0";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText("NA ZELENÉ VLNĚ",-3,-114);
-      ctx.fillStyle="#ecebe7";ctx.beginPath();ctx.moveTo(-8,52);ctx.lineTo(182,52);ctx.lineTo(198,64);ctx.lineTo(8,64);ctx.closePath();ctx.fill();
+      // Historic KD Slavie / former Deutsches Haus: simplified for the top-down game map,
+      // but preserving the protected Neo-Renaissance frontage's defining proportions.
+      ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(0,77,238,31,0,0,Math.PI*2);ctx.fill();
+      ctx.save();ctx.translate(0,70);ctx.scale(1,.68);ctx.translate(0,-70);
+
+      // Lower side wings and their darker roofs keep the central pediment dominant.
+      ctx.fillStyle="#4e4d46";ctx.beginPath();ctx.moveTo(-242,-100);ctx.lineTo(-174,-126);ctx.lineTo(-174,-88);ctx.lineTo(-242,-72);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(242,-100);ctx.lineTo(174,-126);ctx.lineTo(174,-88);ctx.lineTo(242,-72);ctx.closePath();ctx.fill();
+      ctx.fillStyle="#cfc6aa";roundRect(ctx,-242,-92,68,148,3);ctx.fill();roundRect(ctx,174,-92,68,148,3);ctx.fill();
+
+      // Main three-level historic body.
+      const plaster=ctx.createLinearGradient(-180,-150,180,58);plaster.addColorStop(0,"#efe6ca");plaster.addColorStop(.52,"#ddd3b7");plaster.addColorStop(1,"#c9bea3");
+      ctx.fillStyle=plaster;roundRect(ctx,-178,-151,356,209,3);ctx.fill();
+      ctx.strokeStyle="#a79c82";ctx.lineWidth=2;ctx.stroke();
+
+      // Ground-floor rustication and strong horizontal cornices.
+      ctx.strokeStyle="rgba(129,118,95,.38)";ctx.lineWidth=1.2;
+      for(let y=-48;y<51;y+=16){ctx.beginPath();ctx.moveTo(-176,y);ctx.lineTo(176,y);ctx.stroke();}
+      for(let x=-168;x<=168;x+=28){ctx.beginPath();ctx.moveTo(x,-48);ctx.lineTo(x+((Math.floor(x/28)&1)?8:-8),-32);ctx.stroke();}
+      ctx.fillStyle="#b8ad91";ctx.fillRect(-184,-55,368,8);ctx.fillRect(-184,-116,368,7);ctx.fillRect(-188,53,376,8);
+      ctx.fillStyle="#f4ecd4";ctx.fillRect(-184,-58,368,3);ctx.fillRect(-184,-119,368,3);
+
+      const archWindow=(x,y,w,h,door=false)=>{
+        ctx.save();ctx.translate(x,y);
+        ctx.fillStyle=door?"#47372e":"#40535b";
+        ctx.beginPath();ctx.moveTo(-w/2,h/2);ctx.lineTo(-w/2,-h/2+w/2);ctx.arc(0,-h/2+w/2,w/2,Math.PI,0);ctx.lineTo(w/2,h/2);ctx.closePath();ctx.fill();
+        ctx.strokeStyle="rgba(246,238,216,.72)";ctx.lineWidth=2;ctx.stroke();
+        if(!door){ctx.strokeStyle="rgba(196,218,214,.36)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,-h/2+w/2);ctx.lineTo(0,h/2);ctx.moveTo(-w/2+3,3);ctx.lineTo(w/2-3,3);ctx.stroke();}
+        else{ctx.fillStyle="#8e7459";ctx.beginPath();ctx.arc(5,h*.18,1.7,0,Math.PI*2);ctx.fill();}
+        ctx.restore();
+      };
+      const bays=[-138,-92,-46,0,46,92,138];
+
+      // Tall arched first-floor windows, rhythmically divided by pilasters.
+      for(const x of bays)archWindow(x,-82,19,35,false);
+      ctx.fillStyle="#c0b498";for(const x of [-160,-115,-69,-23,23,69,115,160]){roundRect(ctx,x-3,-112,6,57,2);ctx.fill();ctx.fillStyle="#f1e6c8";ctx.fillRect(x-4,-112,8,4);ctx.fillRect(x-4,-59,8,4);ctx.fillStyle="#c0b498";}
+
+      // Small rectangular upper windows below the pediment.
+      for(const x of bays){ctx.fillStyle="#43575d";roundRect(ctx,x-8,-140,16,17,2);ctx.fill();ctx.strokeStyle="rgba(245,237,215,.75)";ctx.lineWidth=1.5;ctx.stroke();ctx.strokeStyle="rgba(201,221,215,.28)";ctx.beginPath();ctx.moveTo(x,-139);ctx.lineTo(x,-124);ctx.stroke();}
+
+      // Ground arches with the characteristic three central entrance doors.
+      for(const x of [-138,-92,92,138])archWindow(x,15,20,38,false);
+      archWindow(-42,13,22,44,true);archWindow(0,13,22,46,true);archWindow(42,13,22,44,true);
+
+      // Moulded window surrounds and voussoir hints keep the facade readable without photo textures.
+      ctx.strokeStyle="rgba(126,112,88,.5)";ctx.lineWidth=2;
+      for(const x of [-138,-92,92,138]){ctx.beginPath();ctx.arc(x,-4,14,Math.PI,0);ctx.stroke();}
+      for(const x of [-42,0,42]){ctx.beginPath();ctx.arc(x,-8,15,Math.PI,0);ctx.stroke();}
+
+      // Central triangular pediment with circular oculus: the key silhouette from the real building.
+      ctx.fillStyle="#e8dfc3";ctx.beginPath();ctx.moveTo(-181,-151);ctx.lineTo(0,-221);ctx.lineTo(181,-151);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="#a79b80";ctx.lineWidth=3;ctx.stroke();
+      ctx.strokeStyle="#f5edd4";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-160,-155);ctx.lineTo(0,-211);ctx.lineTo(160,-155);ctx.stroke();
+      ctx.fillStyle="#43565b";ctx.beginPath();ctx.arc(0,-181,13,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#b4a88c";ctx.lineWidth=5;ctx.stroke();ctx.strokeStyle="rgba(243,234,209,.75)";ctx.lineWidth=2;ctx.stroke();
+
+      // Side-wing windows.
+      for(const sx of [-208,208]){archWindow(sx,-50,18,32,false);archWindow(sx,4,18,34,false);}
+
+      // Restrained event banner: promotional identity is present but no longer replaces the architecture.
+      ctx.fillStyle="#2f6b4d";roundRect(ctx,-66,36,132,17,4);ctx.fill();ctx.strokeStyle="rgba(224,244,226,.45)";ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle="#eff7ec";ctx.font="bold 9px sans-serif";ctx.textAlign="center";ctx.fillText("NA ZELENÉ VLNĚ",0,48);
+
+      // Plinth and small step tie the facade to the plaza.
+      ctx.fillStyle="#d6cdb4";ctx.beginPath();ctx.moveTo(-190,58);ctx.lineTo(190,58);ctx.lineTo(205,70);ctx.lineTo(-205,70);ctx.closePath();ctx.fill();
+      ctx.strokeStyle="rgba(118,110,94,.35)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-205,70);ctx.lineTo(205,70);ctx.stroke();
+      ctx.restore();
     }
     ctx.restore();
   }
