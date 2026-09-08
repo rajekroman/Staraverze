@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-1";
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-2";
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
   await page.addInitScript(() => {
@@ -49,7 +49,8 @@ test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context 
     "/style.css",
     "/manifest.webmanifest",
     "/assets/audio/ambient/ambient-chlum.mp3",
-    "/assets/audio/effects/dig-perfect.mp3"
+    "/assets/audio/effects/dig-perfect.mp3",
+    "/assets/ui/nzv-logo-purple.png"
   ]) {
     const cached = await page.evaluate(async path => {
       const response = await fetch(path);

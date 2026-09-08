@@ -1,4 +1,4 @@
-const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-1";
+const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-2";
 const CORE = [
   "./","./index.html","./style.css","./game.js","./manifest.webmanifest",
   "./icon-180.png","./icon-192.png","./icon-512.png",
@@ -15,7 +15,7 @@ const CORE = [
   "./assets/audio/effects/journey-loop.mp3","./assets/audio/effects/ui-click.mp3",
   "./assets/audio/effects/ui-close.mp3","./assets/audio/effects/ui-open.mp3",
   "./assets/audio/effects/ui-result.mp3",
-  "./assets/ui/na-zelene-vlne.jpg"
+  "./assets/ui/na-zelene-vlne.jpg","./assets/ui/nzv-logo-purple.png"
 ];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE))); self.skipWaiting(); });
 self.addEventListener("activate", e => {

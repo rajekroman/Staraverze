@@ -4,6 +4,41 @@ const LEVELS = ["chlum", "locenice", "nesmen", "besednice", "malse"];
 const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
+test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#campaignEventCard")).toContainText("19. 9. 2026");
+  await expect(page.locator("#campaignEventCard")).toContainText("ČESKÉ BUDĚJOVICE");
+  await expect(page.locator("#campaignEventCard")).toContainText("KD SLAVIE");
+  await expect(page.locator(".campaign-storyline")).toContainText("DORAZ NA AKCI");
+  await expect(page.locator('a[href="https://www.nazelenevlne.cz"]')).toHaveCount(3);
+  await expect(page.locator(".nzv-brand-lockup img")).toHaveAttribute("src", "./assets/ui/nzv-logo-purple.png");
+  await expect(page.locator(".nzv-brand-lockup")).toBeVisible();
+  await expect(page.locator("#campaignEventCard")).toBeVisible();
+  await expect(page.locator("#playButton")).toBeVisible();
+
+  const promoBounds = await page.evaluate(() => {
+    const viewport = { width: innerWidth, height: innerHeight };
+    const selectors = [".nzv-brand-lockup", "#campaignEventCard", "#playButton"];
+    return { viewport, boxes: selectors.map(selector => {
+      const r = document.querySelector(selector).getBoundingClientRect();
+      return { selector, left:r.left, top:r.top, right:r.right, bottom:r.bottom };
+    }) };
+  });
+  for (const box of promoBounds.boxes) {
+    expect(box.left, box.selector).toBeGreaterThanOrEqual(-1);
+    expect(box.right, box.selector).toBeLessThanOrEqual(promoBounds.viewport.width + 1);
+    expect(box.top, box.selector).toBeGreaterThanOrEqual(-1);
+    expect(box.bottom, box.selector).toBeLessThanOrEqual(promoBounds.viewport.height + 1);
+  }
+
+  await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
+  await expect.poll(() => page.evaluate(() => Boolean(window.__lovecDebug))).toBe(true);
+  await page.evaluate(() => window.__lovecDebug.startLevel(0));
+  await expect(page.locator(".campaign-hud-badge")).toContainText("NA ZELENÉ VLNĚ");
+  await expect(page.locator(".campaign-hud-badge")).toContainText("19. 9. 2026");
+});
+
 test("audit: mezerník aktivuje tlačítko nabídky", async ({ page }) => {
   await page.goto("/");
   await page.locator("#playButton").focus();

@@ -1,14 +1,14 @@
 {
   "name": "Lovec vltavínů: Na zelené vlně v5.4.2",
   "short_name": "Lovec vltavínů",
-  "description": "Přístupná mobilní arkádová výprava: radar odhalí skryté vltavíny, Chlum nabídne sběr z povrchu a profily čekají na přesné kopání.",
+  "description": "Herní pozvánka na Na zelené vlně 2026: nasbírej vltavíny v jižních Čechách a doraz 19. září do KD Slavie v Českých Budějovicích.",
   "lang": "cs",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#08150e",
-  "theme_color": "#173727",
+  "background_color": "#3A006E",
+  "theme_color": "#3A006E",
   "categories": ["games", "entertainment"],
   "prefer_related_applications": false,
   "shortcuts": [

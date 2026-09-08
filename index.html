@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#173727">
+  <meta name="theme-color" content="#3A006E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Lovec vltavínů">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta name="description" content="Mobilní arkádová výprava po jihočeských lokalitách vltavínů.">
+  <meta name="description" content="Herní pozvánka na Na zelené vlně 2026: nasbírej vltavíny v jižních Čechách a doraz 19. září do KD Slavie v Českých Budějovicích.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-180.png">
   <link rel="stylesheet" href="./style.css">
@@ -44,6 +44,9 @@
     <div id="combo" class="combo hidden">KOMBO ×2</div>
     <div id="hint" class="hint hidden">Rozhlédni se po okolí</div>
     <div id="toast" class="toast"></div>
+    <div class="campaign-hud-badge" aria-label="Cíl výpravy: Na zelené vlně, 19. září 2026, KD Slavie České Budějovice">
+      <span>CÍL VÝPRAVY</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD SLAVIE</small>
+    </div>
   </section>
 
   <div id="theftAlert" class="theft-alert hidden" aria-live="assertive">
@@ -72,17 +75,25 @@
       <div class="field-lines"></div><div class="title-gem">◆</div>
     </div>
     <div class="title-copy">
-      <div class="title-brand"><img src="./assets/ui/na-zelene-vlne.jpg" alt="Na Zelené Vlně"></div>
-      <p class="eyebrow">JIŽNÍ ČECHY · SBÍRKA PRO VÝSTAVU</p>
+      <a class="nzv-brand-lockup" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer" aria-label="Na zelené vlně – informace o akci">
+        <img src="./assets/ui/nzv-logo-purple.png" alt="Na zelené vlně">
+      </a>
+      <p class="eyebrow campaign-eyebrow">HERNÍ POZVÁNKA NA VLTA­VÍNOVOU AKCI ROKU</p>
       <h1>Lovec<br>vltavínů</h1>
-      <p class="subtitle">Dostaň se na Na zelené vlně a přivez nejlepší sbírku vltavínů</p>
-      <button id="playButton" class="play-button" type="button"><span>VYRAZIT</span><small>jedním klepnutím</small></button>
+      <p class="subtitle">Nasbírej vltavíny napříč jižními Čechami a v posledním levelu doraz na <strong>Na zelené vlně</strong>.</p>
+      <div id="campaignEventCard" class="campaign-event-card" aria-label="Na zelené vlně, 19. září 2026, České Budějovice, KD Slavie">
+        <div><span>19. 9. 2026</span><small>SOBOTA</small></div>
+        <div><span>ČESKÉ BUDĚJOVICE</span><small>KD SLAVIE</small></div>
+      </div>
+      <div class="campaign-storyline"><span>NAJDI</span><i>→</i><span>NASBÍREJ</span><i>→</i><strong>DORAZ NA AKCI</strong></div>
+      <button id="playButton" class="play-button" type="button"><span>ZAČÍT VÝPRAVU</span><small>cílem je KD Slavie</small></button>
       <button id="continueButton" class="text-button hidden" type="button">Pokračovat v rozehrané výpravě</button>
+      <a class="campaign-link" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer">PODROBNOSTI O AKCI ↗</a>
       <div class="title-tools">
         <button id="howButton" class="text-button" type="button">Jak se hraje</button>
         <button id="recordsButton" class="text-button" type="button">Rekordy</button>
       </div>
-      <p class="version">v5.4.2 · pokračující vydání</p>
+      <p class="version">v5.4.2 · herní pozvánka na Na zelené vlně 2026</p>
     </div>
   </section>
 
@@ -93,6 +104,10 @@
       <p id="briefText"></p>
       <div class="brief-goal"><span>ÚKOL</span><strong id="briefGoal"></strong></div>
       <div class="brief-why"><span>PROČ</span><p id="briefWhy"></p></div>
+      <div class="campaign-route">
+        <div><span>SBÍRKA</span><i>→</i><span>5 LOKALIT</span><i>→</i><strong>NA ZELENÉ VLNĚ</strong></div>
+        <small>19. 9. 2026 · KD Slavie · České Budějovice</small>
+      </div>
       <button id="briefButton" class="primary-button" type="button">JDU NA TO</button>
     </div>
   </section>
@@ -151,7 +166,8 @@
 
   <section id="juryScreen" class="screen">
     <div class="jury-card">
-      <p class="eyebrow">KD SLÁVIE · NA ZELENÉ VLNĚ</p>
+      <div class="event-arrival-banner"><span>DORAZIL JSI NA AKCI</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD Slavie · České Budějovice</small></div>
+      <p class="eyebrow">FINÁLE V KD SLAVII</p>
       <h2>Vyber tři kameny do vitríny</h2>
       <p>Vzácnost, stav a doložený původ rozhodnou o výsledku.</p>
       <div id="juryList" class="jury-list"></div>
@@ -166,7 +182,12 @@
       <div class="score-ring"><strong id="resultScore">0</strong><span>BODŮ</span></div>
       <p id="resultText"></p>
       <div id="resultStats" class="result-stats"></div>
-      <button id="againButton" class="primary-button" type="button">NOVÁ VÝPRAVA</button>
+      <div class="result-event-invite">
+        <img src="./assets/ui/nzv-logo-purple.png" alt="" aria-hidden="true">
+        <div><strong>Teď doraz i ve skutečnosti.</strong><span>19. 9. 2026 · KD Slavie · České Budějovice</span></div>
+      </div>
+      <a class="primary-button result-event-link" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer">NAZELEVLNE.CZ ↗</a>
+      <button id="againButton" class="secondary-button" type="button">NOVÁ VÝPRAVA</button>
       <button id="resultRecordsButton" class="text-button" type="button">Zobrazit rekordy</button>
     </div>
   </section>
