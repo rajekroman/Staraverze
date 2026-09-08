@@ -1454,8 +1454,50 @@
     else if(p.type==="plaza"){ctx.fillStyle="rgba(232,233,228,.5)";roundRect(ctx,-190,-70,380,140,16);ctx.fill();for(let i=-160;i<=160;i+=40){ctx.strokeStyle="rgba(110,115,112,.18)";ctx.beginPath();ctx.moveTo(i,-70);ctx.lineTo(i,70);ctx.stroke();}for(let i=0;i<8;i++){const x=-140+i*40;ctx.fillStyle=i%2?"#48535c":"#7a6a5d";ctx.beginPath();ctx.arc(x,5+(i%3)*10,5,0,Math.PI*2);ctx.fill();}}
     else if(p.type==="npc")drawActor(0,0,p.role==="owner"?"ranger":"farmer",0,p.name,true,{pose:"front",facing:1,moving:false,motionRatio:0,motionPhase:0});
     else if(p.type==="pit"){const r=p.r||28;drawExcavationProfile(r*2,r*1.1,p.x+p.y,{lip:"#a27a4f",wall:"#775035",deep:"#251b14",line:"#d0ad7d"});}
-    else if(p.type==="sign"){ctx.fillStyle="rgba(0,0,0,.18)";ellipse(0,20,18,6);ctx.fill();ctx.fillStyle="#744e2f";ctx.fillRect(-4,-30,8,50);ctx.fillStyle="#d5c49d";roundRect(ctx,-42,-52,84,28,5);ctx.fill();ctx.strokeStyle="rgba(255,240,190,.5)";ctx.stroke();ctx.fillStyle="#3f3427";ctx.font="bold 10px sans-serif";ctx.textAlign="center";ctx.fillText(p.text||"",0,-34);}
-    else if(p.type==="lamp"){ctx.fillStyle="#3c4344";ctx.fillRect(-3,-55,6,70);ctx.fillStyle="rgba(255,224,142,.12)";ctx.beginPath();ctx.arc(0,-57,25,0,Math.PI*2);ctx.fill();ctx.fillStyle="#ffe6a0";ctx.beginPath();ctx.arc(0,-57,8,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#b5c1a1";ctx.lineWidth=2;ctx.stroke();}
+    else if(p.type==="bench"){
+      ctx.fillStyle="rgba(0,0,0,.24)";ctx.beginPath();ctx.ellipse(0,15,43,10,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#3d403e";ctx.lineWidth=4;ctx.lineCap="round";
+      ctx.beginPath();ctx.moveTo(-31,4);ctx.lineTo(-31,18);ctx.lineTo(-25,23);ctx.moveTo(31,4);ctx.lineTo(31,18);ctx.lineTo(25,23);ctx.stroke();
+      ctx.strokeStyle="#50534f";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-34,-19);ctx.lineTo(-34,10);ctx.moveTo(34,-19);ctx.lineTo(34,10);ctx.stroke();
+      const wood=ctx.createLinearGradient(-38,-18,38,12);wood.addColorStop(0,"#a87345");wood.addColorStop(.5,"#825633");wood.addColorStop(1,"#684329");
+      ctx.fillStyle=wood;
+      for(const y of [-18,-9,0]){roundRect(ctx,-38,y,76,6,2);ctx.fill();}
+      for(const y of [7,14]){roundRect(ctx,-39,y,78,6,2);ctx.fill();}
+      ctx.strokeStyle="rgba(229,184,127,.32)";ctx.lineWidth=1;
+      for(const y of [-17,-8,1,8,15]){ctx.beginPath();ctx.moveTo(-34,y);ctx.lineTo(33,y);ctx.stroke();}
+      ctx.strokeStyle="rgba(54,36,25,.34)";ctx.beginPath();ctx.moveTo(-12,-16);ctx.lineTo(-4,-13);ctx.moveTo(16,9);ctx.lineTo(27,11);ctx.stroke();
+    }
+    else if(p.type==="sign"){
+      ctx.save();ctx.scale(1.12,1.12);
+      ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(1,21,24,7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#56402d";roundRect(ctx,-5,-31,10,53,3);ctx.fill();
+      ctx.fillStyle="#82603c";ctx.fillRect(-2,-28,3,45);
+      ctx.fillStyle="#5c4633";roundRect(ctx,-46,-55,92,33,6);ctx.fill();
+      const board=ctx.createLinearGradient(-40,-51,40,-26);board.addColorStop(0,"#e5d8b8");board.addColorStop(.55,"#cdbd98");board.addColorStop(1,"#b7a57e");
+      ctx.fillStyle=board;roundRect(ctx,-42,-51,84,25,3);ctx.fill();
+      ctx.strokeStyle="rgba(255,244,211,.46)";ctx.lineWidth=1.2;ctx.stroke();
+      ctx.strokeStyle="rgba(96,76,51,.22)";ctx.beginPath();ctx.moveTo(-35,-46);ctx.lineTo(-20,-44);ctx.moveTo(18,-33);ctx.lineTo(34,-35);ctx.stroke();
+      const label=String(p.text||"");
+      let fs=10;ctx.textAlign="center";ctx.textBaseline="middle";
+      do{ctx.font=`bold ${fs}px sans-serif`;if(ctx.measureText(label).width<=74||fs<=6)break;fs-=1;}while(fs>5);
+      ctx.fillStyle="#3c3328";ctx.fillText(label,0,-38);
+      ctx.restore();
+    }
+    else if(p.type==="lamp"){
+      ctx.save();ctx.scale(1.48,1.48);
+      ctx.fillStyle="rgba(0,0,0,.2)";ctx.beginPath();ctx.ellipse(2,16,12,5,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#4b5050";roundRect(ctx,-7,10,14,8,3);ctx.fill();
+      const pole=ctx.createLinearGradient(-4,0,4,0);pole.addColorStop(0,"#252c2e");pole.addColorStop(.5,"#515b5c");pole.addColorStop(1,"#252b2d");
+      ctx.fillStyle=pole;roundRect(ctx,-3,-55,6,69,2);ctx.fill();
+      ctx.strokeStyle="rgba(202,218,207,.22)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-1,-50);ctx.lineTo(-1,7);ctx.stroke();
+      ctx.fillStyle="#30383a";roundRect(ctx,-10,-65,20,9,4);ctx.fill();
+      ctx.fillStyle="#697575";roundRect(ctx,-7,-63,14,5,2);ctx.fill();
+      const glow=ctx.createRadialGradient(0,-61,3,0,-61,27);glow.addColorStop(0,"rgba(255,232,158,.25)");glow.addColorStop(1,"rgba(255,224,142,0)");
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(0,-61,27,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="#ffe7a2";ctx.beginPath();ctx.ellipse(0,-61,6,4,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="rgba(229,235,210,.65)";ctx.lineWidth=1.2;ctx.stroke();
+      ctx.restore();
+    }
     else if(p.type==="bridge"){ctx.fillStyle="#4f6f78";roundRect(ctx,-115,-28,230,56,16);ctx.fill();ctx.strokeStyle="#a8cad0";ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,25,105,Math.PI,0);ctx.stroke();}
     else if(p.type==="slavie"){
       // Historic KD Slavie / former Deutsches Haus: simplified for the top-down game map,
