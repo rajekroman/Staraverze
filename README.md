@@ -10,6 +10,8 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 
 ## Dokončení ve verzi 5.4.2
 
+- hlavní nabídka funguje jako herní pozvánka na akci Na zelené vlně 2026 a používá její mint/fialový vizuální systém;
+- menu jasně vysvětluje cíl: nasbírat nejkrásnější vltavíny a dorazit s nimi do KD Slavie;
 - noční Besednice už nevytváří černou vymazanou plochu na neprůhledném canvasu;
 - hlavní nabídka je v mobilním landscape režimu celá viditelná a ovladatelná;
 - pauza, dialog, minihra a ztráta fokusu bezpečně uvolní dotykový i klávesový pohyb;
@@ -27,6 +29,7 @@ npm install
 npm test
 npm run test:smoke
 npm run test:offline
+npm run test:visual
 ```
 
 Aktuální zjištění, skutečně provedené opravy a neuzavřené release podmínky:
@@ -36,3 +39,5 @@ Pro souběžnou práci lze testovacímu serveru zadat vlastní port, například
 `PLAYWRIGHT_PORT=4186 npm run test:smoke`. Testy nepřebírají cizí již běžící server.
 Při změně distribuovaných souborů je nutné zvýšit revizi `CACHE` v `sw.js`:
 základní statické soubory se v rámci jedné revize obsluhují z cache.
+
+Vizuální regression gate pokrývá menu, Chlum, radar a kopání na desktopu, iPhone portrait a iPhone landscape. Screenshoty se ukládají jako CI artefakty pro kontrolu změn vzhledu.
