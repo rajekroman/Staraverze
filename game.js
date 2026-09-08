@@ -350,14 +350,27 @@
   let bossIntroTimer = 0;
   let theftAlertUntil = 0;
   let theftAlertShown = false;
+  let restoredWorld = false;
+  let lastFocused=null;
 
-  function save() { storage.set(SAVE_KEY, JSON.stringify(state)); refreshContinue(); }
+  function save() {
+    const payload={version:APP_VERSION,state,world:world?JSON.parse(JSON.stringify(world)):null,player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose}};
+    storage.set(SAVE_KEY, JSON.stringify(payload)); refreshContinue();
+  }
   function load() {
     try {
       const data=JSON.parse(storage.get(SAVE_KEY)||"null");
-      const normalized=normalizeState(data);
+      const envelope=data?.state&&typeof data.state==="object"?data:null;
+      const normalized=normalizeState(envelope?data.state:data);
       if(!normalized) return false;
       state=normalized;
+      restoredWorld=false;
+      if(envelope?.world&&envelope.world.id===LEVELS[state.levelIndex]?.id&&Array.isArray(envelope.world.items)&&Array.isArray(envelope.world.props)){
+        world=envelope.world;
+        const saved=envelope.player||{};
+        player={...player,x:finiteNumber(saved.x,player.x,0,world.w),y:finiteNumber(saved.y,player.y,0,world.h),angle:finiteNumber(saved.angle,0,-Math.PI,Math.PI),facing:saved.facing<0?-1:1,pose:["front","back","side"].includes(saved.pose)?saved.pose:"front"};
+        restoredWorld=true; buildTerrainCache(world); findNearest();
+      }
       audio.enabled=state.sound!==false; return true;
     } catch { return false; }
   }
@@ -365,7 +378,12 @@
   function getRecords(){try{const rows=JSON.parse(storage.get(RECORD_KEY)||"[]");return Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object").slice(0,10):[];}catch{return[];}}
   function addRecord(score,title){const rows=getRecords();rows.push({score,title,stones:state.stones.length,date:new Date().toISOString()});rows.sort((a,b)=>b.score-a.score);storage.set(RECORD_KEY,JSON.stringify(rows.slice(0,10)));}
 
-  function showOnly(screen){Object.values(screens).forEach(s=>s.classList.remove("visible"));if(screen)screen.classList.add("visible");}
+  function showOnly(screen){
+    if(screen&&document.activeElement instanceof HTMLElement&&document.activeElement!==document.body)lastFocused=document.activeElement;
+    Object.values(screens).forEach(s=>s.classList.remove("visible"));
+    if(screen){screen.classList.add("visible");requestAnimationFrame(()=>{const target=screen.querySelector("button:not([disabled]),[href],input,select,textarea");target?.focus();});}
+    else if(lastFocused?.isConnected)requestAnimationFrame(()=>lastFocused.focus());
+  }
   function setPlaying(on){if(!on)resetControls();hud.classList.toggle("hidden",!on);controls.classList.toggle("hidden",!on||!isTouch);app.classList.toggle("playing",on);}
   function haptic(pattern=12){try{navigator.vibrate?.(pattern);}catch{}}
   function toast(text,type="",duration=1500){clearTimeout(toastTimer);ui.toast.textContent=text;ui.toast.className=`toast show ${type}`;toastTimer=setTimeout(()=>ui.toast.className="toast",duration);}
@@ -526,7 +544,7 @@
   }
 
   function startNew(){
-    audio.start();audio.sfx("click");state=freshState();storage.remove(SAVE_KEY);showBrief(0);
+    audio.start();audio.sfx("click");state=freshState();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);
   }
   function continueGame(){audio.start();if(!load()){startNew();return;}showBrief(state.levelIndex);}
   function showBrief(index){
@@ -534,7 +552,7 @@
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
     showOnly(screens.brief);
   }
-  function enterLevel(){generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
+  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
 
   function levelGoal(){
     const r=world.runtime;
@@ -680,7 +698,7 @@
       const stone=makeStone(LEVELS[state.levelIndex].name,h.rarity||"common",h.documented!==false);addStone(stone,h.x,h.y);
       if(world.id==="chlum")world.runtime.collected++;
     }
-    currentDig=null;findNearest();updateHUD(true);
+    currentDig=null;findNearest();updateHUD(true);save();
   }
 
   function makeStone(locality,rarity="common",documented=true,qualityBonus=0){
@@ -701,24 +719,24 @@
   function interactItem(item){
     if(!item.active)return;
     if(item.type==="stone"){
-      item.active=false;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",item.documented!==false);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;return;
+      item.active=false;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",item.documented!==false);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;save();return;
     }
     if(item.type==="sample"){currentSample=item;mode="identify";setPlaying(false);$("sampleTitle").textContent=item.sample.title;$("sampleDescription").textContent=item.sample.text;$("sampleGem").style.color=item.sample.real?"#70d999":"#33f48b";showOnly(screens.identify);return;}
     if(item.type==="clue"){
       item.active=false;world.runtime.clues++;audio.sfx("paper");boostCombo();
       const clueText=["První stopa: směr k hlavní těžební ploše","Druhá stopa: ježková vrstva je blízko","Třetí stopa: přesné místo profilu nalezeno"][world.runtime.clues-1]||`Stopa: ${item.label}`;
       toast(clueText,"good",1500);
-      if(world.runtime.clues>=3){addHotspot(980,520,{rarity:"hedgehog",documented:true,special:"hedgehog",revealed:true,marked:true});toast("JEŽKOVÝ PROFIL ODKRYT · DOJDI DOPROSTŘED", "rare",2200);}return;
+      if(world.runtime.clues>=3){addHotspot(980,520,{rarity:"hedgehog",documented:true,special:"hedgehog",revealed:true,marked:true});toast("JEŽKOVÝ PROFIL ODKRYT · DOJDI DOPROSTŘED", "rare",2200);}save();return;
     }
     if(item.type==="paper"){
-      item.active=false;world.runtime.papers++;audio.sfx("paper");toast(`Nalezena: ${item.label}`,"good");boostCombo();if(world.runtime.papers>=3&&!world.runtime.bossStarted)world.runtime.bossDelay=.45;return;
+      item.active=false;world.runtime.papers++;audio.sfx("paper");toast(`Nalezena: ${item.label}`,"good");boostCombo();if(world.runtime.papers>=3&&!world.runtime.bossStarted)world.runtime.bossDelay=.45;save();return;
     }
   }
   function resolveSample(choice){
     if(!currentSample)return;const correct=choice===currentSample.sample.real;currentSample.active=!correct;currentSample.hidden=!correct;world.runtime.identified++;screens.identify.classList.remove("visible");mode="playing";setPlaying(true);
     if(correct){world.runtime.correct++;state.stats.correct++;boostCombo();state.score+=220*state.combo;audio.sfx("good");toast("Správně","good");if(currentSample.sample.real){world.runtime.real++;addStone(makeStone("Ločenice",Math.random()<.2?"good":"common",true,state.perks.eye*3),currentSample.x,currentSample.y);}}
     else{state.heat=clamp(state.heat+12-state.perks.quiet*2,0,100);breakCombo();audio.sfx("bad");toast("Špatné určení · vzorek zůstává na místě. Znovu ho vyhledej radarem.","bad",2600);}
-    currentSample=null;updateHUD(true);
+    currentSample=null;updateHUD(true);save();
   }
 
   function fillHole(hole){

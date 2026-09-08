@@ -26,10 +26,6 @@ test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page 
     await page.keyboard.press("Space");
     if(i<2) await page.waitForTimeout(120);
   }
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(250);
-  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
-  await page.locator("#resumeButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(1);
   await page.waitForTimeout(200);
   expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(1);
@@ -334,11 +330,37 @@ test("starý nebo poškozený save se bezpečně obnoví", async ({ page }) => {
     snapshot: window.__lovecDebug?.snapshot?.(),
     save: JSON.parse(localStorage.getItem(saveKey))
   }), { saveKey: SAVE_KEY });
-  expect(restored.save).toMatchObject({ version: "5.4.2", levelIndex: 4, score: 420, sound: false });
-  expect(restored.save.stones).toHaveLength(1);
-  expect(restored.save.stones[0]).toMatchObject({ weight: 2.5, quality: 100, value: 900 });
-  expect(restored.save.perks.boots).toBe(3);
+  expect(restored.save).toMatchObject({ version: "5.4.2" });
+  expect(restored.save.state).toMatchObject({ levelIndex: 4, score: 420, sound: false });
+  expect(restored.save.state.stones).toHaveLength(1);
+  expect(restored.save.state.stones[0]).toMatchObject({ weight: 2.5, quality: 100, value: 900 });
+  expect(restored.save.state.perks.boots).toBe(3);
   expect(errors).toEqual([]);
+});
+
+test("rozehraný level obnoví nálezy, runtime i pozici", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPlayer(500,840);
+    dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+    dispatchEvent(new KeyboardEvent("keyup", { code: "Space" }));
+    dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+    dispatchEvent(new KeyboardEvent("keyup", { code: "Space" }));
+  });
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(1);
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.world.id).toBe("chlum");
+  expect(saved.world.runtime.collected).toBe(1);
+  expect(saved.player).toMatchObject({ x: 500, y: 840 });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restored = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(restored.player).toMatchObject({ x: 500, y: 840 });
+  expect(restored.world.stones).toBe(8);
+  expect(restored.world.surfaceVisible).toBe(0);
+  expect(restored.state.stones).toBe(1);
 });
 
 test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }) => {

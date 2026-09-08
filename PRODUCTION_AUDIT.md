@@ -26,7 +26,7 @@ Při vstupní kontrole nebyly otevřené issues ani PR. Byly přečteny runtime,
 
 ## Nalezené problémy — neuzavřené
 
-- **High / Medium — pokračování rozehrané lokality.** `save()` ukládá pouze `state`, ne `world.runtime`, rozmístění, vybrané předměty ani hráčovu pozici. `enterLevel()` generuje svět od začátku a přitom ponechává sbírku/skóre. Chlum: sebrat kámen → nabídka → pokračovat znamená sbírku s kamenem, ale cíl znovu 0/6. Nelze to bezpečně opravit přidáním dalšího `save()`: je nutný verzovaný snapshot nebo jednoznačné checkpointy s návratem všech souvisejících hodnot.
+- **Vyřešeno v této etapě — pokračování rozehrané lokality.** Uložený stav nyní obsahuje verzovaný snapshot `state`, aktuální svět, runtime hodnoty, aktivitu nálezů a pozici postavy. Staré ploché save formáty zůstávají migrovatelné a při jejich načtení se svět bezpečně vygeneruje nově. Regresní test ověřuje Chlum: sebraný kámen, `runtime.collected`, pozici a obnovení po reloadu.
 - **High / Small–Medium — nasazení není závislé na výsledku testů.** `pages.yml` běží nezávisle na `validate.yml` při push na main. Navíc publikuje celý kořen, tedy i testy, nástroje a vývojovou dokumentaci. Změnu publikační politiky je vhodné oddělit od runtime opravy a ověřit na konkrétním SHA.
 - **High / Small + součinnost vlastníka — audio práva a poslech.** Část dodaných zvuků má `NOASSERTION`; technická integrita nenahrazuje právo distribuce. Nutný poslech na reproduktoru/sluchátkách a potvrzení vlastníka. Původní dokumentace popisuje 21 položek v7.3, aktuální offline seznam obsahuje i další sdílené zvuky.
 - **Medium / Medium — přístupnost.** Dialogy mají role a popisky, ale chybí důsledný focus management/focus trap a vracení fokusu. Celostránkové blokování vícedotykových gest brání přiblížení textu. Canvas neposkytuje ekvivalent prostorové navigace pro nevidomého hráče. Omezení pohybu se čte při startu a neomezuje všechny lokální pulsy.
@@ -61,13 +61,12 @@ Konkrétní finální výsledky testů jsou doplněny po dokončení běhů. Aut
 
 | Pořadí | Krok | Přínos / náročnost / riziko |
 |---|---|---|
-| 1 | Verzované checkpointy nebo kompletní save světa, včetně reload/regresních testů | High / Medium / Medium |
-| 2 | Závislost Pages nasazení na úspěšném exact-SHA QA; explicitní distribuční seznam | High / Small–Medium / Medium |
-| 3 | Uzavřít práva k audio souborům a skutečný mobilní poslech | High / Small + vlastník / Low |
-| 4 | Sjednotit mute, pokračování a background audio lifecycle | Medium / Small–Medium / Low |
-| 5 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | High / Medium / Low |
-| 6 | Focus management, přiblížení textu a test klávesnice/čtečky | Medium / Medium / Medium |
-| 7 | Reálný průchod všech kapitol na iOS/Android bez debug zkratek | High / Medium / Low |
-| 8 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat prokázanou příčinu | Medium / Medium / Low |
-| 9 | Přirozenější koruny a městské povrchy se srovnáním před/po | Medium / Medium / Low |
-| 10 | Zpřesnit dokumentaci aktivního audia, testovacího pokrytí a odstranit prokazatelně mrtvé artefakty | Low / Small / Low |
+| 1 | Závislost Pages nasazení na úspěšném exact-SHA QA; explicitní distribuční seznam | High / Small–Medium / Medium |
+| 2 | Uzavřít práva k audio souborům a skutečný mobilní poslech | High / Small + vlastník / Low |
+| 3 | Sjednotit mute, pokračování a background audio lifecycle | Medium / Small–Medium / Low |
+| 4 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | High / Medium / Low |
+| 5 | Focus management, přiblížení textu a test klávesnice/čtečky | Medium / Medium / Medium |
+| 6 | Reálný průchod všech kapitol na iOS/Android bez debug zkratek | High / Medium / Low |
+| 7 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat prokázanou příčinu | Medium / Medium / Low |
+| 8 | Přirozenější koruny a městské povrchy se srovnáním před/po | Medium / Medium / Low |
+| 9 | Zpřesnit dokumentaci aktivního audia, testovacího pokrytí a odstranit prokazatelně mrtvé artefakty | Low / Small / Low |
