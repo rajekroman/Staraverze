@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Hlavní menu — copy a vizuální hierarchie
+
+- úvodní text je přepsaný do přirozenější češtiny: hráč se vydává po stopách vltavínů, skládá sbírku a ve finále dorazí do KD Slavie na akci Na zelené vlně;
+- titulní obrazovka má novou hierarchii logo → název hry → smysl výpravy → datum/místo → hlavní CTA → sekundární navigace;
+- datum a místo jsou zobrazené jako kompaktní event ticket místo dvojice těžkých reklamních bloků;
+- hlavní CTA zní „Vyrazit za vltavíny“, pokračování a odkazy „Jak hrát / Rekordy / O akci“ mají samostatnou klidnější vrstvu;
+- desktop, mobilní portrait i nízký landscape používají vlastní kompaktní rozložení;
+- PWA cache byla zvýšena na `runtime-3`, aby se nový layout a copy propsaly i do nainstalované hry.
+
 ## Na zelené vlně 2026 — propagační integrace
 
 - hra je na titulní obrazovce výslovně označena jako herní pozvánka na akci Na zelené vlně;
