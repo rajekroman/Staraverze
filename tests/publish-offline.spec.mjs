@@ -5,7 +5,7 @@ const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const OLD_APP_CACHE = "lovec-vltavinu-reborn-v5-4-2-publish-upgrade-test-old";
 const OTHER_APP_CACHE = "another-app-cache";
 
-test("dist PWA přejde ze staré cache na novou bez ztráty postupu", async ({ page, context }) => {
+test("dist PWA přejde ze staré cache na novou bez ztráty postupu", async ({ page, context, request }) => {
   await page.addInitScript(({ oldCache, otherCache }) => {
     const register = navigator.serviceWorker.register.bind(navigator.serviceWorker);
     navigator.serviceWorker.register = async (...args) => {
@@ -34,7 +34,7 @@ test("dist PWA přejde ze staré cache na novou bez ztráty postupu", async ({ p
   expect(new URL(registration.scope).pathname).toBe(APP_PATH);
   expect(new URL(registration.scriptURL).pathname).toBe(`${APP_PATH}sw.js`);
 
-  const swText = await (await page.request.get(`${APP_PATH}sw.js`)).text();
+  const swText = await (await request.get(`${APP_PATH}sw.js`)).text();
   const currentCache = swText.match(/const CACHE = "([^"]+)"/)?.[1];
   expect(currentCache).toBeTruthy();
 
