@@ -5,8 +5,8 @@ const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
 const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 
 test("Franta je v příběhu sběratel a vystavovatel, ne překupník", async ({ page }) => {
-  await page.goto("/game.js");
-  const source = await page.locator("body").innerText();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  const source = await page.evaluate(async () => (await fetch("/game.js")).text());
   expect(source).toContain("sběratel Franta");
   expect(source).toContain("Franta už se svou sbírkou míří do KD Slávie");
   expect(source).not.toContain("překupník Franta");
