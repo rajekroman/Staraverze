@@ -133,7 +133,12 @@ test("Chlum visual baseline", async ({ page }) => {
 
 test("shared scale reference visual evidence", async ({ page }) => {
   await openDebug(page);
-  const scene = await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const scene = await page.evaluate(() => {
+    const result=window.__lovecDebug.startScaleReference();
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
+    return result;
+  });
   expect(scene).toMatchObject({ level: "chlum", reference: true });
   await capture(page, "scale-reference");
 });
@@ -142,7 +147,9 @@ test("Malše / Slávie identity baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(4);
-    window.__lovecDebug.setPlayer(1420, 430);
+    window.__lovecDebug.setPlayer(1450, 300);
+    document.getElementById("hud")?.classList.add("hidden");
+    document.getElementById("controls")?.classList.add("hidden");
   });
   await page.waitForTimeout(700);
   await capture(page, "malse-slavie");
