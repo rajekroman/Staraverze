@@ -551,19 +551,21 @@
   function generateScaleReference(){
     currentDig=null;currentSample=null;digKind="dig";digHolding=false;digFinishDelay=0;
     state=freshState();state.levelIndex=0;
-    world={id:"chlum",theme:"field",w:1200,h:1100,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{permit:true,collected:0},rain:0,referenceScene:true};
-    player.x=610;player.y=520;player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
-    addProp("farm",420,520,{scale:2.05,reference:true});
-    addProp("bench",785,520,{scale:1,reference:true});
-    addPatrol("car",[{x:440,y:720},{x:440,y:720}],{speed:0,vision:0,scale:2.75,reference:true});
-    addPatrol("tractor",[{x:705,y:730},{x:705,y:730}],{speed:0,vision:0,scale:1.35,reference:true});
-    addProp("tree",430,930,{scale:1.75,variant:1,reference:true});
-    addProp("excavator",740,930,{scale:1.55,angle:0,reference:true});
+    const portrait=viewport.h>viewport.w*1.18;
+    const layout=portrait
+      ? {w:620,h:1120,player:[205,505],farm:[310,275],bench:[415,505],car:[180,700],tractor:[430,705],tree:[175,970],excavator:[420,970]}
+      : {w:1000,h:800,player:[385,315],farm:[170,320],bench:[560,315],car:[180,535],tractor:[470,540],tree:[190,710],excavator:[565,705]};
+    world={id:"chlum",theme:"field",w:layout.w,h:layout.h,props:[],obstacles:[],hotspots:[],items:[],patrols:[],hazards:[],particles:[],radarPings:[],exit:null,runtime:{permit:true,collected:0},rain:0,referenceScene:true};
+    player.x=layout.player[0];player.y=layout.player[1];player.angle=0;player.facing=1;player.pose="front";stopPlayerMotion();player.footstepCycle=-1;
+    addProp("farm",layout.farm[0],layout.farm[1],{scale:2.3,reference:true});
+    addProp("bench",layout.bench[0],layout.bench[1],{scale:1.15,reference:true});
+    addPatrol("car",[{x:layout.car[0],y:layout.car[1]},{x:layout.car[0],y:layout.car[1]}],{speed:0,vision:0,scale:3.2,reference:true});
+    addPatrol("tractor",[{x:layout.tractor[0],y:layout.tractor[1]},{x:layout.tractor[0],y:layout.tractor[1]}],{speed:0,vision:0,scale:1.8,reference:true});
+    addProp("tree",layout.tree[0],layout.tree[1],{scale:2.0,variant:1,reference:true});
+    addProp("excavator",layout.excavator[0],layout.excavator[1],{scale:1.5,angle:0,reference:true});
     buildTerrainCache(world);
-    camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));
-    camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));
-    nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
-    return {level:world.id,reference:true,player:{x:player.x,y:player.y}};
+    camera.x=0;camera.y=0;nearest=null;scanCooldown=0;scanPulse=0;state.heat=0;state.combo=1;state.comboTimer=0;updateHUD(true);
+    return {level:world.id,reference:true,portrait,player:{x:player.x,y:player.y}};
   }
 
   function startNew(){
@@ -1064,6 +1066,14 @@
   function render(){
     ctx.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);ctx.clearRect(0,0,viewport.w,viewport.h);
     if(!world){drawMenuBackdrop();return;}
+    if(world.referenceScene){
+      const fit=Math.min(viewport.w/world.w,viewport.h/world.h);
+      const ox=(viewport.w-world.w*fit)/2,oy=(viewport.h-world.h*fit)/2;
+      ctx.fillStyle="#66513e";ctx.fillRect(0,0,viewport.w,viewport.h);
+      ctx.save();ctx.translate(ox,oy);ctx.scale(fit,fit);
+      if(terrainCache.canvas){ctx.drawImage(terrainCache.canvas,0,0,terrainCache.canvas.width,terrainCache.canvas.height,0,0,world.w,world.h);}else{drawGround();drawGroundDetails();}
+      drawWorldObjects();ctx.restore();return;
+    }
     ctx.save();const sx=shake&&!reducedMotion?(Math.random()-.5)*shake:0,sy=shake&&!reducedMotion?(Math.random()-.5)*shake:0;ctx.translate(sx-camera.x,sy-camera.y);if(terrainCache.canvas){ctx.drawImage(terrainCache.canvas,0,0,terrainCache.canvas.width,terrainCache.canvas.height,0,0,world.w,world.h);}else{drawGround();drawGroundDetails();}drawWorldObjects();drawEffects();ctx.restore();drawScreenVignette();drawAtmosphereOverlay();drawObjectiveArrow();
   }
 
