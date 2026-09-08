@@ -484,7 +484,7 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
     window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
     window.__lovecDebug.setBossStun(0);
   });
-  await expect(page.locator("#actionText")).toHaveText("CHYTIT");
+  await expect(page.locator("#actionText")).toHaveText("DOHNAT");
   await page.keyboard.press("Space");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(0);
 
@@ -682,7 +682,7 @@ test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) 
       window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
       window.__lovecDebug.setBossStun(5);
     });
-    await expect(page.locator("#actionText")).toHaveText("CHYTIT");
+    await expect(page.locator("#actionText")).toHaveText("DOHNAT");
     await page.keyboard.press("Space");
 
     if (hit === 1) {
