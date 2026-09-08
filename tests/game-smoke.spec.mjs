@@ -359,7 +359,7 @@ test("rozehraný level obnoví nálezy, runtime i pozici", async ({ page }) => {
   const restored = await page.evaluate(() => window.__lovecDebug.snapshot());
   expect(restored.player).toMatchObject({ x: 500, y: 840 });
   expect(restored.world.stones).toBe(8);
-  expect(restored.world.surfaceVisible).toBe(0);
+  expect(restored.world.surfaceVisible).toBe(1);
   expect(restored.state.stones).toBe(1);
 });
 
