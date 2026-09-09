@@ -4,16 +4,17 @@
 
 - datový model kamene nově odděluje `documented` (doložený původ) a `certified` (konkrétní odborně posouzený kus);
 - po Besednici následuje nejdřív Expertiza, až potom perk a briefing Malše;
-- Expertiza pracuje s konkrétními stone IDs, certifikuje nejvýše pět kusů a průběžný výběr se ukládá přes `pendingCertification`, takže přežije reload;
+- Expertiza pracuje s konkrétními stone IDs, dovoluje certifikovat jeden až pět kusů a průběžný výběr se ukládá přes `pendingCertification`, takže přežije reload;
 - Chlum již netvrdí, že je Franta fyzicky přítomen v mapě; Václav zároveň umožňuje herně doložit původ chlumských nálezů;
 - `caught()` neodebere certifikovaný kámen ani povinný Besednický ježek;
 - první vstup do Malše odehraje krátký runtime incident s Frantou a skutečným pádem certifikační složky, která se následně hledá radarem;
-- certifikační složka hráčovy sbírky je oddělená od pozdější kontrolní složky s podklady k Frantovu vzorku;
-- vitrína nabízí pouze certifikované kameny; stav `documented` zůstává samostatnou bodovanou vlastností poroty;
+- certifikační složka hráčovy sbírky nese konkrétní `stoneIds` z Expertizy, její obnovení ukládá `recoveredCertificateStoneIds` a registrace kontroluje shodu se skutečně certifikovanými kameny; složka je oddělená od pozdějšího kontrolního dossieru k Frantovu vzorku;
+- vitrína nabízí pouze certifikované kameny; stav `documented` zůstává samostatnou bodovanou vlastností poroty; po přepočtu realistických profilů byly hranice poroty recalibrovány na 15 000 bodů pro výstavní uznání a 21 500 pro hlavní cenu;
 - Expertiza a finále mají bezpečný fallback pro 0/1/2 kameny bez softlocku, přičemž nulová vitrína je považována jen za legacy/poškozený-save scénář;
 - save schema 2 migruje starý `levelIndex=4` bez přechodu do Expertizy, ale již rozehranou Malši nevrací zpět a deterministicky doplní certifikované kusy;
-- smoke sada rozšířena na 70 testů a PR workflow nyní spouští browser smoke, visual regression i offline gate ještě před mergem;
-- PWA cache zvýšena na `runtime-34`.
+- smoke sada rozšířena na 74 testovacích definic včetně konkrétních certifikačních ID, reloadu arrival incidentu, filtrování vitríny a exaktní kalibrace poroty; PR workflow spouští browser smoke, visual regression i offline gate ještě před mergem;
+- visual regression nově zachycuje samostatnou obrazovku Expertizy ve třech podporovaných viewportových projektech;
+- PWA cache zvýšena na `runtime-35`.
 
 ## Narativní a UX copy pass
 
