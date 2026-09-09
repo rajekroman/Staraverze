@@ -12,7 +12,9 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Vltavíny sbírá na prodej");
   expect(source).toContain("utratit za automaty");
   expect(source).toContain("potřeboval bych tvůj názor na jeden Frantův vzorek");
-  expect(source).toContain("necháš nejlepší kusy posoudit odborníkem a získáš k nim certifikáty");
+  await expect(page.locator("#expertiseText")).toContainText("necháš své nejlepší kusy posoudit odborníkem");
+  await expect(page.locator("#expertiseText")).toContainText("vystaví k nim certifikáty");
+  expect(source).toContain('pendingTransition="expertise"');
   expect(source).toContain("složka s certifikáty skončí někde na nábřeží");
   expect(source).toContain("Dožeň Karla. Chyť ho, až se zastaví.");
   expect(source).toContain("Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.");
@@ -943,6 +945,44 @@ test("perk a porota se po reloadu obnoví bez opakovaného bodového bonusu", as
   expect(advanced.state).toMatchObject({levelIndex:1,pendingTransition:null,pendingPerks:[]});
 
   await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  await page.locator(".perk-option").first().click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#expertiseTitle")).toBeFocused();
+  const expertiseSave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(expertiseSave.state).toMatchObject({levelIndex:4,pendingTransition:"expertise",pendingPerks:[]});
+  const expertiseScore = expertiseSave.state.score;
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(key => JSON.parse(localStorage.getItem(key)).state.score, SAVE_KEY))).toBe(expertiseScore);
+  await page.locator("#expertiseButton").click();
+  await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 5 / 5");
+  const afterExpertise = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(afterExpertise.state).toMatchObject({levelIndex:4,pendingTransition:null,pendingPerks:[]});
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  await page.locator(".perk-option").first().click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#expertiseScreen")).not.toHaveAttribute("role","dialog");
+  await expect(page.locator("#expertiseScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#expertiseTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  await page.locator("#expertiseButton").click();
+  await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 5 / 5");
+
+  await page.evaluate(() => {
     window.__lovecDebug.startLevel(4);
     window.__lovecDebug.completeGoal();
     window.__lovecDebug.exitCurrentLevel();
@@ -981,6 +1021,11 @@ test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }
       const perks = page.locator("#perkList .perk-option");
       await expect(perks.first()).toBeVisible();
       await perks.first().click();
+      if (index === 3) {
+        await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+        await expect(page.locator("#expertiseText")).toContainText("vystaví k nim certifikáty");
+        await page.locator("#expertiseButton").click();
+      }
       await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
     }
   }
@@ -1429,7 +1474,7 @@ test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertn�
     if (attrs.describedby) await expect(page.locator(`#${attrs.describedby}`), `${id} description`).toHaveCount(1);
   }
 
-  for (const id of ["briefScreen","perkScreen","juryScreen","resultScreen"]) {
+  for (const id of ["briefScreen","perkScreen","expertiseScreen","juryScreen","resultScreen"]) {
     await expect(page.locator(`#${id}`), `${id} is a standalone flow screen`).not.toHaveAttribute("role","dialog");
     await expect(page.locator(`#${id}`)).not.toHaveAttribute("aria-modal","true");
     await expect(page.locator(`#${id}`)).toHaveAttribute("aria-labelledby",/.+/);
@@ -1450,7 +1495,7 @@ test("briefing je samostatná obrazovka a po přechodu oznámí svůj nadpis", a
   await expect(page.locator("#briefTitle")).toBeFocused();
 });
 
-test("perk a porota jsou povinné samostatné kroky, které Escape neobejde", async ({ page }) => {
+test("perk, expertiza a porota jsou povinné samostatné kroky, které Escape neobejde", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(0);
@@ -1705,6 +1750,7 @@ test("HTML obrazovky zůstávají dosažitelné při 200% reflow proxy v portrai
     ["identifyScreen","#glassButton"],
     ["dialogScreen","#dialogButton"],
     ["perkScreen","#perkTitle"],
+    ["expertiseScreen","#expertiseButton"],
     ["juryScreen","#juryButton"],
     ["resultScreen","#resultRecordsButton"],
     ["pauseScreen","#menuButton"],
