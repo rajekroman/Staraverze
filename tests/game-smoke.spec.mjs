@@ -683,7 +683,7 @@ test("starý nebo poškozený save se bezpečně obnoví a projde povinnou Exper
   await expect(page.locator("#continueButton")).toBeVisible();
   await page.locator("#continueButton").click();
   await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
-  await expect(page.locator("#expertiseCount")).toHaveText("1 / 1");
+  await expect(page.locator("#expertiseCount")).toHaveText("1 / max. 1");
   await expect(page.locator("#expertiseText")).toContainText("tvůj jediný kus");
   await page.locator("#expertiseButton").click();
   await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 5 / 5");
@@ -757,7 +757,7 @@ test("Expertiza je robustní pro 0, 1 i 2 kameny", async ({ page }) => {
     await page.reload({waitUntil:"domcontentloaded"});
     await page.locator("#continueButton").click();
     await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
-    await expect(page.locator("#expertiseCount")).toHaveText(`${count} / ${count}`);
+    await expect(page.locator("#expertiseCount")).toHaveText(`${count} / max. ${count}`);
     if(count===0) await expect(page.locator("#expertiseText")).toContainText("žádné kameny");
     if(count===1) await expect(page.locator("#expertiseText")).toContainText("tvůj jediný kus");
     await expect(page.locator("#expertiseButton")).toBeEnabled();
@@ -769,7 +769,7 @@ test("Expertiza je robustní pro 0, 1 i 2 kameny", async ({ page }) => {
   }
 });
 
-test("výběr pěti konkrétních kamenů v Expertize přežije reload a určí certifikované IDs", async ({ page }) => {
+test("výběr až pěti konkrétních kamenů v Expertize přežije reload a určí certifikované IDs", async ({ page }) => {
   await page.goto("/");
   const stones=Array.from({length:6},(_,i)=>savedStone(`cert-${i+1}`,70+i,{documented:i!==0}));
   await page.evaluate(({saveKey,stones})=>{
@@ -778,19 +778,19 @@ test("výběr pěti konkrétních kamenů v Expertize přežije reload a určí 
   },{saveKey:SAVE_KEY,stones});
   await page.reload({waitUntil:"domcontentloaded"});
   await page.locator("#continueButton").click();
-  await expect(page.locator("#expertiseCount")).toHaveText("5 / 5");
+  await expect(page.locator("#expertiseTitle")).toContainText("až pět");
+  await expect(page.locator("#expertiseCount")).toHaveText("5 / max. 5");
   await expect(page.locator("#expertiseList .selected")).toHaveCount(5);
 
   await page.locator("#expertiseList .expertise-stone.selected").first().click();
-  await expect(page.locator("#expertiseButton")).toBeDisabled();
-  await page.locator("#expertiseList .expertise-stone:not(.selected)").last().click();
+  await expect(page.locator("#expertiseCount")).toHaveText("4 / max. 5");
   await expect(page.locator("#expertiseButton")).toBeEnabled();
   const pending=await page.evaluate(key=>[...JSON.parse(localStorage.getItem(key)).state.pendingCertification].sort(),SAVE_KEY);
-  expect(pending).toHaveLength(5);
+  expect(pending).toHaveLength(4);
 
   await page.reload({waitUntil:"domcontentloaded"});
   await page.locator("#continueButton").click();
-  await expect(page.locator("#expertiseList .selected")).toHaveCount(5);
+  await expect(page.locator("#expertiseList .selected")).toHaveCount(4);
   const restored=await page.evaluate(key=>[...JSON.parse(localStorage.getItem(key)).state.pendingCertification].sort(),SAVE_KEY);
   expect(restored).toEqual(pending);
 
@@ -800,6 +800,7 @@ test("výběr pěti konkrétních kamenů v Expertize přežije reload a určí 
   expect(state.expertiseCompleted).toBe(true);
   expect(state.pendingCertification).toEqual([]);
   expect(state.stones.filter(stone=>stone.certified).map(stone=>stone.id).sort()).toEqual(pending);
+  expect(state.stones.filter(stone=>!stone.certified)).toHaveLength(2);
 });
 
 test("Chlum umí vytvořit nedoložený nález a Václav jeho původ následně doloží", async ({ page }) => {
@@ -865,6 +866,86 @@ test("první vstup do Malše skutečně odehraje jednorázový incident s Franto
   await page.locator("#continueButton").click();
   await page.locator("#briefButton").click();
   await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot())).toMatchObject({arrivalIncidentSeen:true,arrivalIncidentActive:false});
+});
+
+test("certifikační složka nese ID konkrétních certifikovaných kamenů a zůstává oddělená od dossieru", async ({ page }) => {
+  await page.goto("/?debug=1");
+  const stones=[
+    savedStone("bundle-a",92,{certified:true,documented:true,rarity:"rare"}),
+    savedStone("bundle-b",84,{certified:true,documented:false,rarity:"good"}),
+    savedStone("not-certified",100,{certified:false,documented:true,rarity:"rare"})
+  ];
+  await page.evaluate(({saveKey,stones})=>{
+    localStorage.clear();
+    localStorage.setItem(saveKey,JSON.stringify({version:"5.4.2",saveSchema:2,levelIndex:4,score:2500,stones,expertiseCompleted:true,pendingTransition:null,perks:{},stats:{},sound:true}));
+  },{saveKey:SAVE_KEY,stones});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+
+  const expected=["bundle-a","bundle-b"];
+  const initial=await page.evaluate(()=>window.__lovecDebug.malseSnapshot());
+  expect([...initial.certificateStoneIds].sort()).toEqual(expected);
+  expect([...initial.certificateItemStoneIds].sort()).toEqual(expected);
+  expect(initial).toMatchObject({certificateItemCount:1,dossierRecovered:false});
+
+  await recoverMalseCertificates(page);
+  const recovered=await page.evaluate(()=>window.__lovecDebug.malseSnapshot());
+  expect(recovered.certificateRecovered).toBe(true);
+  expect([...recovered.recoveredCertificateStoneIds].sort()).toEqual(expected);
+  expect(recovered.dossierRecovered).toBe(false);
+
+  await page.evaluate(()=>window.__lovecDebug.completeGoal());
+  const finale=await page.evaluate(()=>window.__lovecDebug.malseSnapshot());
+  expect(finale.certificateRecovered).toBe(true);
+  expect([...finale.recoveredCertificateStoneIds].sort()).toEqual(expected);
+  expect(finale.dossierRecovered).toBe(true);
+});
+
+test("reload během Malše arrival incidentu nevytvoří druhého Frantu ani druhou certifikační složku", async ({ page }) => {
+  await page.goto("/?debug=1");
+  const stones=[savedStone("incident-cert",88,{certified:true,documented:true,rarity:"rare"})];
+  await page.evaluate(({saveKey,stones})=>{
+    localStorage.clear();
+    localStorage.setItem(saveKey,JSON.stringify({version:"5.4.2",saveSchema:2,levelIndex:4,score:0,stones,expertiseCompleted:true,pendingTransition:null,perks:{},stats:{},sound:true}));
+  },{saveKey:SAVE_KEY,stones});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot())).toMatchObject({
+    arrivalIncidentSeen:true,arrivalIncidentActive:true,arrivalFrantaCount:1,certificateItemCount:1
+  });
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot())).toMatchObject({
+    arrivalIncidentSeen:true,arrivalIncidentActive:true,arrivalFrantaCount:1,certificateItemCount:1
+  });
+  await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot().arrivalIncidentActive),{timeout:3000}).toBe(false);
+  const after=await page.evaluate(()=>window.__lovecDebug.malseSnapshot());
+  expect(after).toMatchObject({arrivalFrantaCount:0,certificateItemCount:1});
+});
+
+test("porota nabízí pouze certifikované kameny a kvalitní necertifikovaný kus do vitríny nepustí", async ({ page }) => {
+  await page.goto("/");
+  const stones=[
+    savedStone("cert-one",82,{certified:true,documented:true,locality:"Chlum"}),
+    savedStone("cert-two",79,{certified:true,documented:false,locality:"Ločenice"}),
+    savedStone("cert-three",76,{certified:true,documented:true,locality:"Besednice",rarity:"hedgehog"}),
+    savedStone("elite-uncertified",100,{certified:false,documented:true,locality:"Nesměň",rarity:"rare"})
+  ];
+  await page.evaluate(({saveKey,stones})=>{
+    localStorage.clear();
+    localStorage.setItem(saveKey,JSON.stringify({version:"5.4.2",saveSchema:2,levelIndex:4,score:4000,stones,expertiseCompleted:true,pendingTransition:"jury",perks:{},stats:{},sound:true}));
+  },{saveKey:SAVE_KEY,stones});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryList .stone-card")).toHaveCount(3);
+  await expect(page.locator("#juryList")).not.toContainText("elite-uncertified");
+  for(const card of await page.locator("#juryList .stone-card small").all()) await expect(card).toContainText("CERTIFIKOVÁN");
+  await expect(page.locator("#juryList .stone-card small").first()).toContainText(/PŮVOD (DOLOŽENÝ|NEDOLOŽENÝ)/);
 });
 
 test("strukturálně poškozený snapshot světa se zahodí a lokalita se bezpečně obnoví", async ({ page }) => {
@@ -1161,7 +1242,7 @@ test("perk, Expertiza a porota se po reloadu obnoví bez opakovaného bodového 
   });
   await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
   await expect(page.locator("#expertiseTitle")).toBeFocused();
-  await expect(page.locator("#expertiseCount")).toHaveText("1 / 1");
+  await expect(page.locator("#expertiseCount")).toHaveText("1 / max. 1");
   const expertiseSave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
   expect(expertiseSave.state).toMatchObject({levelIndex:3,pendingTransition:"expertise",expertiseCompleted:false});
   expect(expertiseSave.state.pendingCertification).toHaveLength(1);
@@ -1216,7 +1297,7 @@ test("celá výprava projde z Chlumu přes Expertizu až k porotě a výsledku",
     if (index < LEVELS.length - 1) {
       if(index===3){
         await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
-        await expect(page.locator("#expertiseCount")).toHaveText("5 / 5");
+        await expect(page.locator("#expertiseCount")).toHaveText("5 / max. 5");
         await page.locator("#expertiseButton").click();
         await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
       }else{
@@ -1233,7 +1314,7 @@ test("celá výprava projde z Chlumu přes Expertizu až k porotě a výsledku",
   await expect(page.locator("#juryCount")).toHaveText("0 / 3");
   const stones = page.locator("#juryList .stone-card");
   await expect(stones).toHaveCount(5);
-  await expect(stones.first().locator("small")).toHaveText(/stav: .+ · \d+ % · původ (doložený|nedoložený)/);
+  await expect(stones.first().locator("small")).toHaveText(/stav: .+ · \d+ % · PŮVOD (DOLOŽENÝ|NEDOLOŽENÝ) · CERTIFIKOVÁN/);
   for (let index = 0; index < 3; index += 1) await stones.nth(index).click();
 
   await expect(page.locator("#juryCount")).toHaveText("3 / 3");
