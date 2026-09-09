@@ -646,6 +646,38 @@ test("starý nebo poškozený save se bezpečně obnoví", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("strukturálně poškozený snapshot světa se zahodí a lokalita se bezpečně obnoví", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.world.runtime=null;
+    delete save.world.hotspots;
+    delete save.world.patrols;
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 3 / 5");
+  await page.locator("#briefButton").click();
+
+  await expect(page.locator("#objectiveLabel")).toHaveText("Získej souhlas lesníka");
+  const restored=await page.evaluate(key => ({
+    snapshot:window.__lovecDebug.snapshot(),
+    save:JSON.parse(localStorage.getItem(key))
+  }), SAVE_KEY);
+  expect(restored.snapshot).toMatchObject({level:"nesmen",mode:"playing"});
+  expect(restored.save.world.runtime).toMatchObject({permit:false,dug:0,filled:0,open:0});
+  for(const key of ["items","props","obstacles","hotspots","patrols","hazards","particles","radarPings"]){
+    expect(Array.isArray(restored.save.world[key]),key).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});
+
 test("rozehraný level obnoví nálezy, runtime i pozici", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
