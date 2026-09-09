@@ -76,7 +76,7 @@
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie na akci Na zelené vlně. U vstupu zaregistruješ svou sbírku. Pak prověříš tři podklady k Frantovu podezřelému vzorku, upozorníš pořadatele na nesrovnalost a zachráníš složku, se kterou se pokusí utéct.",
+      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie na akci Na zelené vlně. Franta tu kolem akce čeká kupce, ale pořadatelům nesedí původ jednoho jeho vzorku. U vstupu zaregistruješ svou sbírku, prověříš tři podklady, upozorníš na nesrovnalost a zachráníš složku, se kterou se pokusí utéct.",
       why: "Tady se uzavře celá výprava. Nejde o největší kámen ani o prodej: rozhodne stav kamenů, doložený původ, pestrost sbírky a to, jak ses během cesty choval.",
       goal: "Zaregistruj sbírku, prověř 3 podklady, vyřeš podvod a připrav vitrínu.", music: "city"
     }
@@ -769,7 +769,7 @@
     if(typeof r.dossierRecovered!=="boolean")r.dossierRecovered=Boolean(r.bossDefeated&&!r.frantaEscaped);
     r.fraudAttempts=Math.round(finiteNumber(r.fraudAttempts,0,0,99));
     delete r.bossDelay;
-    if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
+    if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=142;world.rival.escapeTarget={x:1650,y:980};}
   }
   function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);normalizeMalseWorld();restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
 
