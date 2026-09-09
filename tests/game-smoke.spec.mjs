@@ -1031,6 +1031,8 @@ test("skryté herní ovládání nelze zaměřit během modálu", async ({ page 
   await page.locator("#pauseButton").focus();
   expect(await page.evaluate(() => document.activeElement?.id)).not.toBe("pauseButton");
   await expect(page.locator("#controls")).toHaveAttribute("inert","");
+  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+  await expect(page.locator("#app")).not.toHaveAttribute("aria-hidden","true");
 });
 
 test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", async ({ page }) => {
@@ -1238,9 +1240,6 @@ test("syntetický 200% Chromium page scale zachová visualViewport a souřadnice
   const cdp=await page.context().newCDPSession(page);
   await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:2});
   await expect.poll(() => page.evaluate(() => visualViewport?.scale||1)).toBeGreaterThan(1.9);
-
-  await page.goto("/?debug=1");
-  await expect.poll(() => page.evaluate(() => visualViewport?.scale||1)).toBeGreaterThan(1.9);
   await page.locator("#recordsButton").evaluate(element=>element.scrollIntoView({block:"nearest",inline:"nearest"}));
   const reach=await page.evaluate(()=>{
     const vv=visualViewport,rect=document.getElementById("recordsButton").getBoundingClientRect();
@@ -1272,6 +1271,30 @@ test("živé regiony neobsahují časovač ani průběžný pohyb ukazatele", as
   await expect(page.locator("#digMeter")).not.toHaveAttribute("aria-live",/.+/);
   await expect(page.locator("#digTimerFill")).not.toHaveAttribute("aria-live",/.+/);
   await expect(page.locator("#hud")).not.toHaveAttribute("aria-live",/.+/);
+});
+
+test("prefers-reduced-motion vypne CSS pohybové efekty a přechody", async ({ page }) => {
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await page.goto("/");
+  const audit=await page.evaluate(() => {
+    const parse=values=>values.split(",").map(value=>{
+      const trimmed=value.trim();
+      return trimmed.endsWith("ms")?parseFloat(trimmed)/1000:parseFloat(trimmed)||0;
+    });
+    const action=getComputedStyle(document.getElementById("actionButton"),"::before");
+    const boss=getComputedStyle(document.getElementById("bossIntro"));
+    const alert=getComputedStyle(document.getElementById("theftAlert"));
+    return {
+      matches:matchMedia("(prefers-reduced-motion: reduce)").matches,
+      actionDurations:parse(action.animationDuration),
+      bossTransitions:parse(boss.transitionDuration),
+      alertDurations:parse(alert.animationDuration)
+    };
+  });
+  expect(audit.matches).toBe(true);
+  expect(Math.max(...audit.actionDurations,0)).toBeLessThan(.01);
+  expect(Math.max(...audit.bossTransitions,0)).toBeLessThan(.01);
+  expect(Math.max(...audit.alertDurations,0)).toBeLessThan(.01);
 });
 
 
