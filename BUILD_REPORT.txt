@@ -38,7 +38,7 @@ POKRYTÉ RELEASE SCÉNÁŘE
 MANUÁLNÍ RELEASE GATE
 - Playwright WebKit je CI aproximace Safari, nikoli fyzický iPhone/Safari.
 - Pro finální veřejné vydání stále zbývá skutečný průchod na fyzickém iOS/Android zařízení.
-- Aktivní MP3 s licenčním stavem NOASSERTION vyžadují potvrzení distribučních práv.
+- Licenční gate aktivních produkčních MP3 je uzavřen v PR #117; stále zbývá ruční poslech kvality.
 - Je nutný lidský poslech ambientů/efektů na reproduktoru a sluchátkách.
 - Haptická odezva není funkční podmínkou hry a na iOS/Safari se může lišit.
 
