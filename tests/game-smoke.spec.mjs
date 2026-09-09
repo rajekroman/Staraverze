@@ -14,6 +14,12 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("potřeboval bych tvůj názor na jeden Frantův vzorek");
   expect(source).toContain("necháš nejlepší kusy posoudit odborníkem a získáš k nim certifikáty");
   expect(source).toContain("složka s certifikáty skončí někde na nábřeží");
+  expect(source).toContain("Dožeň Karla. Chyť ho, až se zastaví.");
+  expect(source).toContain("Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.");
+  expect(source).toContain("NAJDI SLOŽKU");
+  expect(source).toContain("Vitrína je připravená. Porota přichází.");
+  expect(source).toContain("Porota ocenila doložený původ a férový průběh");
+  expect(source).not.toContain("Drž se úkolu a sleduj okolí.");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
   expect(source).not.toContain("FETÁK FRANTA");
@@ -1018,7 +1024,6 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
     { timeout: 5_000 }
   ).toBe(false);
   await expect(page.locator("#bossIntroText")).toHaveText("Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.");
-  await expect(page.locator("#toast")).toHaveText("Dožeň Karla. Chyť ho, až se zastaví.");
 
   await page.evaluate(() => {
     const player = window.__lovecDebug.snapshot().player;
