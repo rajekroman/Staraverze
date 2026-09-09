@@ -433,6 +433,8 @@
   function getRecords(){try{const rows=JSON.parse(storage.get(RECORD_KEY)||"[]");return Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object").slice(0,10):[];}catch{return[];}}
   function addRecord(score,title){const rows=getRecords();rows.push({score,title,stones:state.stones.length,date:new Date().toISOString()});rows.sort((a,b)=>b.score-a.score);storage.set(RECORD_KEY,JSON.stringify(rows.slice(0,10)));}
 
+  function capturePointer(element,id){if(id===null||!element?.setPointerCapture)return;try{element.setPointerCapture(id);}catch{}}
+  function releasePointer(element,id){if(id===null||!element?.hasPointerCapture?.(id))return;try{element.releasePointerCapture(id);}catch{}}
   function focusableElements(screen){return [...screen.querySelectorAll(FOCUSABLE)].filter(el=>el instanceof HTMLElement&&!el.hasAttribute("disabled")&&el.getClientRects().length>0);}
   function focusElement(element){if(!(element instanceof HTMLElement)||!element.isConnected)return false;try{element.focus({preventScroll:true});}catch{element.focus();}return document.activeElement===element;}
   function focusInitial(screen){
@@ -445,8 +447,13 @@
       node.toggleAttribute("inert",inaccessible);
       if(inaccessible)node.setAttribute("aria-hidden","true");else node.removeAttribute("aria-hidden");
     }
+    for(const announcement of [ui.theftAlert,ui.bossIntro]){
+      if(!announcement)continue;
+      if(blocked)announcement.setAttribute("aria-hidden","true");else announcement.removeAttribute("aria-hidden");
+    }
   }
   function showOnly(screen,{capture=true,focus=true,focusTarget=null}={}){
+    if(screen&&modalScreens.has(screen))resetControls();
     const previous=activeScreen;
     const origin=document.activeElement;
     if(screen&&screen!==previous&&capture){if(origin instanceof HTMLElement&&origin!==document.body&&origin.isConnected)focusOrigins.set(screen,origin);else focusOrigins.delete(screen);}
@@ -2445,16 +2452,15 @@
   function setupControls(){
     const zone=$("moveZone"),stick=$("stick"),action=$("actionButton");let pid=null,actionPid=null;const keys=new Set();
     const syncKeyboard=()=>{input.x=(keys.has("KeyD")||keys.has("ArrowRight")?1:0)-(keys.has("KeyA")||keys.has("ArrowLeft")?1:0);input.y=(keys.has("KeyS")||keys.has("ArrowDown")?1:0)-(keys.has("KeyW")||keys.has("ArrowUp")?1:0);};
-    const releaseCapture=(element,id)=>{if(id!==null&&element.hasPointerCapture?.(id)){try{element.releasePointerCapture(id);}catch{}}};
     const cancelFillHold=()=>{if(mode==="dig"&&digKind==="fill"){digHolding=false;digMarker=.06;}};
-    resetControls=()=>{releaseCapture(zone,pid);releaseCapture(action,actionPid);pid=null;actionPid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");cancelFillHold();resetDigPointer();};
+    resetControls=()=>{releasePointer(zone,pid);releasePointer(action,actionPid);pid=null;actionPid=null;keys.clear();input.x=input.y=0;input.pressed=false;stopPlayerMotion();stick.style.transform="translate(-50%,-50%)";action.classList.remove("active");cancelFillHold();resetDigPointer();};
     const move=e=>{const r=zone.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=r.width*.33,len=Math.hypot(dx,dy)||1,s=Math.min(1,max/len),x=dx*s,y=dy*s;input.x=x/max;input.y=y/max;stick.style.transform=`translate(calc(-50% + ${x}px),calc(-50% + ${y}px))`;};
-    zone.addEventListener("pointerdown",e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;zone.setPointerCapture?.(pid);move(e);});
+    zone.addEventListener("pointerdown",e=>{if(pid!==null)return;e.preventDefault();pid=e.pointerId;capturePointer(zone,pid);move(e);});
     zone.addEventListener("pointermove",e=>{if(e.pointerId===pid)move(e);});
-    const endMove=e=>{if(e.pointerId!==pid)return;releaseCapture(zone,pid);pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";};
+    const endMove=e=>{if(e.pointerId!==pid)return;releasePointer(zone,pid);pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";};
     zone.addEventListener("pointerup",endMove);zone.addEventListener("pointercancel",endMove);zone.addEventListener("lostpointercapture",e=>{if(e.pointerId===pid){pid=null;input.x=input.y=0;stick.style.transform="translate(-50%,-50%)";}});
-    action.addEventListener("pointerdown",e=>{if(actionPid!==null)return;e.preventDefault();actionPid=e.pointerId;action.setPointerCapture?.(actionPid);input.pressed=true;action.classList.add("active");haptic(8);performAction();});
-    const stopAction=e=>{if(e.pointerId!==actionPid)return;releaseCapture(action,actionPid);actionPid=null;input.pressed=false;action.classList.remove("active");};
+    action.addEventListener("pointerdown",e=>{if(actionPid!==null)return;e.preventDefault();actionPid=e.pointerId;capturePointer(action,actionPid);input.pressed=true;action.classList.add("active");haptic(8);performAction();});
+    const stopAction=e=>{if(e.pointerId!==actionPid)return;releasePointer(action,actionPid);actionPid=null;input.pressed=false;action.classList.remove("active");};
     action.addEventListener("pointerup",stopAction);action.addEventListener("pointercancel",stopAction);action.addEventListener("lostpointercapture",e=>{if(e.pointerId===actionPid){actionPid=null;input.pressed=false;action.classList.remove("active");}});
     addEventListener("keydown",e=>{
       if(e.key==="Tab"&&modalScreens.has(activeScreen)){trapModalFocus(e);return;}
@@ -2497,9 +2503,9 @@
     $("digPauseButton").addEventListener("click",pause);
     $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
     const digButton=$("digButton");let digPointer=null;
-    resetDigPointer=()=>{const active=digPointer;digPointer=null;if(active!==null&&digButton.hasPointerCapture?.(active)){try{digButton.releasePointerCapture(active);}catch{}}digButton.classList.remove("pressed");};
-    digButton.addEventListener("pointerdown",event=>{if(digPointer!==null)return;event.preventDefault();digPointer=event.pointerId;digButton.setPointerCapture?.(digPointer);digButton.classList.add("pressed");digPress();});
-    const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;const active=digPointer;digPointer=null;if(digButton.hasPointerCapture?.(active)){try{digButton.releasePointerCapture(active);}catch{}}digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
+    resetDigPointer=()=>{const active=digPointer;digPointer=null;releasePointer(digButton,active);digButton.classList.remove("pressed");};
+    digButton.addEventListener("pointerdown",event=>{if(digPointer!==null)return;event.preventDefault();digPointer=event.pointerId;capturePointer(digButton,digPointer);digButton.classList.add("pressed");digPress();});
+    const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;const active=digPointer;digPointer=null;releasePointer(digButton,active);digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
     digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
@@ -2579,7 +2585,7 @@
           return {level:world.id,complete:goalComplete(),stones:state.stones.length};
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
-        digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,inputLocked:performance.now()<digInputLockUntil};},
+        digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,finishDelay:digFinishDelay,currentActive:Boolean(currentDig?.active),inputLocked:performance.now()<digInputLockUntil};},
         fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
         setPatrolMotion(type="tractor",options={}){
           if(!world)return null;
