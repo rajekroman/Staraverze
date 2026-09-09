@@ -21,6 +21,14 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("NAJDI SLOŽKU");
   expect(source).toContain("Vitrína je připravená. Porota přichází.");
   expect(source).toContain("Porota ocenila doložený původ a férový průběh");
+  expect(source).toContain("Posuď povrch, tvar a pravidelnost vzorku.");
+  expect(source).toContain("Olivově zelený nepravidelný kus s jamkami, kanálky a několika drobnými bublinkami.");
+  expect(source).toContain("Jasně zelený kus s velmi hladkým povrchem, pravidelnými hranami a téměř stejnou tloušťkou.");
+  expect(source).toContain('stav: ${qualityLabel} · ${s.quality} %');
+  expect(source).toContain('Zásyp profilu · ${digHits}/3');
+  expect(source).toContain("Hlína spadla vedle. Naber ji znovu.");
+  expect(source).not.toContain("Hlína v díře · přenos");
+  expect(source).not.toContain("Hlína spadla vedle · naber znovu");
   expect(source).not.toContain("Drž se úkolu a sleduj okolí.");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
@@ -1059,6 +1067,7 @@ test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }
 
   const stones = page.locator("#juryList .stone-card");
   expect(await stones.count()).toBeGreaterThanOrEqual(3);
+  await expect(stones.first().locator("small")).toHaveText(/stav: .+ · \d+ % · původ (doložený|nedoložený)/);
   for (let index = 0; index < 3; index += 1) await stones.nth(index).click();
 
   await expect(page.locator("#juryCount")).toHaveText("3 / 3");
@@ -1083,7 +1092,7 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
 
   const triggered = await page.evaluate(() => window.__lovecDebug.triggerTheft());
   expect(triggered).toEqual({ shown: true, boss: "karel" });
-  await expect(page.locator("#theftAlert strong")).toHaveText("KAREL TI UKRADL JEŽKA");
+  await expect(page.locator("#theftAlert strong")).toHaveText("KAREL TI VZAL JEŽKA");
 
   await page.keyboard.down("KeyD");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({ x: 0, y: 0, pressed: false });
