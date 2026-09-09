@@ -719,9 +719,7 @@
     addProp("plaza",1440,400,{scale:1.0});
     addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti"});
     [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["detail povrchu vzorku","fotografie údajného nálezu","záznam původu a času nálezu"][i]}));
-    addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
     addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:1.25,variant:0});
-    addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
   }
 
@@ -855,6 +853,7 @@
     if(typeof r.dossierRecovered!=="boolean")r.dossierRecovered=Boolean(r.bossDefeated&&!r.frantaEscaped);
     r.fraudAttempts=Math.round(finiteNumber(r.fraudAttempts,0,0,99));
     delete r.bossDelay;
+    if(Array.isArray(world.patrols))world.patrols=world.patrols.filter(p=>p?.type!=="bike"&&p?.type!=="police");
     if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
   }
   function enterLevel(){
@@ -978,6 +977,8 @@
 
   function performAction(){
     if(mode!=="playing"||theftAlertShown)return;
+    const franta=world?.id==="malse"&&world.rival?.active&&world.rival.name==="franta"?world.rival:null;
+    if(franta&&dist(player,franta)<=140){nearest={kind:"rival",ref:franta,x:franta.x,y:franta.y};hitRival();return;}
     findNearest();
     if(nearest){
       if(nearest.kind==="npc")talkNpc(nearest.ref);
@@ -1474,11 +1475,11 @@
   function updateParticles(dt){for(const p of world.particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=20*dt;}world.particles=world.particles.filter(p=>p.life>0);}
 
   function findNearest(){
-    nearest=null;let best=100;const check=(kind,ref,x,y,range=68)=>{const d=Math.hypot(x-player.x,y-player.y);if(d<range&&d<best){best=d;nearest={kind,ref,x,y};}};
+    nearest=null;let best=160;const check=(kind,ref,x,y,range=68)=>{const d=Math.hypot(x-player.x,y-player.y);if(d<range&&d<best){best=d;nearest={kind,ref,x,y};}};
     for(const p of world.props)if(p.type==="npc"&&!p.used)check("npc",p,p.x,p.y);
     for(const h of world.hotspots)if(h.active&&h.revealed)check("hotspot",h,h.x,h.y);
     for(const i of world.items)if(i.active&&!i.hidden)check(i.type==="hole"?"hole":"item",i,i.x,i.y,i.type==="hole"?98:68);
-    if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.name==="franta"?92:world.rival.stunTimer>0?92:66);
+    if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.name==="franta"?140:world.rival.stunTimer>0?92:66);
     if(world.exit&&!world.rival?.active)check("exit",world.exit,world.exit.x,world.exit.y,88);
     const actionButton=$("actionButton");
     if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};let m=map[nearest.kind]||["◎","AKCE"];if(nearest.kind==="item"&&world.id==="malse"&&nearest.ref.type==="paper")m=nearest.ref.special==="certificate"?["▣","CERTIFIKÁTY"]:["◎","PROVĚŘIT"];if(nearest.kind==="rival"&&nearest.ref.name==="franta")m=["✋","ZASTAVIT"];if(nearest.kind==="exit"&&world.id==="malse")m=!world.runtime.certificateRecovered?["◉","CERTIFIKÁTY"]:!world.runtime.registered?["▣","REGISTRACE"]:world.runtime.papers<3?["◎","PODKLADY"]:!world.runtime.fraudResolved?["◉","KONTROLA"]:["→","VSTUP"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&(nearest.ref.name==="franta"||nearest.ref.stunTimer>0));actionButton.setAttribute("aria-label",nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);}
