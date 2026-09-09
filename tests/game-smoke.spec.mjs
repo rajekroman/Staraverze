@@ -789,6 +789,62 @@ test("čekající Karel se po reloadu znovu spustí místo softlocku Besednice",
   expect(restored.world.runtime.pendingBoss ?? null).toBeNull();
 });
 
+test("rozběhnutá Karlova honička bez rival objektu se po reloadu sama obnoví", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.state.stones=save.state.stones.filter(stone=>stone.rarity!=="hedgehog");
+    save.world.runtime.hedgehog=true;
+    save.world.runtime.chaseStarted=true;
+    save.world.runtime.bossStarted=true;
+    save.world.runtime.bossDefeated=false;
+    delete save.world.runtime.pendingBoss;
+    delete save.world.rival;
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
+    name:"karel",active:true,hits:0,maxHits:3
+  });
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostaň ježek zpět");
+});
+
+test("rozběhnutý Frantův útěk bez rival objektu se po reloadu sám obnoví", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.world.runtime.certificateRecovered=true;
+    save.world.runtime.registered=true;
+    save.world.runtime.papers=3;
+    save.world.runtime.fraudResolved=true;
+    save.world.runtime.bossStarted=true;
+    save.world.runtime.bossDefeated=false;
+    save.world.runtime.dossierRecovered=false;
+    save.world.runtime.frantaEscaped=false;
+    delete save.world.rival;
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
+    name:"franta",active:true,hits:0,maxHits:1
+  });
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zachraň složku před Frantou");
+});
+
 test("každý platný zásah Karla se checkpointuje a finální ježek přežije reload", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
