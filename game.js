@@ -586,7 +586,7 @@
     if(world?.id==="besednice"&&pending&&!world.runtime.bossStarted){
       world.runtime.pendingBoss=null;
       startRival("karel",pending.x,pending.y);
-      toast("Dožeň zloděje ve chvíli, kdy se zastaví!","bad",2200);
+      toast("Dožeň Karla. Chyť ho, až se zastaví.","bad",2200);
       save();
     }
   }
@@ -1005,7 +1005,8 @@
   function talkNpc(npc){
     if(world.id==="chlum"){showDialog("Václav","V","Bouřka vyplavila pár kusů přímo do brázd. Bez radaru je v té hlíně snadno přehlédneš.");return;}
     if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Můžeš do tří vyznačených profilů. Každý po prohlédnutí zase zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Lesník ti dovolil kopat","good");save();});return;}
-    showDialog(npc.name,npc.avatar,npc.role==="farmer"?"Po bouřce bývají nejlepší kusy přímo v brázdách. Koukej pořádně.":npc.role==="owner"?"Hlavně po sobě každý profil zase zahrab.":"Drž se úkolu a sleduj okolí.");
+    if(npc.role==="farmer"){showDialog(npc.name,npc.avatar,"Po bouřce bývají nejlepší kusy přímo v brázdách. Koukej pořádně.");return;}
+    if(npc.role==="owner"){showDialog(npc.name,npc.avatar,"Hlavně po sobě každý profil zase zahrab.");return;}
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
   function closeDialog(){dialogueCallback?.();dialogueCallback=null;mode="playing";setPlaying(true);showOnly(null);updateHUD(true);}
@@ -1209,7 +1210,7 @@
     world.rival={name,displayName:isKarel?"KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:isKarel?3:1,speed:isKarel?150:142,baseSpeed:isKarel?150:142,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,distanceTravelled:0,target:isKarel?{x:rand(250,1550),y:rand(220,950)}:{x:1650,y:980},escapeTarget:isKarel?null:{x:1650,y:980},throwTimer:1.15,active:true,flashlight:isKarel,vision:isKarel?245:0,baseVision:isKarel?245:0,halfAngle:isKarel?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:isKarel?1.15:.65,trail:[]};
     bossIntroTimer=2.35;
     if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KAREL":"FRANTA";
-    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel utíká s ježkem. Po sprintu se na chvíli zastaví — tehdy ho chyť.":"Franta popadne složku se záznamy a vyráží k východu. Dostihni ho a zastav ho.";
+    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.":"Franta popadne složku se záznamy a vyráží k východu. Dostihni ho a zastav ho.";
     ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");
     audio.sfx("boss");haptic([35,40,35]);shake=Math.max(shake,7);flash=.1;flashColor="190,100,75";
     toast(isKarel?"Karel utíká s ježkem!":"FRANTA UTÍKÁ SE SLOŽKOU · ZASTAV HO!","bad",2100);
@@ -1285,6 +1286,16 @@
     $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"}. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"Došel jsi bez kamenů. Výpravu lze dokončit, ale vitrína zůstane prázdná.";
     $("juryCount").textContent=`0 / ${target}`;$("juryButton").disabled=target>0;$("juryButton").textContent=target?"POSTAVIT VITRÍNU":"PŘEDSTOUPIT PŘED POROTU";showOnly(screens.jury);
   }
+  function submitJury(){
+    if(mode!=="jury")return;
+    const button=$("juryButton");
+    button.disabled=true;
+    button.textContent="POROTA PŘICHÁZÍ";
+    for(const card of document.querySelectorAll("#juryList .stone-card"))card.disabled=true;
+    $("juryDescription").textContent="Vitrína je připravená. Porota přichází.";
+    audio.sfx("click");
+    setTimeout(()=>{if(mode==="jury")judge();},900);
+  }
   function judge(){
     const chosen=state.stones.filter(s=>jurySelection.has(s.id));
     const quality=chosen.reduce((sum,s)=>sum+s.quality*28,0);
@@ -1295,7 +1306,7 @@
     const finale=(state.stats.fraud||0)*900+(state.stats.dossier||0)*650;
     const journey=Math.min(state.score,7000)*.22;
     const jury=Math.round(1200+quality+provenance+diversity+rarity+stewardship+finale+journey);
-    let title="Výprava dokončena",text="Došel jsi až do Slávie a dostal svou sbírku do vitríny. Na hlavní ocenění tentokrát nestačila, ale výprava je u konce.";
+    let title="Výprava dokončena",text="Došel jsi až do Slávie a výpravu dokončil. Porota ocenila doložený původ a férový průběh, ale vitrína tentokrát na hlavní ocenění nestačila.";
     if(jury>=12000){title="Hlavní cena poroty";text="Porota ocenila kvalitu sbírky, její pestrost i způsob, jakým ses k nejlepším kusům během výpravy dostal.";}
     else if(jury>=8500){title="Výstavní uznání";text="Sbírka zaujala stavem, doloženým původem a pestrostí lokalit. Hmotnost sama o sobě o výsledku nerozhodla.";}
     state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");
@@ -1494,7 +1505,7 @@
     if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.name==="franta"?140:world.rival.stunTimer>0?92:66);
     if(world.exit&&!world.rival?.active)check("exit",world.exit,world.exit.x,world.exit.y,88);
     const actionButton=$("actionButton");
-    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};let m=map[nearest.kind]||["◎","AKCE"];if(nearest.kind==="item"&&world.id==="malse"&&nearest.ref.type==="paper")m=nearest.ref.special==="certificate"?["▣","VZÍT SLOŽKU"]:["◎","PROVĚŘIT"];if(nearest.kind==="rival"&&nearest.ref.name==="franta")m=["✋","ZASTAVIT"];if(nearest.kind==="exit"&&world.id==="malse")m=!world.runtime.certificateRecovered?["◉","SLOŽKA"]:!world.runtime.registered?["▣","REGISTROVAT"]:world.runtime.papers<3?["◎","INDICIE"]:!world.runtime.fraudResolved?["◉","KONTROLA"]:["→","VSTOUPIT"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&(nearest.ref.name==="franta"||nearest.ref.stunTimer>0));actionButton.setAttribute("aria-label",nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);}
+    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};let m=map[nearest.kind]||["◎","AKCE"];if(nearest.kind==="item"&&world.id==="malse"&&nearest.ref.type==="paper")m=nearest.ref.special==="certificate"?["▣","VZÍT SLOŽKU"]:["◎","PROVĚŘIT"];if(nearest.kind==="rival"&&nearest.ref.name==="franta")m=["✋","ZASTAVIT"];if(nearest.kind==="exit"&&world.id==="malse")m=!world.runtime.certificateRecovered?["◉","NAJDI SLOŽKU"]:!world.runtime.registered?["▣","REGISTROVAT"]:world.runtime.papers<3?["◎","INDICIE"]:!world.runtime.fraudResolved?["◉","KONTROLA"]:["→","VSTOUPIT"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&(nearest.ref.name==="franta"||nearest.ref.stunTimer>0));actionButton.setAttribute("aria-label",nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);}
     else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";actionButton.classList.remove("ready","boss-ready");actionButton.setAttribute("aria-label",scanCooldown>0?`Radar připraven za ${Math.ceil(scanCooldown)} s`:"Spustit radar");hideHint();}
   }
 
@@ -2757,7 +2768,7 @@
     digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("fraudButton").addEventListener("click",()=>resolveFraudReview(true));$("fraudWrongButton").addEventListener("click",()=>resolveFraudReview(false));
-    $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";audio.setTheme("menu");audio.resumeAll();showOnly(screens.title);refreshContinue();});
+    $("juryButton").addEventListener("click",submitJury);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";audio.setTheme("menu");audio.resumeAll();showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();syncSoundButton();save();});
     $("howButton").addEventListener("click",()=>openAuxiliary(screens.how));$("closeHowButton").addEventListener("click",()=>closeAuxiliary(screens.how));
