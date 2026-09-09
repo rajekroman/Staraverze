@@ -859,14 +859,21 @@
   function enterLevel(){
     if(!restoredWorld)generateLevel(state.levelIndex);
     normalizeMalseWorld();
-    const pendingKarel=world?.id==="besednice"&&world.runtime?.pendingBoss&&!world.runtime.bossStarted
-      ? world.runtime.pendingBoss
+    const interruptedKarel=world?.id==="besednice"&&world.runtime?.chaseStarted&&!world.runtime?.bossDefeated&&!(world.rival?.active&&world.rival.name==="karel")
+      ? world.runtime.pendingBoss||{
+          x:finiteNumber(world.rival?.x,clamp(player.x+180,80,1720),80,1720),
+          y:finiteNumber(world.rival?.y,clamp(player.y-100,100,1120),100,1120)
+        }
       : null;
+    const interruptedFranta=world?.id==="malse"&&world.runtime?.fraudResolved&&!world.runtime?.bossDefeated&&!(world.rival?.active&&world.rival.name==="franta");
     restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();
-    if(pendingKarel){
+    if(interruptedKarel){
       world.runtime.pendingBoss=null;
-      startRival("karel",pendingKarel.x,pendingKarel.y);
+      startRival("karel",interruptedKarel.x,interruptedKarel.y);
       toast("Karel pokračuje v útěku s ježkem","bad",1800);
+    }else if(interruptedFranta){
+      startRival("franta",1260,430);
+      toast("Franta pokračuje v útěku se složkou","bad",1800);
     }
     save();
   }
