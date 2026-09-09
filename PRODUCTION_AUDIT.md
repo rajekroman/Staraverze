@@ -1,5 +1,22 @@
 # Produkční audit v5.4.2 — 8. 9. 2026
 
+## Aktualizace certifikace a narativní návaznosti — 9. 9. 2026
+
+Pracovní dokončovací revize vychází z `main@98f6949cf598c254eecb8c9b1b176b9361fdd39f`. Níže uvedený starší audit zůstává jako historie, ale pro certifikaci a finále platí novější stav:
+
+- kámen má explicitně oddělené `documented` a `certified`; certifikace je navázaná na konkrétní stone ID a funguje jako eligibility gate pro vitrínu;
+- Chlum může vytvořit nález s nedoloženým původem a Václav jej následně umí herně doložit, takže provenance již není automatické maximum;
+- tok kampaně je Besednice → Expertiza → perk → Malše; rozpracovaná Expertiza se ukládá včetně výběru konkrétních kamenů;
+- certifikované kameny a Besednický ježek nejsou součástí poolu náhodně ztratitelných kamenů;
+- první příchod do Malše má skutečný krátký runtime incident s Frantou; certifikační složka a pozdější kontrolní dossier jsou dva různé předměty;
+- porota nabízí pouze certifikované kameny, ale `documented` zůstává samostatně bodované;
+- save schema 2 řeší starý `levelIndex=4` bez Expertizy, rozehranou Malši zachovává a migraci provádí idempotentně;
+- browser smoke, visual regression a offline testy se nově spouštějí i na pull requestu, nikoli až po merge do `main`;
+- PWA runtime cache této revize je `lovec-vltavinu-reborn-v5-4-2-runtime-33`.
+
+Nulová vitrína zůstává pouze defenzivním fallbackem pro legacy nebo poškozený save; normální průchod po Besednici garantuje alespoň příběhový ježek.
+
+
 ## Aktualizace release stavu — 9. 9. 2026
 
 Výchozí stav této druhé dokončovací revize je `main@6504199da4527e47cc86f02913424467a8e364b2`. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
