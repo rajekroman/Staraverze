@@ -697,6 +697,32 @@ test("starý nebo poškozený save se bezpečně obnoví a projde povinnou Exper
   expect(errors).toEqual([]);
 });
 
+test("duplicitní nebo chybějící stone IDs se při načtení opraví deterministicky", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(saveKey=>{
+    localStorage.clear();
+    localStorage.setItem(saveKey,JSON.stringify({
+      version:"5.4.2",saveSchema:2,levelIndex:3,score:900,
+      stones:[
+        {id:"dup",name:"První kus",locality:"Chlum",rarity:"common",weight:1,quality:70,value:700,documented:true,certified:false},
+        {id:"dup",name:"Druhý kus",locality:"Ločenice",rarity:"good",weight:2,quality:80,value:1400,documented:true,certified:false},
+        {name:"Třetí kus",locality:"Nesměň",rarity:"rare",weight:3,quality:90,value:2500,documented:true,certified:false}
+      ],
+      pendingTransition:"expertise",pendingCertification:["dup"],perks:{},stats:{},sound:true
+    }));
+  },SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  const restored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).state,SAVE_KEY);
+  expect(restored.stones.map(stone=>stone.id)).toEqual(["dup","dup-2","restored-2"]);
+  expect(new Set(restored.stones.map(stone=>stone.id)).size).toBe(3);
+  expect(restored.pendingCertification).toEqual(["dup"]);
+  await expect(page.locator("#expertiseList .expertise-stone")).toHaveCount(3);
+  await expect(page.locator("#expertiseList .expertise-stone small").first()).toContainText("NECERTIFIKOVÁN");
+});
+
 test("rozehraná stará Malše se nevrací do Expertizy a certifikace se doplní idempotentně", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(({ saveKey }) => {
