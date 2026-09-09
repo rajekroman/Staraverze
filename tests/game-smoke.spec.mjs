@@ -10,7 +10,7 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Ty vltavíny nehledáš kvůli penězům");
   expect(source).toContain("vybrat z ní nejzajímavější kusy pro výstavu na akci Na zelené vlně v KD Slávii");
   expect(source).toContain("Vltavíny sbírá na prodej");
-  expect(source).toContain("utratit peníze za automaty");
+  expect(source).toContain("utratit za automaty");
   expect(source).toContain("potřeboval bych tvůj názor na jeden Frantův vzorek");
   expect(source).toContain("necháš nejlepší kusy posoudit odborníkem a získáš k nim certifikáty");
   expect(source).toContain("složka s certifikáty skončí někde na nábřeží");
@@ -816,7 +816,7 @@ test("čekající Karel se po reloadu znovu spustí místo softlocku Besednice",
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
     name:"karel",active:true,hits:0,maxHits:3
   });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dostaň ježek zpět");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Získej ježka zpět");
   const restored = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
   expect(restored.world.runtime.bossStarted).toBe(true);
   expect(restored.world.runtime.pendingBoss ?? null).toBeNull();
@@ -846,7 +846,7 @@ test("rozběhnutá Karlova honička bez rival objektu se po reloadu sama obnoví
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
     name:"karel",active:true,hits:0,maxHits:3
   });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dostaň ježek zpět");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Získej ježka zpět");
 });
 
 test("rozběhnutý Frantův útěk bez rival objektu se po reloadu sám obnoví", async ({ page }) => {
@@ -1251,7 +1251,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await page.locator("#fraudButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({ name: "franta", active: true, maxHits: 1 });
   await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi složku zpět");
-  await expect(page.locator("#bossPhase")).toContainText(/BERE SLOŽKU|JEDEN ZÁSAH/);
+  await expect(page.locator("#bossPhase")).toContainText(/BERE SLOŽKU|DOSTIHNI HO/);
 
   await page.evaluate(() => {
     const player = window.__lovecDebug.snapshot().player;
