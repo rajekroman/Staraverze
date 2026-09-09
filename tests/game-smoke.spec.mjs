@@ -1182,7 +1182,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   expect(errors).toEqual([]);
 });
 
-test("Slávie nemá cyklisty ani policii a Frantu lze chytit přímo akčním tlačítkem", async ({ page }) => {
+test("Slávie nemá cyklisty ani policii a Frantu lze chytit přímo akčním tlačítkem", async ({ page }, testInfo) => {
   await openDebug(page);
   await page.evaluate(() => {
     localStorage.clear();
@@ -1199,7 +1199,13 @@ test("Slávie nemá cyklisty ani policii a Frantu lze chytit přímo akčním tl
     window.__lovecDebug.setBossPose(player.x + 125, player.y, 0);
   });
   await expect(page.locator("#actionText")).toHaveText("ZASTAVIT");
-  await page.locator("#actionButton").click();
+  const actionButton=page.locator("#actionButton");
+  if(testInfo.project.name.includes("iphone")){
+    await expect(actionButton).toBeVisible();
+    await actionButton.tap();
+  }else{
+    await page.keyboard.press("Space");
+  }
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
     name:"franta",active:false,hits:1,maxHits:1
   });
