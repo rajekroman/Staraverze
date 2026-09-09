@@ -2,16 +2,17 @@
 
 ## Aktualizace release stavu — 9. 9. 2026
 
-Výchozí stav této dodatečné revize je `main@2d0cee52c675b1bdeeabeba1c24d8004557958c5` po sloučení přepracovaného finále Slávie. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
+Výchozí stav této druhé dokončovací revize je `main@6504199da4527e47cc86f02913424467a8e364b2`. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
 
 - Pages publish je nyní navázán na úspěšný workflow `Validate v5.4 continuation`, checkoutuje přesně `workflow_run.head_sha` a publikuje pouze explicitní `dist/`.
 - Focus management, focus trap, návrat fokusu a mobilní pinch/reflow byly doplněny a mají browserové regresní testy.
 - Finále Slávie nyní obsahuje certifikáty pravosti, registraci, kontrolu podvodu, Frantův útěk se složkou a výstavní vitrínu. Cyklisté a policejní patrol byli z finále odstraněni; Frantův catch používá tolerantnější prioritní akci vhodnou pro dotykové ovládání.
 - Save integrity pokrývá dopadení, radarové odhalení, souhlas lesníka, neúspěšné minihry, pending perk/jury přechody, stabilní nabídku perků a obnovu Karlova souboje bez reload softlocku.
+- Druhá dokončovací revize navíc obnovuje rozběhnuté honičky s Karlem i Frantou, pokud částečně poškozený save ztratí objekt soupeře. Strukturálně neplatný snapshot světa (např. bez `runtime` nebo povinných kolekcí) se již nenačte jako rozehraný svět; zachová se normalizovaný stav kampaně a aktuální lokalita se bezpečně vygeneruje znovu.
 - Audio lifecycle pro mute, pause, background a rychlé přepnutí theme má automatické testy. Finální hudební pass doplňuje existující ambienty procedurálním score bez nového externího audio assetu.
-- Stále zůstává ruční release gate: potvrzení distribučních práv k MP3 označeným `NOASSERTION`, poslech na reproduktorech/sluchátkách a plný průchod na fyzickém iOS/Android zařízení.
+- Licenční gate aktivních produkčních MP3 byl uzavřen v PR #117 potvrzením vlastníka pro ElevenLabs-generated replacements. Stále zůstává ruční poslech na reproduktorech/sluchátkách a plný průchod na fyzickém iOS/Android zařízení.
 
-Technické vydání proto po zeleném CI nemá známý blokátor v runtime/publish pipeline; zbývající blokátor je manuální licenční a fyzický QA gate.
+Technické vydání proto po zeleném CI nemá známý blokátor v runtime/publish pipeline; zbývající release gate je manuální poslech a fyzický QA průchod.
 
 
 ## Rozsah a základ
@@ -42,7 +43,7 @@ Při vstupní kontrole nebyly otevřené issues ani PR. Byly přečteny runtime,
 
 - **Vyřešeno v této etapě — pokračování rozehrané lokality.** Uložený stav nyní obsahuje verzovaný snapshot `state`, aktuální svět, runtime hodnoty, aktivitu nálezů a pozici postavy. Staré ploché save formáty zůstávají migrovatelné a při jejich načtení se svět bezpečně vygeneruje nově. Regresní test ověřuje Chlum: sebraný kámen, `runtime.collected`, pozici a obnovení po reloadu.
 - **Vyřešeno — exact-SHA Pages publish.** Produkční deploy navazuje na úspěšný validační workflow, checkoutuje přesně ověřené SHA a publikuje pouze explicitně allowlistovaný `dist/`. Publish smoke ověřuje také offline migraci cache.
-- **High / Small + součinnost vlastníka — audio práva a poslech.** Část dodaných zvuků má `NOASSERTION`; technická integrita nenahrazuje právo distribuce. Nutný poslech na reproduktoru/sluchátkách a potvrzení vlastníka.
+- **Licence vyřešena v PR #117; ruční poslech zůstává otevřený.** Aktivní produkční MP3 mají zdokumentované ElevenLabs-generated provenance a autorizaci vlastníka k distribuci s hrou. Stále je nutný lidský poslech na reproduktoru/sluchátkách.
 - **Vyřešeno pro podporované HTML UI — přístupnost a zoom.** Focus management, focus trap, návrat fokusu, reduced-motion, mobilní reflow a pinch-to-zoom proxy mají regresní testy. Canvasová prostorová navigace pro nevidomého hráče zůstává inherentním omezením této architektury a není deklarována jako plná screen-reader herní podpora.
 - **Vyřešeno — audio lifecycle.** Mute, pokračování, pauza, background/visibility a rychlé přepínání theme mají automatické testy a společný AudioEngine lifecycle.
 - **Medium / Medium — vizuální testy.** Automatická brána nyní pokrývá více scén včetně Slávie a běží ve třech viewportových variantách. Fingerprint 8×6 s tolerancí 1,25 může stále přehlédnout malý lokální detail; screenshot artefakty proto zůstávají důležitou ruční kontrolou.
@@ -69,13 +70,13 @@ node tools/capture-runtime-audit.mjs 629c1d3b6a43c3429d4293373276b340916e3ea2
 
 Výstup: `test-results/audit/`, páry snímků pro 1280×720, 390×844, 844×390 a `capture.json`. Porovnání načítá původní `game.js` přímo z daného commitu; ostatní soubory pocházejí z pracovní větve. Scéna, seed a délka řízeného postupu jsou stejné. Jde o prohlížečovou diagnostiku, nikoli GPU benchmark nebo fyzický iPhone/Safari PASS.
 
-Konkrétní finální výsledky testů jsou doplněny po dokončení běhů. Automatická úspěšnost sama neuzavírá release: zbývají skutečná zařízení, manuální audio a práva k dodaným assetům.
+Konkrétní finální výsledky testů jsou doplněny po dokončení běhů. Automatická úspěšnost sama neuzavírá release: zbývají skutečná zařízení a manuální poslech audia.
 
 ## Další priority
 
 | Pořadí | Krok | Přínos / náročnost / riziko |
 |---|---|---|
-| 1 | Uzavřít práva k audio souborům a skutečný mobilní poslech | High / Small + vlastník / Low |
+| 1 | Dokončit skutečný poslech aktivního audia na reproduktorech/sluchátkách | High / Small + vlastník / Low |
 | 2 | Reálný průchod všech kapitol na fyzickém iOS/Android bez debug zkratek | High / Medium / Low |
 | 3 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat pouze prokázanou příčinu | Medium / Medium / Low |
 | 4 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | Medium / Medium / Low |

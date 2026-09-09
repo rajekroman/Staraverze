@@ -4,12 +4,6 @@ The active soundtrack and effect files in this directory are the supplied produc
 `LICENSE.md` and this `PROVENANCE.md` travel with the public audio payload.
 `v73-audio-build-audit.json` remains in the source repository as an internal integrity record and is intentionally excluded from the runtime package.
 
-Project owner confirmation, 2026-09-09: the active production replacement MP3
-files listed in `LICENSE.md` were generated specifically for Lovec vltavínů: Na
-zelené vlně using ElevenLabs, contain no intentionally included third-party
-source audio, and are authorized for public distribution with the game through
-GitHub Pages under the ElevenLabs account terms applicable at generation time.
-
 The four shared effects below were supplied from the earlier `pr297` asset bundle. The same bytes were present in the other supplied work directories; the SHA-256 values confirm that one canonical copy is sufficient:
 
 | File | SHA-256 |

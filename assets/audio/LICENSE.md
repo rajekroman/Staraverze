@@ -22,13 +22,13 @@ synthesis provenance and CC0-1.0 declaration:
 - `ui-open.mp3`
 - `ui-result.mp3`
 
-## ElevenLabs-generated production replacements / PROJECT_AI_GENERATED_ELEVENLABS
+## User-supplied production replacements / NOASSERTION
 
-The following canonical binaries were generated specifically for this game
-using ElevenLabs. The project owner confirms that these files contain no
-intentionally included third-party source audio and are authorized for public
-distribution with Lovec vltavínů: Na zelené vlně through GitHub Pages under the
-ElevenLabs account terms applicable at generation time:
+The following canonical binaries were supplied as production replacements. The
+repository records their exact bytes and SHA-256 for integrity, but does **not**
+assert an upstream license or origin for them. The release owner must confirm
+that the project has the right to redistribute/use them before publishing the
+release:
 
 - `ambient-besednice.mp3`
 - `ambient-chlum.mp3`
