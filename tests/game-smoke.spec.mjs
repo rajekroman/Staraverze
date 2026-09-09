@@ -1233,7 +1233,7 @@ test("celá výprava projde z Chlumu přes Expertizu až k porotě a výsledku",
   await expect(page.locator("#juryCount")).toHaveText("0 / 3");
   const stones = page.locator("#juryList .stone-card");
   await expect(stones).toHaveCount(5);
-  await expect(stones.first().locator("small")).toHaveText(/stav: .+ · \\d+ % · původ (doložený|nedoložený)/);
+  await expect(stones.first().locator("small")).toHaveText(/stav: .+ · \d+ % · původ (doložený|nedoložený)/);
   for (let index = 0; index < 3; index += 1) await stones.nth(index).click();
 
   await expect(page.locator("#juryCount")).toHaveText("3 / 3");
