@@ -621,7 +621,7 @@ test("starší Malše save bez certifikační položky se migruje bez softlocku"
   expect(certificate).toMatchObject({type:"paper",active:true,hidden:true});
 
   await recoverMalseCertificates(page);
-  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj sbírku u vstupu");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj certifikované kusy u vstupu");
 });
 
 test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", async ({ page }) => {
@@ -1084,7 +1084,7 @@ test("rozběhnutý Frantův útěk bez rival objektu se po reloadu sám obnoví"
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
     name:"franta",active:true,hits:0,maxHits:1
   });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi složku zpět");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi kontrolní podklady zpět");
 });
 
 test("každý platný zásah Karla se checkpointuje a finální ježek přežije reload", async ({ page }) => {
@@ -1461,7 +1461,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   await recoverMalseCertificates(page);
-  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj sbírku u vstupu");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj certifikované kusy u vstupu");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
   await expect(page.locator("#actionText")).toHaveText("REGISTROVAT");
@@ -1492,7 +1492,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
 
   await page.locator("#fraudButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({ name: "franta", active: true, maxHits: 1 });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi složku zpět");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi kontrolní podklady zpět");
   await expect(page.locator("#bossPhase")).toContainText(/BERE SLOŽKU|DOSTIHNI HO/);
 
   await page.evaluate(() => {
