@@ -1,14 +1,19 @@
 # Lovec vltavínů Reborn 5.4.2
 
-## Expertiza mezi Besednicí a Slávií
+## Certifikace, doložený původ a návaznost finále
 
-- po dokončení Besednice a výběru perku se nově otevře samostatná povinná obrazovka Expertiza;
-- hráč se v ní dozví, že nejlepší kusy byly odborně posouzeny a byly k nim vystaveny certifikáty, které následně přebírá;
-- briefing Malše už expertizu nevypráví zpětně a začíná až příchodem s certifikáty ke KD Slávii;
-- přechod `pendingTransition="expertise"` se ukládá a po reloadu se obnoví bez přeskočení nebo opakovaného bodového bonusu;
-- smoke testy pokrývají plný narativní tok, reload, Escape a reflow nové obrazovky;
-- PWA cache zvýšena na `runtime-32`.
-
+- datový model kamene nově odděluje `documented` (doložený původ) a `certified` (konkrétní odborně posouzený kus);
+- po Besednici následuje nejdřív Expertiza, až potom perk a briefing Malše;
+- Expertiza pracuje s konkrétními stone IDs, certifikuje nejvýše pět kusů a průběžný výběr se ukládá přes `pendingCertification`, takže přežije reload;
+- Chlum již netvrdí, že je Franta fyzicky přítomen v mapě; Václav zároveň umožňuje herně doložit původ chlumských nálezů;
+- `caught()` neodebere certifikovaný kámen ani povinný Besednický ježek;
+- první vstup do Malše odehraje krátký runtime incident s Frantou a skutečným pádem certifikační složky, která se následně hledá radarem;
+- certifikační složka hráčovy sbírky je oddělená od pozdější kontrolní složky s podklady k Frantovu vzorku;
+- vitrína nabízí pouze certifikované kameny; stav `documented` zůstává samostatnou bodovanou vlastností poroty;
+- Expertiza a finále mají bezpečný fallback pro 0/1/2 kameny bez softlocku, přičemž nulová vitrína je považována jen za legacy/poškozený-save scénář;
+- save schema 2 migruje starý `levelIndex=4` bez přechodu do Expertizy, ale již rozehranou Malši nevrací zpět a deterministicky doplní certifikované kusy;
+- smoke sada rozšířena na 70 testů a PR workflow nyní spouští browser smoke, visual regression i offline gate ještě před mergem;
+- PWA cache zvýšena na `runtime-33`.
 
 ## Narativní a UX copy pass
 
