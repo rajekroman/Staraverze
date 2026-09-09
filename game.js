@@ -1984,7 +1984,7 @@
     const fallbackDx=Math.cos(angle||0),fallbackDy=Math.sin(angle||0);
     const pose=motion?.pose||(local&&!motion?"front":Math.abs(fallbackDy)>.66?(fallbackDy<0?"back":"front"):"side");
     const facing=motion?.facing===-1?-1:motion?.facing===1?1:(fallbackDx<0?-1:1);
-    const moving=motion?.moving ?? Boolean(motion);
+    const moving=motion?.moving===true;
     const motionRatio=moving?clamp(Number.isFinite(motion?.motionRatio)?motion.motionRatio:.65,0,1):0;
     const phase=Number.isFinite(motion?.motionPhase)?motion.motionPhase:renderNow()*.008+(x+y)*.002;
     const side=pose==="side",back=pose==="back";
