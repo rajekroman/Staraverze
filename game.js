@@ -371,7 +371,7 @@
 
   function freshState() {
     return {
-      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0, pendingTransition:null,
+      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0, pendingTransition:null, pendingPerks:[],
       perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
@@ -407,6 +407,10 @@
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
+    const availablePerks=new Set(PERKS.filter(perk=>(clean.perks[perk.id]||0)<perk.max).map(perk=>perk.id));
+    clean.pendingPerks=clean.pendingTransition==="perk"&&Array.isArray(data.pendingPerks)
+      ? [...new Set(data.pendingPerks.filter(id=>availablePerks.has(id)))].slice(0,3)
+      : [];
     for (const key of Object.keys(clean.stats)) {
       clean.stats[key] = Math.round(finiteNumber(data.stats?.[key], 0, 0, 1000000));
     }
@@ -1242,8 +1246,16 @@
   }
   function showPerks(){
     mode="transition";setPlaying(false);
-    const candidates=PERKS.filter(p=>(state.perks[p.id]||0)<p.max).sort(()=>Math.random()-.5).slice(0,3);const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingTransition=null;save();showBrief(state.levelIndex);});list.append(b);});
+    const available=PERKS.filter(p=>(state.perks[p.id]||0)<p.max);
+    const desired=Math.min(3,available.length);
+    let candidates=(state.pendingPerks||[]).map(id=>available.find(perk=>perk.id===id)).filter(Boolean);
+    if(candidates.length!==desired){
+      candidates=[...available].sort(()=>Math.random()-.5).slice(0,desired);
+      state.pendingPerks=candidates.map(perk=>perk.id);
+      save();
+    }
+    const list=$("perkList");list.innerHTML="";
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingTransition=null;state.pendingPerks=[];save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
   }
 
