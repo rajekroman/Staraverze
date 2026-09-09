@@ -1365,7 +1365,7 @@
       save();
     }
     const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingPerks=[];state.pendingTransition=null;save();showBrief(state.levelIndex);});list.append(b);});
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingPerks=[];state.pendingTransition=null;world=null;restoredWorld=false;save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
   }
 
