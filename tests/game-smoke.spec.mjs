@@ -12,6 +12,8 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
   expect(source).toContain("utratit peníze za automaty");
   expect(source).toContain("Frantovu podezřelému vzorku");
+  expect(source).toContain("certifikáty pravosti");
+  expect(source).toContain("Franta ti při příchodu vyrazí složku");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
   expect(source).not.toContain("FETÁK FRANTA");
@@ -145,6 +147,7 @@ test("audit: skrytí stránky pozastaví kopání a odchod zruší odměnu", asy
 test("audit: Franta se nespustí před potvrzeným odhalením podvodu ani přes pauzu", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await recoverMalseCertificates(page);
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
   await page.keyboard.press("Space");
@@ -302,6 +305,18 @@ function watchErrors(page) {
 async function openDebug(page) {
   await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
   await expect.poll(() => page.evaluate(() => Boolean(window.__lovecDebug))).toBe(true);
+}
+
+async function recoverMalseCertificates(page) {
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(720,1060);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+  await page.evaluate(() => window.__lovecDebug.setPlayer(880,1030));
+  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.malseSnapshot()?.certificateRecovered)).toBe(true);
 }
 
 test("hlavní nabídka je celá dosažitelná v aktuálním viewportu", async ({ page }) => {
@@ -540,6 +555,7 @@ test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", asy
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await recoverMalseCertificates(page);
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
   await page.keyboard.press("Space");
   await page.locator("#dialogButton").click();
@@ -944,6 +960,13 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
 
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
+  await page.keyboard.press("Space");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  await recoverMalseCertificates(page);
   await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
