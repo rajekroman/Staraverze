@@ -373,7 +373,7 @@
   function freshState() {
     return {
       version:APP_VERSION, saveSchema:SAVE_SCHEMA, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
-      pendingTransition:null, pendingPerks:[], expertiseCompleted:false,
+      pendingTransition:null, pendingPerks:[], pendingCertification:[], expertiseCompleted:false,
       perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
@@ -420,6 +420,10 @@
     clean.caught = Math.round(finiteNumber(data.caught, 0, 0, 100000));
     clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="expertise"||data.pendingTransition==="jury" ? data.pendingTransition : null;
     clean.expertiseCompleted = data.expertiseCompleted === true || clean.stones.some(stone=>stone.certified);
+    const stoneIds=new Set(clean.stones.map(stone=>stone.id));
+    clean.pendingCertification=clean.pendingTransition==="expertise"&&Array.isArray(data.pendingCertification)
+      ? [...new Set(data.pendingCertification.filter(id=>stoneIds.has(id)))].slice(0,5)
+      : [];
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
@@ -1375,9 +1379,11 @@
     mode="expertise";setPlaying(false);audio.setTheme(LEVELS[4].music);expertiseSelection.clear();
     const ordered=rankStonesForExpertise();
     const target=Math.min(5,ordered.length);
+    const pending=(state.pendingCertification||[]).map(id=>ordered.find(stone=>stone.id===id)).filter(Boolean);
     const existing=ordered.filter(stone=>stone.certified).slice(0,target);
-    const initial=existing.length===target?existing:ordered.slice(0,target);
+    const initial=pending.length===target?pending:existing.length===target?existing:ordered.slice(0,target);
     initial.forEach(stone=>expertiseSelection.add(stone.id));
+    state.pendingCertification=[...expertiseSelection];save();
     const list=$("expertiseList");list.innerHTML="";
     $("expertiseTitle").textContent=target>0?(ordered.length>5?"Vyber pět kusů k certifikaci":"Odborné posouzení"):"Expertiza bez vzorků";
     $("expertiseText").textContent=target===0
@@ -1392,6 +1398,7 @@
       b.addEventListener("click",()=>{
         if(expertiseSelection.has(s.id)){expertiseSelection.delete(s.id);b.classList.remove("selected");}
         else if(expertiseSelection.size<target){expertiseSelection.add(s.id);b.classList.add("selected");}
+        state.pendingCertification=[...expertiseSelection];save();
         $("expertiseCount").textContent=`${expertiseSelection.size} / ${target}`;
         $("expertiseButton").disabled=target>0&&expertiseSelection.size!==target;
       });
@@ -1408,6 +1415,7 @@
     const target=Math.min(5,state.stones.length);
     if(target>0&&expertiseSelection.size!==target)return;
     state.stones.forEach(stone=>stone.certified=expertiseSelection.has(stone.id));
+    state.pendingCertification=[];
     state.expertiseCompleted=true;
     audio.sfx("click");
     if(state.levelIndex===3){state.pendingTransition="perk";state.pendingPerks=[];save();showPerks();return;}
