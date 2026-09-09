@@ -1,5 +1,15 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Finále Slávie — registrace, podvod a vitrína
+
+- Malše/Slávie má nový tok: registrace sbírky → tři podklady → kontrola Frantova vzorku → jediný pokus zachránit složku → výstavní sál;
+- chybná kontrola podvodu vysvětlí nesrovnalosti a dovolí opakování; Frantův únik nezablokuje dohrání, ale odebere bonus za složku;
+- vitrína přijme 0–3 skutečně nasbírané kameny a porota boduje stav, doložený původ, pestrost lokalit a fair play místo přímé výhody za hmotnost;
+- staré uložené stavy Malše se převádějí na nový tok a legacy `bossDelay` se zahazuje;
+- Frantův nový únik používá společný humanoidní motion-state z předchozího PR;
+- PWA cache byla zvýšena na `runtime-22`.
+
+
 ## Společný pohyb pěších postav — základ
 
 - Franta a Karel mají stejný stav směru a chůze jako ostatní pěší postavy: `facing`, `pose`, `moving`, `motionRatio` a `motionPhase`;
