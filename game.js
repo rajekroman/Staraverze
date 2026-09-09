@@ -1121,17 +1121,25 @@
   }
 
   function showJury(){mode="jury";jurySelection.clear();setPlaying(false);const list=$("juryList");list.innerHTML="";
-    [...state.stones].sort((a,b)=>b.value-a.value).forEach(s=>{const b=document.createElement("button");b.type="button";b.className="stone-card";const size=s.size|| (s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · ${s.weight.toFixed(2)} g · ${qualityLabel} (${s.quality} %)${s.documented?" · doložený":""}</small></div>`;b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<3){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / 3`;$("juryButton").disabled=jurySelection.size!==3;});list.append(b);});
-    $("juryCount").textContent="0 / 3";$("juryButton").disabled=true;showOnly(screens.jury);
+    const target=Math.min(3,state.stones.length);
+    $("juryTitle").textContent=target===3?"Vyber tři kameny do vitríny":target===2?"Vyber dva kameny do vitríny":target===1?"Vyber kámen do vitríny":"Prázdná vitrína";
+    [...state.stones].sort((a,b)=>b.quality-a.quality||Number(b.documented)-Number(a.documented)||b.value-a.value).forEach(s=>{
+      const b=document.createElement("button");b.type="button";b.className="stone-card";const size=s.size||(s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · stav ${qualityLabel} (${s.quality} %)${s.documented?" · původ doložený":" · původ nedoložený"}</small></div>`;
+      b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<target){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / ${target}`;$("juryButton").disabled=target>0&&jurySelection.size!==target;});list.append(b);
+    });
+    $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"}. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"Došel jsi bez kamenů. Výpravu lze dokončit, ale vitrína zůstane prázdná.";
+    $("juryCount").textContent=`0 / ${target}`;$("juryButton").disabled=target>0;$("juryButton").textContent=target?"POSTAVIT VITRÍNU":"PŘEDSTOUPIT PŘED POROTU";showOnly(screens.jury);
   }
   function judge(){
-    const chosen=state.stones.filter(s=>jurySelection.has(s.id));let jury=0;for(const s of chosen){jury+=s.value*.45+s.quality*18+(s.documented?700:0)+(s.rarity==="hedgehog"?3800:s.rarity==="rare"?1700:s.rarity==="good"?500:100);}jury=Math.round(jury+state.score+Math.max(0,100-state.caught*12)*18);
-    let title="Sbírka byla přijata",text="Výprava dorazila do Slávie a našla své místo mezi vystavovateli.";
-    if(jury>=25000){title="Hlavní cena Zelené vlny";text="Pestrá, doložená a dobře zvolená kolekce získala hlavní ocenění večera.";}
-    else if(jury>=17500){title="Výstavní uznání";text="Porota ocenila kvalitu kamenů i cestu napříč jihočeskými lokalitami.";}
-    state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");
-    $("resultTitle").textContent=title;$("resultScore").textContent=jury.toLocaleString("cs-CZ");$("resultText").textContent=text;
-    $("resultStats").innerHTML=`<div><span>KAMENY</span><strong>${state.stones.length}</strong></div><div><span>VZÁCNÉ</span><strong>${state.stats.rare}</strong></div><div><span>DOPADENÍ</span><strong>${state.caught}</strong></div>`;mode="result";showOnly(screens.result);
+    const chosen=state.stones.filter(s=>jurySelection.has(s.id));
+    const quality=chosen.reduce((sum,s)=>sum+s.quality*28,0);const provenance=chosen.filter(s=>s.documented).length*950;const diversity=new Set(chosen.map(s=>s.locality)).size*700;
+    const rarity=chosen.reduce((sum,s)=>sum+(s.rarity==="hedgehog"?2200:s.rarity==="rare"?1100:s.rarity==="good"?400:120),0);const stewardship=Math.max(0,1800-state.caught*180)+(state.stats.filled||0)*220;const finale=(state.stats.fraud||0)*900+(state.stats.dossier||0)*650;const journey=Math.min(state.score,7000)*.22;
+    const jury=Math.round(1200+quality+provenance+diversity+rarity+stewardship+finale+journey);
+    let title="Sbírka byla přijata",text="Porota uzavřela tvoji výpravu. I slabší vitrína může uspět, pokud má poctivě doložený původ a dobrý stav.";
+    if(jury>=12000){title="Hlavní cena Zelené vlny";text="Porota ocenila výstavní stav, doložený původ, pestrost lokalit i poctivý průběh výpravy.";}else if(jury>=8500){title="Výstavní uznání";text="Kolekce zaujala stavem a příběhem nálezů. Hmotnost sama o sobě o výsledku nerozhodovala.";}
+    state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");$("resultTitle").textContent=title;$("resultScore").textContent=jury.toLocaleString("cs-CZ");$("resultText").textContent=text;
+    $("resultStats").innerHTML=`<div><span>STAV</span><strong>${Math.round(quality)}</strong></div><div><span>PŮVOD</span><strong>${Math.round(provenance)}</strong></div><div><span>PESTROST</span><strong>${Math.round(diversity)}</strong></div><div><span>FAIR PLAY</span><strong>${Math.round(stewardship+finale)}</strong></div>`;mode="result";showOnly(screens.result);
   }
 
   function caught(reason){
