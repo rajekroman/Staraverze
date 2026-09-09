@@ -441,12 +441,10 @@ test("pěší NPC drží svislou siluetu a používají stejné směrové pózy 
     window.__lovecDebug.startLevel(4);
     window.__lovecDebug.spawnBoss("franta");
   });
-  const movingRival = await expect.poll(() => page.evaluate(() => {
+  await expect.poll(() => page.evaluate(() => {
     const rival=window.__lovecDebug.rivalSnapshot();
-    return rival&&rival.moving&&rival.motionPhase>0
-      ? {moving:rival.moving,pose:rival.pose,facing:rival.facing}
-      : null;
-  })).not.toBeNull();
+    return Boolean(rival&&rival.moving&&rival.motionPhase>0&&["front","back","side"].includes(rival.pose)&&Math.abs(rival.facing)===1);
+  })).toBe(true);
 
   await page.evaluate(() => {
     const rival=window.__lovecDebug.rivalSnapshot();
