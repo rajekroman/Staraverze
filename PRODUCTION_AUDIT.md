@@ -2,12 +2,13 @@
 
 ## Aktualizace release stavu — 9. 9. 2026
 
-Výchozí stav této dodatečné revize je `main@2d0cee52c675b1bdeeabeba1c24d8004557958c5` po sloučení přepracovaného finále Slávie. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
+Výchozí stav této druhé dokončovací revize je `main@6504199da4527e47cc86f02913424467a8e364b2`. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
 
 - Pages publish je nyní navázán na úspěšný workflow `Validate v5.4 continuation`, checkoutuje přesně `workflow_run.head_sha` a publikuje pouze explicitní `dist/`.
 - Focus management, focus trap, návrat fokusu a mobilní pinch/reflow byly doplněny a mají browserové regresní testy.
 - Finále Slávie nyní obsahuje certifikáty pravosti, registraci, kontrolu podvodu, Frantův útěk se složkou a výstavní vitrínu. Cyklisté a policejní patrol byli z finále odstraněni; Frantův catch používá tolerantnější prioritní akci vhodnou pro dotykové ovládání.
 - Save integrity pokrývá dopadení, radarové odhalení, souhlas lesníka, neúspěšné minihry, pending perk/jury přechody, stabilní nabídku perků a obnovu Karlova souboje bez reload softlocku.
+- Druhá dokončovací revize navíc obnovuje rozběhnuté honičky s Karlem i Frantou, pokud částečně poškozený save ztratí objekt soupeře. Strukturálně neplatný snapshot světa (např. bez `runtime` nebo povinných kolekcí) se již nenačte jako rozehraný svět; zachová se normalizovaný stav kampaně a aktuální lokalita se bezpečně vygeneruje znovu.
 - Audio lifecycle pro mute, pause, background a rychlé přepnutí theme má automatické testy. Finální hudební pass doplňuje existující ambienty procedurálním score bez nového externího audio assetu.
 - Stále zůstává ruční release gate: potvrzení distribučních práv k MP3 označeným `NOASSERTION`, poslech na reproduktorech/sluchátkách a plný průchod na fyzickém iOS/Android zařízení.
 
