@@ -11,7 +11,7 @@
 
   const screens = {
     title: $("titleScreen"), brief: $("briefScreen"), dig: $("digScreen"), identify: $("identifyScreen"),
-    dialog: $("dialogScreen"), perk: $("perkScreen"), jury: $("juryScreen"), result: $("resultScreen"),
+    dialog: $("dialogScreen"), fraud: $("fraudScreen"), perk: $("perkScreen"), jury: $("juryScreen"), result: $("resultScreen"),
     pause: $("pauseScreen"), how: $("howScreen"), records: $("recordsScreen")
   };
 
@@ -76,9 +76,9 @@
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie v centru Českých Budějovic. Za parkem se vzrostlými stromy stojí světlá novorenesanční budova se schodištěm k řece. Franta tu kolem akce čeká kupce pro své vltavíny. Ty tam naopak vezeš svou sbírku vystavit. Posbírej dokumentaci, dožeň ho a doraz na Na zelené vlně s doloženým původem kamenů.",
-      why: "Tady končí hledání a začíná výstava. Nejde ti o prodej — chceš ukázat nejlepší sbírku, kterou se ti během výpravy podařilo sestavit.",
-      goal: "Seber 3 složky, dožeň Frantu a vstup do KD Slávie.", music: "city"
+      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie na akci Na zelené vlně. U vstupu zaregistruješ svou sbírku. Pak prověříš tři podklady k Frantovu podezřelému vzorku, upozorníš pořadatele na nesrovnalost a zachráníš složku, se kterou se pokusí utéct.",
+      why: "Tady se uzavře celá výprava. Nejde o největší kámen ani o prodej: rozhodne stav kamenů, doložený původ, pestrost sbírky a to, jak ses během cesty choval.",
+      goal: "Zaregistruj sbírku, prověř 3 podklady, vyřeš podvod a připrav vitrínu.", music: "city"
     }
   ];
 
@@ -308,7 +308,7 @@
   function freshState() {
     return {
       version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
-      perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0}, sound:true
+      perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
 
@@ -639,7 +639,7 @@
   }
 
   function generateMalse(){
-    world.runtime={papers:0,bossStarted:false,bossHits:0,bossDefeated:false};player.x=720;player.y=1060;
+    world.runtime={papers:0,registered:false,fraudResolved:false,fraudAttempts:0,bossStarted:false,bossHits:0,bossDefeated:false,dossierRecovered:false,frantaEscaped:false};player.x=720;player.y=1060;
     for(let y=150;y<1100;y+=145){addProp("tree",510,y,{scale:1.38});addProp("lamp",650,y);}
     // Authored park clearings keep the documents and the existing patrol routes legible.
     [[1160,690],[1370,610],[1630,550],[1730,780],[1450,920],[1190,1040],[1670,1060]].forEach(([x,y],i)=>addProp("tree",x,y,{scale:1.45+(i%3)*.16}));
@@ -647,7 +647,7 @@
     addProp("lamp",1320,455);addProp("lamp",1660,435);
     addProp("bridge",330,520,{scale:1}); addProp("slavie",1460,235,{scale:1.26}); addProp("sign",780,1000,{text:"Zátkovo nábřeží"});
     addProp("plaza",1440,400,{scale:1.0});
-    [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["fotografie nálezů","souhlasy vlastníků","vážní protokol"][i]}));
+    [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["detail povrchu vzorku","fotografie údajného nálezu","záznam původu a času nálezu"][i]}));
     addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
     addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:1.25,variant:0});
     addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
@@ -757,7 +757,21 @@
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
     showOnly(screens.brief);
   }
-  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
+  function normalizeMalseWorld(){
+    if(!world||world.id!=="malse")return;
+    const r=world.runtime||(world.runtime={});
+    r.papers=Math.round(finiteNumber(r.papers,0,0,3));
+    if(typeof r.registered!=="boolean")r.registered=Boolean(r.papers>0||r.bossStarted||r.bossDefeated);
+    if(typeof r.fraudResolved!=="boolean")r.fraudResolved=Boolean(r.bossStarted||r.bossDefeated);
+    if(typeof r.bossStarted!=="boolean")r.bossStarted=false;
+    if(typeof r.bossDefeated!=="boolean")r.bossDefeated=false;
+    if(typeof r.frantaEscaped!=="boolean")r.frantaEscaped=false;
+    if(typeof r.dossierRecovered!=="boolean")r.dossierRecovered=Boolean(r.bossDefeated&&!r.frantaEscaped);
+    r.fraudAttempts=Math.round(finiteNumber(r.fraudAttempts,0,0,99));
+    delete r.bossDelay;
+    if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
+  }
+  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);normalizeMalseWorld();restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
 
   function levelGoal(){
     const r=world.runtime;
@@ -765,7 +779,7 @@
     if(world.id==="locenice")return `Správně ${r.correct}/5 · pravé ${r.real}/3`;
     if(world.id==="nesmen")return r.permit?`Profily ${r.dug}/3 · zahrabáno ${r.filled}/3`:`Získej souhlas lesníka`;
     if(world.id==="besednice")return r.bossStarted?(r.bossDefeated?"Ježek je v bezpečí":"Dostaň ježek zpět"):r.clues<3?`Stopy ${r.clues}/3`:`Vykopej ježkový profil`;
-    if(world.id==="malse")return r.bossStarted?(r.bossDefeated?"Vstup do Slávie":"Dožeň Frantu"): `Dokumenty ${r.papers}/3`;
+    if(world.id==="malse"){if(!r.registered)return "Registrace u vstupu do Slávie";if(r.papers<3)return `Podklady ${r.papers}/3`;if(!r.fraudResolved)return "Prověř Frantův vzorek u vstupu";if(!r.bossDefeated)return "Zachraň složku před Frantou";return r.dossierRecovered?"Vstup do výstavního sálu":"Vstup do sálu · kopie podkladů zajištěna";}
     return "Výprava";
   }
   function goalComplete(){
@@ -774,7 +788,7 @@
     if(world.id==="locenice")return r.correct>=5&&r.real>=3;
     if(world.id==="nesmen")return r.permit&&r.dug>=3&&r.filled>=3;
     if(world.id==="besednice")return r.bossDefeated;
-    if(world.id==="malse")return r.papers>=3&&r.bossDefeated;
+    if(world.id==="malse")return Boolean(r.registered&&r.papers>=3&&r.fraudResolved&&r.bossDefeated);
     return false;
   }
 
@@ -794,7 +808,7 @@
     const bossVisible=Boolean(boss?.active);
     ui.bossHud?.classList.toggle("hidden",!bossVisible);
     ui.bossHud?.classList.toggle("enraged",bossVisible&&boss.phase>=3);ui.bossHud?.classList.toggle("vulnerable",bossVisible&&boss.stunTimer>0);
-    if(bossVisible){const isKarel=boss.name==="karel",display=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=isKarel?(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZRANITELNÝ · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"ZUŘIVÁ FÁZE":boss.phase===2?"ZRYCHLUJE":"VYČKEJ NA PAUZU"):(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"NA DOSAH · DOŽEŇ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"FINÁLNÍ SPRINT":boss.phase===2?"ZRYCHLUJE":"DRŽ SE ZA NÍM");}
+    if(bossVisible){const isKarel=boss.name==="karel",display=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=isKarel?(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZRANITELNÝ · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"ZUŘIVÁ FÁZE":boss.phase===2?"ZRYCHLUJE":"VYČKEJ NA PAUZU"):(boss.graceTimer>0?"BERE SLOŽKU":"ZACHRAŇ SLOŽKU · JEDEN ZÁSAH");}
     hud.classList.toggle("danger-shake",dangerActive&&state.heat>=60);app.classList.toggle("danger-state",dangerActive);
     ui.combo.textContent=`KOMBO ×${state.combo}`;ui.combo.classList.toggle("hidden",state.combo<=1);
   }
@@ -882,6 +896,24 @@
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
   function closeDialog(){dialogueCallback?.();dialogueCallback=null;mode="playing";setPlaying(true);showOnly(null);updateHUD(true);}
+  function openFraudReview(){
+    if(!world||world.id!=="malse"||world.runtime.papers<3)return;
+    mode="fraud";setPlaying(false);
+    $("fraudFeedback").textContent="Porovnej všechny tři podklady. Samotná zelená barva ani lesk nejsou důkazem.";
+    $("fraudFeedback").className="fraud-feedback";
+    showOnly(screens.fraud);
+  }
+  function resolveFraudReview(isFraud){
+    if(mode!=="fraud"||!world||world.id!=="malse")return;
+    const r=world.runtime;
+    if(!isFraud){
+      r.fraudAttempts=(r.fraudAttempts||0)+1;
+      $("fraudFeedback").textContent="To nesedí. Opakující se povrch může ukazovat na odlitek, fotografie neodpovídá tvaru vzorku a záznam původu má časový nesoulad. Posuď celek znovu.";
+      $("fraudFeedback").className="fraud-feedback bad";audio.sfx("bad");save();return;
+    }
+    r.fraudResolved=true;state.stats.fraud=1;state.score+=650;
+    mode="playing";showOnly(null);setPlaying(true);startRival("franta",1260,430);updateHUD(true);save();
+  }
 
   function configureDigScreen(kind,target){
     const filling=kind==="fill";
@@ -1016,7 +1048,12 @@
       if(world.runtime.clues>=3){addHotspot(980,520,{rarity:"hedgehog",documented:true,special:"hedgehog",revealed:true,marked:true});toast("JEŽKOVÝ PROFIL ODKRYT · DOJDI DOPROSTŘED", "rare",2200);}save();return;
     }
     if(item.type==="paper"){
-      item.active=false;world.runtime.papers++;audio.sfx("paper");toast(`Nalezena: ${item.label}`,"good");boostCombo();if(world.runtime.papers>=3&&!world.runtime.bossStarted)world.runtime.bossDelay=.45;save();return;
+      if(world.id==="malse"&&!world.runtime.registered){toast("Nejdřív zaregistruj sbírku u vstupu do Slávie","bad",1500);return;}
+      item.active=false;world.runtime.papers++;audio.sfx("paper");boostCombo();
+      const clues=["Povrch: na dvou místech se opakuje stejná skulptace.","Fotografie: tvar na snímku neodpovídá předloženému vzorku.","Původ: čas nálezu nesedí se záznamem lokality."];
+      toast(world.id==="malse"?(clues[world.runtime.papers-1]||`Prověřeno: ${item.label}`):`Nalezena: ${item.label}`,"good",1900);
+      if(world.id==="malse"&&world.runtime.papers>=3)toast("Máš všechny podklady · vrať se ke vstupu a proveď kontrolu","rare",2200);
+      save();return;
     }
   }
   function resolveSample(choice){
@@ -1034,7 +1071,7 @@
     if(mode!=="dig"||digKind!=="fill"||!currentDig||!currentDig.active)return;
     const hole=currentDig;
     hole.active=false;
-    world.runtime.filled++;
+    world.runtime.filled++;state.stats.filled=(state.stats.filled||0)+1;
     world.runtime.open=Math.max(0,(world.runtime.open||0)-1);
     state.score+=160*state.combo;
     boostCombo();
@@ -1048,26 +1085,49 @@
 
   function startRival(name,x,y){
     world.runtime.bossStarted=true;
-    world.rival={name,displayName:name==="karel"?"KRYSTALOVÝ KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:name==="karel"?3:2,speed:name==="karel"?150:166,baseSpeed:name==="karel"?150:166,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,distanceTravelled:0,target:{x:rand(250,1550),y:rand(220,950)},throwTimer:1.15,active:true,flashlight:name==="karel",vision:name==="karel"?245:0,baseVision:name==="karel"?245:0,halfAngle:name==="karel"?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:1.15,trail:[]};
-    bossIntroTimer=2.35;
     const isKarel=name==="karel";
+    if(!isKarel&&world.id==="malse"){
+      world.runtime.bossDefeated=false;world.runtime.dossierRecovered=false;world.runtime.frantaEscaped=false;state.stats.dossier=0;
+    }
+    world.rival={name,displayName:isKarel?"KRYSTALOVÝ KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:isKarel?3:1,speed:isKarel?150:142,baseSpeed:isKarel?150:142,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,distanceTravelled:0,target:isKarel?{x:rand(250,1550),y:rand(220,950)}:{x:1650,y:980},escapeTarget:isKarel?null:{x:1650,y:980},throwTimer:1.15,active:true,flashlight:isKarel,vision:isKarel?245:0,baseVision:isKarel?245:0,halfAngle:isKarel?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:isKarel?1.15:.65,trail:[]};
+    bossIntroTimer=2.35;
     if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";
-    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel rozebírá chráněný profil a utíká s ježkem. Neútoč naslepo: po sprintu se vyčerpá, tehdy mu vezmi nález zpět.":"Franta sbírá vltavíny kvůli penězům a chce je kolem akce zpeněžit. Dožeň ho po sprintu a doraz do Slavie dřív než on.";
+    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel rozebírá chráněný profil a utíká s ježkem. Neútoč naslepo: po sprintu se vyčerpá, tehdy mu vezmi nález zpět.":"Podvod je odhalený. Franta bere složku s podklady a běží k východu. Stačí ho jednou dostihnout a složku zachránit.";
     ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");
     audio.sfx("boss");haptic([35,40,35]);shake=Math.max(shake,7);flash=.1;flashColor="190,100,75";
-    toast(isKarel?"Krystalový Karel utíká s ježkem!":"Franta vyráží se svou sbírkou do Slavie!","bad",1900);
+    toast(isKarel?"Krystalový Karel utíká s ježkem!":"FRANTA BERE SLOŽKU · ZASTAV HO U VÝCHODU!","bad",2100);
   }
   function hitRival(){
     const r=world.rival;if(!r||!r.active)return;
-    if(r.stunTimer<=0){toast(r.name==="karel"?"Je příliš rychlý · počkej na jeho zastavení":"Franta má náskok · počkej, až zpomalí, a dožeň ho","bad",950);return;}
+    if(r.name==="franta"){
+      r.hits=1;r.active=false;r.hitFlash=.28;world.runtime.bossDefeated=true;world.runtime.dossierRecovered=true;world.runtime.frantaEscaped=false;state.stats.dossier=1;state.score+=1200;
+      ui.bossHud?.classList.add("hidden");audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
+      toast("Složka zachráněna · vstup do výstavního sálu je volný","rare",1900);updateHUD(true);save();return;
+    }
+    if(r.stunTimer<=0){toast("Je příliš rychlý · počkej na jeho zastavení","bad",950);return;}
     r.hits++;r.stunTimer=0;r.hitFlash=.28;r.phase=Math.min(3,r.hits+1);audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
     r.speed=r.baseSpeed*(1+r.hits*.16);if(r.flashlight){r.vision=r.baseVision+r.hits*34;r.halfAngle=.5+r.hits*.08;}
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
-    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");if(r.name==="karel")addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);else{state.score+=1800;toast("Máš náskok · cesta do Slavie je volná","rare");audio.sfx("win");}}
-    else toast(r.name==="karel"?`Zastavení ${r.hits}/${r.maxHits} · Karel zrychluje`:`Dohnání ${r.hits}/${r.maxHits} · Franta znovu zrychluje`,"good",1100);
+    if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);}
+    else toast(`Zastavení ${r.hits}/${r.maxHits} · Karel zrychluje`,"good",1100);
   }
 
-  function tryExit(){if(!goalComplete()){toast(levelGoal(),"bad");return;}finishLevel();}
+  function tryExit(){
+    if(world?.id==="malse"){
+      const r=world.runtime;
+      if(!r.registered){
+        showDialog("Pořadatel","P","Vítej na akci Na zelené vlně. Sbírku zapíšu k výstavě. Než půjdeš do sálu, podívej se prosím na tři podklady k Frantovu vzorku — údaje o původu nám nesedí.",()=>{
+          r.registered=true;state.score+=250;toast("Sbírka zaregistrována · prověř 3 podklady","good",1800);save();
+        });
+        return;
+      }
+      if(r.papers<3){toast(levelGoal(),"bad");return;}
+      if(!r.fraudResolved){openFraudReview();return;}
+      if(!r.bossDefeated){toast("Franta utíká se složkou · dostaň se k němu a použij akci","bad",1400);return;}
+    }
+    if(!goalComplete()){toast(levelGoal(),"bad");return;}
+    finishLevel();
+  }
   function finishLevel(){
     mode="transition";setPlaying(false);state.score+=700+state.combo*120;save();
     if(state.levelIndex>=LEVELS.length-1){showJury();return;}
@@ -1080,17 +1140,34 @@
   }
 
   function showJury(){mode="jury";jurySelection.clear();setPlaying(false);const list=$("juryList");list.innerHTML="";
-    [...state.stones].sort((a,b)=>b.value-a.value).forEach(s=>{const b=document.createElement("button");b.type="button";b.className="stone-card";const size=s.size|| (s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · ${s.weight.toFixed(2)} g · ${qualityLabel} (${s.quality} %)${s.documented?" · doložený":""}</small></div>`;b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<3){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / 3`;$("juryButton").disabled=jurySelection.size!==3;});list.append(b);});
-    $("juryCount").textContent="0 / 3";$("juryButton").disabled=true;showOnly(screens.jury);
+    const target=Math.min(3,state.stones.length);
+    $("juryTitle").textContent=target===3?"Vyber tři kameny do vitríny":target===2?"Vyber dva kameny do vitríny":target===1?"Vyber kámen do vitríny":"Prázdná vitrína";
+    [...state.stones].sort((a,b)=>b.quality-a.quality||Number(b.documented)-Number(a.documented)||b.value-a.value).forEach(s=>{
+      const b=document.createElement("button");b.type="button";b.className="stone-card";
+      const size=s.size||(s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");
+      const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · stav ${qualityLabel} (${s.quality} %)${s.documented?" · původ doložený":" · původ nedoložený"}</small></div>`;
+      b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<target){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / ${target}`;$("juryButton").disabled=target>0&&jurySelection.size!==target;});list.append(b);
+    });
+    $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"}. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"Došel jsi bez kamenů. Výpravu lze dokončit, ale vitrína zůstane prázdná.";
+    $("juryCount").textContent=`0 / ${target}`;$("juryButton").disabled=target>0;$("juryButton").textContent=target?"POSTAVIT VITRÍNU":"PŘEDSTOUPIT PŘED POROTU";showOnly(screens.jury);
   }
   function judge(){
-    const chosen=state.stones.filter(s=>jurySelection.has(s.id));let jury=0;for(const s of chosen){jury+=s.value*.45+s.quality*18+(s.documented?700:0)+(s.rarity==="hedgehog"?3800:s.rarity==="rare"?1700:s.rarity==="good"?500:100);}jury=Math.round(jury+state.score+Math.max(0,100-state.caught*12)*18);
-    let title="Sbírka byla přijata",text="Výprava dorazila do Slávie a našla své místo mezi vystavovateli.";
-    if(jury>=25000){title="Hlavní cena Zelené vlny";text="Pestrá, doložená a dobře zvolená kolekce získala hlavní ocenění večera.";}
-    else if(jury>=17500){title="Výstavní uznání";text="Porota ocenila kvalitu kamenů i cestu napříč jihočeskými lokalitami.";}
+    const chosen=state.stones.filter(s=>jurySelection.has(s.id));
+    const quality=chosen.reduce((sum,s)=>sum+s.quality*28,0);
+    const provenance=chosen.filter(s=>s.documented).length*950;
+    const diversity=new Set(chosen.map(s=>s.locality)).size*700;
+    const rarity=chosen.reduce((sum,s)=>sum+(s.rarity==="hedgehog"?2200:s.rarity==="rare"?1100:s.rarity==="good"?400:120),0);
+    const stewardship=Math.max(0,1800-state.caught*180)+(state.stats.filled||0)*220;
+    const finale=(state.stats.fraud||0)*900+(state.stats.dossier||0)*650;
+    const journey=Math.min(state.score,7000)*.22;
+    const jury=Math.round(1200+quality+provenance+diversity+rarity+stewardship+finale+journey);
+    let title="Sbírka byla přijata",text="Porota uzavřela tvoji výpravu. I slabší vitrína může uspět, pokud má poctivě doložený původ a dobrý stav.";
+    if(jury>=12000){title="Hlavní cena Zelené vlny";text="Porota ocenila výstavní stav, doložený původ, pestrost lokalit i poctivý průběh výpravy.";}
+    else if(jury>=8500){title="Výstavní uznání";text="Kolekce zaujala stavem a příběhem nálezů. Hmotnost sama o sobě o výsledku nerozhodovala.";}
     state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");
     $("resultTitle").textContent=title;$("resultScore").textContent=jury.toLocaleString("cs-CZ");$("resultText").textContent=text;
-    $("resultStats").innerHTML=`<div><span>KAMENY</span><strong>${state.stones.length}</strong></div><div><span>VZÁCNÉ</span><strong>${state.stats.rare}</strong></div><div><span>DOPADENÍ</span><strong>${state.caught}</strong></div>`;mode="result";showOnly(screens.result);
+    $("resultStats").innerHTML=`<div><span>STAV</span><strong>${Math.round(quality)}</strong></div><div><span>PŮVOD</span><strong>${Math.round(provenance)}</strong></div><div><span>PESTROST</span><strong>${Math.round(diversity)}</strong></div><div><span>FAIR PLAY</span><strong>${Math.round(stewardship+finale)}</strong></div>`;mode="result";showOnly(screens.result);
   }
 
   function caught(reason){
@@ -1161,7 +1238,6 @@
       if(digTimeLeft<=0)failDig();return;
     }
     if(mode!=="playing"||!world)return;
-    if(world.runtime.bossDelay>0){world.runtime.bossDelay=Math.max(0,world.runtime.bossDelay-elapsed);if(world.runtime.bossDelay===0&&!world.runtime.bossStarted)startRival("franta",1120,300);}
     scanCooldown=Math.max(0,scanCooldown-dt);player.invuln=Math.max(0,player.invuln-dt);dangerActive=false;dangerSource="";dangerRate=0;dangerCatchAfter=Infinity;bossIntroTimer=Math.max(0,bossIntroTimer-dt);if(bossIntroTimer<=0){ui.bossIntro?.classList.remove("show");ui.bossIntro?.classList.add("hidden");}
     if(theftAlertShown&&performance.now()>=theftAlertUntil)hideTheftAlert();dangerBeatTimer=Math.max(0,dangerBeatTimer-dt);state.comboTimer=Math.max(0,state.comboTimer-dt);if(state.comboTimer<=0&&state.combo>1){state.combo--;state.comboTimer=5;}
     if(theftAlertShown){
@@ -1234,6 +1310,16 @@
   }
   function updateRival(dt){
     const r=world.rival;
+    if(r&&r.active&&r.name==="franta"){
+      const previousX=r.x,previousY=r.y;
+      r.hitFlash=Math.max(0,(r.hitFlash||0)-dt);r.graceTimer=Math.max(0,(r.graceTimer||0)-dt);
+      if(r.graceTimer<=0){
+        const target=r.escapeTarget||{x:1650,y:980},dx=target.x-r.x,dy=target.y-r.y,d=Math.hypot(dx,dy)||1;
+        const travel=Math.min(r.speed*dt,d);r.x+=dx/d*travel;r.y+=dy/d*travel;r.angle=Math.atan2(dy,dx);const movedX=r.x-previousX,movedY=r.y-previousY,movedDistance=Math.hypot(movedX,movedY);updateHumanoidMotionState(r,movedX,movedY,movedDistance,dt,Math.max(160,r.baseSpeed||160));
+        if(d<=24){r.active=false;world.runtime.bossDefeated=true;world.runtime.frantaEscaped=true;world.runtime.dossierRecovered=false;state.stats.dossier=0;ui.bossHud?.classList.add("hidden");toast("Franta utekl, ale pořadatel zajistil kopii podkladů · finále může pokračovat","bad",2400);save();}
+      }
+      return;
+    }
     if(r&&r.active){
       const previousX=r.x,previousY=r.y;
       r.hitFlash=Math.max(0,(r.hitFlash||0)-dt);
@@ -1272,10 +1358,10 @@
     for(const p of world.props)if(p.type==="npc"&&!p.used)check("npc",p,p.x,p.y);
     for(const h of world.hotspots)if(h.active&&h.revealed)check("hotspot",h,h.x,h.y);
     for(const i of world.items)if(i.active&&!i.hidden)check(i.type==="hole"?"hole":"item",i,i.x,i.y,i.type==="hole"?98:68);
-    if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.stunTimer>0?92:66);
-    if(world.exit)check("exit",world.exit,world.exit.x,world.exit.y,88);
+    if(world.rival?.active)check("rival",world.rival,world.rival.x,world.rival.y,world.rival.name==="franta"?92:world.rival.stunTimer>0?92:66);
+    if(world.exit&&!world.rival?.active)check("exit",world.exit,world.exit.x,world.exit.y,88);
     const actionButton=$("actionButton");
-    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};const m=nearest.kind==="rival"&&nearest.ref.name==="franta"?["↟","DOHNAT"]:(map[nearest.kind]||["◎","AKCE"]);ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&nearest.ref.stunTimer>0);actionButton.setAttribute("aria-label",nearest.kind==="exit"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"?nearest.ref.label:m[1]);}
+    if(nearest){const map={npc:["!","MLUVIT"],hotspot:["⛏","KOPAT"],item:["◆","SEBRAT"],hole:["▨","ZAHRABAT"],rival:["✋","CHYTIT"],exit:["→","ODEJÍT"]};let m=map[nearest.kind]||["◎","AKCE"];if(nearest.kind==="item"&&world.id==="malse"&&nearest.ref.type==="paper")m=["◎","PROVĚŘIT"];if(nearest.kind==="rival"&&nearest.ref.name==="franta")m=["✋","ZASTAVIT"];if(nearest.kind==="exit"&&world.id==="malse")m=!world.runtime.registered?["▣","REGISTRACE"]:world.runtime.papers<3?["◎","PODKLADY"]:!world.runtime.fraudResolved?["◉","KONTROLA"]:["→","VSTUP"];ui.actionIcon.textContent=m[0];ui.actionText.textContent=m[1];actionButton.classList.add("ready");actionButton.classList.toggle("boss-ready",nearest.kind==="rival"&&(nearest.ref.name==="franta"||nearest.ref.stunTimer>0));actionButton.setAttribute("aria-label",nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);showHint(nearest.kind==="exit"&&world.id!=="malse"?nearest.ref.label:m[1]);}
     else{ui.actionIcon.textContent="◉";ui.actionText.textContent=scanCooldown>0?`${Math.ceil(scanCooldown)}`:"RADAR";actionButton.classList.remove("ready","boss-ready");actionButton.setAttribute("aria-label",scanCooldown>0?`Radar připraven za ${Math.ceil(scanCooldown)} s`:"Spustit radar");hideHint();}
   }
 
@@ -2537,6 +2623,7 @@
     const releaseDigButton=event=>{if(event.pointerId!==digPointer)return;const active=digPointer;digPointer=null;releasePointer(digButton,active);digButton.classList.remove("pressed");if(event.type==="pointerup")digRelease();else if(digKind==="fill"){digHolding=false;digMarker=.06;}};
     digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
+    $("fraudButton").addEventListener("click",()=>resolveFraudReview(true));$("fraudWrongButton").addEventListener("click",()=>resolveFraudReview(false));
     $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();syncSoundButton();save();});
@@ -2588,6 +2675,7 @@
         setScanCooldown(value=0){scanCooldown=Math.max(0,Number(value)||0);return scanCooldown;},
         setScanPulse(value=.45){scanPulse=clamp(Number(value)||0,0,1);return scanPulse;},
         setBossPose(x,y,angle=0){if(!world?.rival)return null;world.rival.x=x;world.rival.y=y;world.rival.angle=angle;world.rival.speed=0;world.rival.target={x,y};world.rival.moving=false;world.rival.motionRatio=0;return {x,y,angle};},
+        forceFrantaEscape(){const r=world?.rival;if(!r||r.name!=="franta"||!r.active)return null;const target=r.escapeTarget||{x:1650,y:980};r.x=target.x;r.y=target.y;r.graceTimer=0;updateRival(0);return {active:r.active,bossDefeated:Boolean(world.runtime.bossDefeated),dossierRecovered:Boolean(world.runtime.dossierRecovered),frantaEscaped:Boolean(world.runtime.frantaEscaped)};},
         setHeat(value){state.heat=clamp(value,0,100);return state.heat;},
         setBossStun(value=1){if(!world?.rival)return null;world.rival.stunTimer=value;return world.rival.stunTimer;},
         rivalSnapshot(){const r=world?.rival;return r?{name:r.name,active:r.active,x:r.x,y:r.y,angle:r.angle,facing:r.facing,pose:r.pose,moving:Boolean(r.moving),motionRatio:r.motionRatio||0,motionPhase:r.motionPhase||0,distanceTravelled:r.distanceTravelled||0,stunTimer:r.stunTimer||0,dashTime:r.dashTime||0}:null;},
@@ -2611,7 +2699,7 @@
             r.clues=3;r.hedgehog=true;r.bossStarted=true;r.bossDefeated=true;
             if(!state.stones.some(stone=>stone.rarity==="hedgehog"))state.stones.push(makeStone("Besednice","hedgehog",true,8));
           }else if(world.id==="malse"){
-            r.papers=3;r.bossStarted=true;r.bossDefeated=true;
+            r.registered=true;r.papers=3;r.fraudResolved=true;r.bossStarted=true;r.bossDefeated=true;r.dossierRecovered=true;r.frantaEscaped=false;state.stats.fraud=1;state.stats.dossier=1;
           }
           updateHUD(true);save();
           return {level:world.id,complete:goalComplete(),stones:state.stones.length};
@@ -2619,6 +2707,7 @@
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,finishDelay:digFinishDelay,currentActive:Boolean(currentDig?.active),inputLocked:performance.now()<digInputLockUntil};},
         fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
+        malseSnapshot(){const r=world?.id==="malse"?world.runtime:null;return r?{registered:Boolean(r.registered),papers:r.papers||0,fraudResolved:Boolean(r.fraudResolved),fraudAttempts:r.fraudAttempts||0,bossStarted:Boolean(r.bossStarted),bossDefeated:Boolean(r.bossDefeated),dossierRecovered:Boolean(r.dossierRecovered),frantaEscaped:Boolean(r.frantaEscaped)}:null;},
         setPatrolMotion(type="tractor",options={}){
           if(!world)return null;
           const p=world.patrols.find(item=>item.active&&item.type===type);if(!p)return null;
