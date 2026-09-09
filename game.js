@@ -918,7 +918,7 @@
     const bossVisible=Boolean(boss?.active);
     ui.bossHud?.classList.toggle("hidden",!bossVisible);
     ui.bossHud?.classList.toggle("enraged",bossVisible&&boss.phase>=3);ui.bossHud?.classList.toggle("vulnerable",bossVisible&&boss.stunTimer>0);
-    if(bossVisible){const isKarel=boss.name==="karel",display=isKarel?"KAREL":"FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=isKarel?(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZASTAVIL SE · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"JEŠTĚ ZRYCHLUJE":boss.phase===2?"ZRYCHLUJE":"POČKEJ, AŽ ZASTAVÍ"):(boss.graceTimer>0?"BERE SLOŽKU":"ZACHRAŇ SLOŽKU · JEDEN ZÁSAH");}
+    if(bossVisible){const isKarel=boss.name==="karel",display=isKarel?"KAREL":"FRANTA";if(ui.bossName)ui.bossName.textContent=display;if(ui.bossFill)ui.bossFill.style.width=`${clamp((boss.maxHits-boss.hits)/boss.maxHits*100,0,100)}%`;if(ui.bossPhase)ui.bossPhase.textContent=isKarel?(boss.graceTimer>0?"PŘIPRAV SE":boss.stunTimer>0?"ZASTAVIL SE · CHYŤ HO":boss.dashTime>0?"SPRINTUJE":boss.phase>=3?"JEŠTĚ ZRYCHLUJE":boss.phase===2?"ZRYCHLUJE":"POČKEJ, AŽ ZASTAVÍ"):(boss.graceTimer>0?"BERE SLOŽKU":"DOSTIHNI HO · ZASTAVIT");}
     hud.classList.toggle("danger-shake",dangerActive&&state.heat>=60);app.classList.toggle("danger-state",dangerActive);
     ui.combo.textContent=`KOMBO ×${state.combo}`;ui.combo.classList.toggle("hidden",state.combo<=1);
   }
