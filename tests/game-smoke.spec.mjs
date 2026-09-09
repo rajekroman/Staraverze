@@ -1104,6 +1104,58 @@ test("kopací tlačítko po ztrátě capture, blur, pagehide a změně orientace
   }
 });
 
+test("syntetický souběh joysticku a akčního tlačítka drží dva nezávislé pointery", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith("desktop-"),"Vícedotykové ovládání se ověřuje v mobilních projektech; nejde o fyzický multi-touch test.");
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const zone=page.locator("#moveZone");
+  const action=page.locator("#actionButton");
+  const box=await zone.boundingBox();
+  expect(box).toBeTruthy();
+
+  const startX=box.x+box.width*.5,startY=box.y+box.height*.5;
+  await zone.dispatchEvent("pointerdown",{pointerId:71,pointerType:"touch",clientX:startX,clientY:startY,bubbles:true,cancelable:true});
+  await zone.dispatchEvent("pointermove",{pointerId:71,pointerType:"touch",clientX:startX+box.width*.28,clientY:startY-box.height*.12,bubbles:true,cancelable:true});
+  const moving=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(Math.abs(moving.x)+Math.abs(moving.y)).toBeGreaterThan(.1);
+
+  await action.dispatchEvent("pointerdown",{pointerId:72,pointerType:"touch",bubbles:true,cancelable:true});
+  const combined=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(combined.pressed).toBe(true);
+  expect(Math.abs(combined.x)+Math.abs(combined.y)).toBeGreaterThan(.1);
+
+  await action.dispatchEvent("pointerup",{pointerId:72,pointerType:"touch",bubbles:true,cancelable:true});
+  const afterAction=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(afterAction.pressed).toBe(false);
+  expect(Math.abs(afterAction.x)+Math.abs(afterAction.y)).toBeGreaterThan(.1);
+
+  await zone.dispatchEvent("lostpointercapture",{pointerId:71,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
+});
+
+test("modal skryje gameplay i probíhající neinteraktivní oznámení před asistivní technologií", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.triggerTheft();
+  });
+  await expect(page.locator("#theftAlert")).not.toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).not.toHaveAttribute("aria-hidden","true");
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#game")).toHaveAttribute("inert","");
+  await expect(page.locator("#hud")).toHaveAttribute("inert","");
+  await expect(page.locator("#controls")).toHaveAttribute("inert","");
+  await expect(page.locator("#theftAlert")).toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).toHaveAttribute("aria-hidden","true");
+
+  await page.keyboard.press("Escape");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#theftAlert")).not.toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).not.toHaveAttribute("aria-hidden","true");
+});
+
 test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo herní ovladače", async ({ page }) => {
   // Viewport emulation only verifies CSS/viewport preconditions. Physical pinch-to-zoom
   // still requires a separate manual check on a real phone.
@@ -1127,6 +1179,146 @@ test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo hern�
   expect(audit.joystickTouch).toBe("none");
   expect(audit.actionTouch).toBe("none");
   expect(audit.digTouch).toBe("none");
+});
+
+test("HTML obrazovky zůstávají dosažitelné při 200% reflow proxy v portrait i landscape", async ({ page }) => {
+  const screens=[
+    ["titleScreen","#recordsButton"],
+    ["briefScreen","#briefButton"],
+    ["digScreen","#digButton"],
+    ["identifyScreen","#glassButton"],
+    ["dialogScreen","#dialogButton"],
+    ["perkScreen","#perkTitle"],
+    ["juryScreen","#juryButton"],
+    ["resultScreen","#resultRecordsButton"],
+    ["pauseScreen","#menuButton"],
+    ["howScreen","#closeHowButton"],
+    ["recordsScreen","#closeRecordsButton"]
+  ];
+  for(const viewport of [{width:195,height:422},{width:422,height:195}]){
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    for(const [screenId,targetSelector] of screens){
+      await page.evaluate(id=>{
+        for(const node of document.querySelectorAll(".screen")){
+          node.classList.toggle("visible",node.id===id);
+          node.toggleAttribute("inert",node.id!==id);
+          if(node.id===id)node.removeAttribute("aria-hidden");else node.setAttribute("aria-hidden","true");
+        }
+        const active=document.getElementById(id);
+        active.scrollTop=0;active.scrollLeft=0;
+      },screenId);
+      const target=page.locator(targetSelector);
+      await target.evaluate(element=>element.scrollIntoView({block:"nearest",inline:"nearest"}));
+      const metrics=await page.evaluate(({screenId,targetSelector})=>{
+        const screen=document.getElementById(screenId),target=document.querySelector(targetSelector);
+        const r=target.getBoundingClientRect();
+        return {
+          overflowY:getComputedStyle(screen).overflowY,
+          touchAction:getComputedStyle(screen).touchAction,
+          scrollHeight:screen.scrollHeight,
+          clientHeight:screen.clientHeight,
+          rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},
+          viewport:{width:innerWidth,height:innerHeight}
+        };
+      },{screenId,targetSelector});
+      expect(metrics.overflowY,screenId).toMatch(/auto|scroll/);
+      expect(metrics.touchAction,screenId).toMatch(/pinch-zoom|auto|manipulation/);
+      expect(metrics.rect.right,screenId).toBeGreaterThan(0);
+      expect(metrics.rect.left,screenId).toBeLessThan(metrics.viewport.width);
+      expect(metrics.rect.bottom,screenId).toBeGreaterThan(0);
+      expect(metrics.rect.top,screenId).toBeLessThan(metrics.viewport.height);
+    }
+  }
+});
+
+test("syntetický 200% Chromium page scale zachová visualViewport a souřadnice joysticku", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name!=="iphone-portrait","CDP pageScaleFactor je Chromium-only automatická aproximace, nikoli skutečný pinch.");
+  await openDebug(page);
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:2});
+  await expect.poll(() => page.evaluate(() => visualViewport?.scale||1)).toBeGreaterThan(1.9);
+
+  await page.goto("/?debug=1");
+  await expect.poll(() => page.evaluate(() => visualViewport?.scale||1)).toBeGreaterThan(1.9);
+  await page.locator("#recordsButton").evaluate(element=>element.scrollIntoView({block:"nearest",inline:"nearest"}));
+  const reach=await page.evaluate(()=>{
+    const vv=visualViewport,rect=document.getElementById("recordsButton").getBoundingClientRect();
+    return {scale:vv.scale,left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,vvLeft:vv.offsetLeft,vvTop:vv.offsetTop,vvRight:vv.offsetLeft+vv.width,vvBottom:vv.offsetTop+vv.height};
+  });
+  expect(reach.scale).toBeGreaterThan(1.9);
+  expect(reach.right).toBeGreaterThan(reach.vvLeft);
+  expect(reach.left).toBeLessThan(reach.vvRight);
+  expect(reach.bottom).toBeGreaterThan(reach.vvTop);
+  expect(reach.top).toBeLessThan(reach.vvBottom);
+
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const zone=page.locator("#moveZone");
+  const box=await zone.boundingBox();
+  expect(box).toBeTruthy();
+  const cx=box.x+box.width/2,cy=box.y+box.height/2;
+  await zone.dispatchEvent("pointerdown",{pointerId:81,pointerType:"touch",clientX:cx,clientY:cy,bubbles:true,cancelable:true});
+  await zone.dispatchEvent("pointermove",{pointerId:81,pointerType:"touch",clientX:cx+box.width*.25,clientY:cy,bubbles:true,cancelable:true});
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot().input)).x).toBeGreaterThan(.2);
+  await zone.dispatchEvent("pointercancel",{pointerId:81,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
+  await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:1});
+});
+
+test("živé regiony neobsahují časovač ani průběžný pohyb ukazatele", async ({ page }) => {
+  await page.goto("/");
+  const live=await page.evaluate(() => [...document.querySelectorAll("[aria-live]")].map(node=>node.id).sort());
+  expect(live).toEqual(["bossIntro","digFeedback","theftAlert","toast"].sort());
+  await expect(page.locator("#digMeter")).not.toHaveAttribute("aria-live",/.+/);
+  await expect(page.locator("#digTimerFill")).not.toHaveAttribute("aria-live",/.+/);
+  await expect(page.locator("#hud")).not.toHaveAttribute("aria-live",/.+/);
+});
+
+
+test("odchod z pauzy zruší čekající odměnu kopání i zahrabávání", async ({ page }) => {
+  await openDebug(page);
+
+  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+  for(let hit=0;hit<3;hit++){
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
+    await page.keyboard.press("Space");
+    if(hit<2)await page.waitForTimeout(125);
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(() => window.__lovecDebug.digSnapshot())).finishDelay).toBeGreaterThan(0);
+  await page.locator("#menuButton").click();
+  await page.waitForTimeout(500);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restoredDig=await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(restoredDig.state.stones).toBe(0);
+  expect(restoredDig.world.hotspots).toBe(4);
+
+  await page.evaluate(() => window.__lovecDebug.startFillChallenge());
+  for(let transfer=0;transfer<3;transfer++){
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
+    await page.keyboard.down("Space");
+    await page.keyboard.up("Space");
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(() => window.__lovecDebug.digSnapshot())).finishDelay).toBeGreaterThan(0);
+  await page.locator("#menuButton").click();
+  await page.waitForTimeout(500);
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restoredFill=await page.evaluate(() => ({fill:window.__lovecDebug.fillSnapshot(),snapshot:window.__lovecDebug.snapshot()}));
+  expect(restoredFill.fill.open).toBe(1);
+  expect(restoredFill.fill.filled).toBe(0);
+  expect(restoredFill.snapshot.state.score).toBe(0);
 });
 
 test("zahrabávání přes pauzu zruší držení, zmrazí odměnu a započítá ji právě jednou", async ({ page }) => {
