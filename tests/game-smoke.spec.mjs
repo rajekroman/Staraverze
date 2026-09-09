@@ -1086,6 +1086,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
+  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
   await page.keyboard.press("Space");
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
 
