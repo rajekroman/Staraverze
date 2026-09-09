@@ -425,6 +425,10 @@
   // Static non-city terrain is rasterized once per level and reused by every frame.
   // City water remains dynamic, so Malše continues to render live.
   let terrainCache = {key:"", canvas:null, scale:1, generated:0};
+  // Reuse render queue entries between frames to avoid short-lived allocations in the hot path.
+  const renderQueue = [];
+  const renderPool = [];
+  const renderStats = {candidates:0, rendered:0, culled:0};
   let player = {x:0,y:0,r:17,angle:0,facing:1,pose:"front",vx:0,vy:0,speedRatio:0,step:0,footstepCycle:-1,animTime:0,moving:false,invuln:0};
   let camera = {x:0,y:0};
   let input = {x:0,y:0,pressed:false};
@@ -1827,10 +1831,61 @@
     for(let i=0;i<7;i++){const x=520+i*175;ctx.fillStyle="#929b91";ctx.fillRect(x,0,130,36);ctx.fillStyle="#7a7770";ctx.beginPath();ctx.moveTo(x-5,0);ctx.lineTo(x+65,-34);ctx.lineTo(x+135,0);ctx.fill();for(let wx=x+12;wx<x+125;wx+=24){ctx.fillStyle="#677c79";ctx.fillRect(wx,12,9,15);}}
   }
 
+  const PROP_CULL_BOUNDS={
+    tree:[56,108],pine:[56,108],realpine:[52,118],bush:[42,48],fern:[32,48],grass:[24,38],stump:[30,34],log:[62,34],
+    puddle:[48,30],rock:[34,40],farm:[82,106],hut:[76,96],fieldpit:[88,64],sandpit:[88,64],minepit:[96,72],
+    soilheap:[48,42],stubble:[24,28],sandmound:[70,52],earthbank:[72,58],fallenpine:[68,46],trackscar:[70,42],
+    excavator:[122,108],plazatree:[42,82],plaza:[204,90],npc:[42,82],pit:[54,46],bench:[54,46],sign:[60,72],
+    lamp:[52,108],bridge:[132,78],slavie:[258,232]
+  };
+  function drawableExtent(kind,o){
+    if(kind==="player")return [48,92];
+    if(kind==="item")return o.type==="hole"?[72,58]:[48,58];
+    if(kind==="hotspot")return [76,64];
+    if(kind==="exit"){const r=Math.max(48,o.r||0);return [r+28,r+28];}
+    if(kind==="rival"){
+      const vision=Math.max(0,o.vision||0);
+      return [Math.max(120,vision),Math.max(140,vision)];
+    }
+    if(kind==="patrol"){
+      const scale=Math.max(.1,(o.scale||1)*(o.visualScale||1));
+      const vehicle=o.type==="tractor"||o.type==="car"||o.type==="bike";
+      const base=o.type==="tractor"?[96,78]:o.type==="car"?[54,46]:o.type==="bike"?[40,48]:[44,88];
+      const vision=Math.max(0,o.vision||0);
+      return [Math.max(base[0]*scale,vision),Math.max(base[1]*scale,vision,vehicle?64:0)];
+    }
+    const base=PROP_CULL_BOUNDS[o.type]||[92,108];
+    const scale=Math.max(.1,(o.scale||1)*(o.visualScale||1));
+    return [base[0]*scale,base[1]*scale];
+  }
+  function drawableVisible(kind,o){
+    if(world.referenceScene)return true;
+    const [rx,ry]=drawableExtent(kind,o);
+    // Extra guard covers camera easing, screen shake and anti-aliased edges without visible pop-in.
+    const guard=36;
+    return o.x+rx+guard>=camera.x&&o.x-rx-guard<=camera.x+viewport.w&&o.y+ry+guard>=camera.y&&o.y-ry-guard<=camera.y+viewport.h;
+  }
+  function queueDrawable(kind,o){
+    renderStats.candidates++;
+    if(!drawableVisible(kind,o)){renderStats.culled++;return;}
+    const index=renderQueue.length;
+    const slot=renderPool[index]||(renderPool[index]={y:0,kind:"",o:null});
+    slot.y=o.y;slot.kind=kind;slot.o=o;renderQueue.push(slot);renderStats.rendered++;
+  }
   function drawWorldObjects(){
-    const drawables=[];world.props.forEach(o=>drawables.push({y:o.y,kind:"prop",o}));world.items.filter(o=>o.active&&!o.hidden).forEach(o=>drawables.push({y:o.y,kind:"item",o}));world.hotspots.filter(o=>o.active&&o.revealed).forEach(o=>drawables.push({y:o.y,kind:"hotspot",o}));world.patrols.filter(o=>o.active).forEach(o=>drawables.push({y:o.y,kind:"patrol",o}));if(world.rival?.active)drawables.push({y:world.rival.y,kind:"rival",o:world.rival});drawables.push({y:player.y,kind:"player",o:player});drawables.sort((a,b)=>a.y-b.y);
-    for(const d of drawables){if(d.kind==="prop")drawProp(d.o);else if(d.kind==="item")drawItem(d.o);else if(d.kind==="hotspot")drawHotspot(d.o);else if(d.kind==="patrol")drawPatrol(d.o);else if(d.kind==="rival")drawRival(d.o);else drawPlayer();}
-    if(world.exit)drawExit(world.exit);
+    renderQueue.length=0;renderStats.candidates=0;renderStats.rendered=0;renderStats.culled=0;
+    for(const o of world.props)queueDrawable("prop",o);
+    for(const o of world.items)if(o.active&&!o.hidden)queueDrawable("item",o);
+    for(const o of world.hotspots)if(o.active&&o.revealed)queueDrawable("hotspot",o);
+    for(const o of world.patrols)if(o.active)queueDrawable("patrol",o);
+    if(world.rival?.active)queueDrawable("rival",world.rival);
+    queueDrawable("player",player);
+    renderQueue.sort((a,b)=>a.y-b.y);
+    for(const d of renderQueue){if(d.kind==="prop")drawProp(d.o);else if(d.kind==="item")drawItem(d.o);else if(d.kind==="hotspot")drawHotspot(d.o);else if(d.kind==="patrol")drawPatrol(d.o);else if(d.kind==="rival")drawRival(d.o);else drawPlayer();}
+    if(world.exit){
+      renderStats.candidates++;
+      if(drawableVisible("exit",world.exit)){renderStats.rendered++;drawExit(world.exit);}else renderStats.culled++;
+    }
   }
 
   function drawProp(p){ctx.save();ctx.translate(p.x,p.y);const s=(p.scale||1)*(p.visualScale||1);ctx.scale(s,s);
@@ -2857,7 +2912,7 @@
         },
         snapCameraToPlayer(){camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));return {x:camera.x,y:camera.y};},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score,pendingTransition:state.pendingTransition,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},renderStats:{candidates:renderStats.candidates,rendered:renderStats.rendered,culled:renderStats.culled},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score,pendingTransition:state.pendingTransition,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
