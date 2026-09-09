@@ -436,6 +436,31 @@ test("pěší NPC drží svislou siluetu a používají stejné směrové pózy 
   });
   expect(actorSource).toContain("ctx.scale(facing,1)");
   expect(actorSource).not.toContain("ctx.rotate(");
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.spawnBoss("franta");
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const rival=window.__lovecDebug.rivalSnapshot();
+    return Boolean(rival&&rival.moving&&rival.motionPhase>0&&["front","back","side"].includes(rival.pose)&&Math.abs(rival.facing)===1);
+  })).toBe(true);
+
+  await page.evaluate(() => {
+    const rival=window.__lovecDebug.rivalSnapshot();
+    window.__lovecDebug.setBossPose(rival.x,rival.y,rival.angle);
+    window.__lovecDebug.setBossStun(1);
+  });
+  await expect.poll(() => page.evaluate(() => {
+    const rival=window.__lovecDebug.rivalSnapshot();
+    return rival ? {moving:rival.moving,motionRatio:rival.motionRatio} : null;
+  })).toEqual({moving:false,motionRatio:0});
+
+  const rivalSource = await page.evaluate(async () => {
+    const source=await (await fetch("./game.js")).text();
+    return source.slice(source.indexOf("function updateRival"),source.indexOf("function updateParticles"));
+  });
+  expect(rivalSource).toContain("updateHumanoidMotionState(r");
   expect(errors).toEqual([]);
 });
 
