@@ -26,8 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run validate
 
-  pr-smoke:
-    name: PR smoke - chromium
+  pr-publish:
+    name: PR publish validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -36,16 +36,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:smoke -- --project=desktop-chromium
-      - uses: actions/upload-artifact@v7
-        if: failure()
-        with:
-          name: playwright-pr-smoke-chromium
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
+      - run: npm run build:publish
+      - run: npm run validate:publish
 
   publish:
     name: Clean Pages publish
