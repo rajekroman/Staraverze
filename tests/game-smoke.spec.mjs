@@ -1214,7 +1214,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("VZÍT SLOŽKU");
+  await expect(page.locator("#actionText")).toHaveText("SLOŽKA");
   await page.keyboard.press("Space");
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
@@ -1336,7 +1336,7 @@ test("Malše zůstane dohratelná, když Franta se složkou unikne", async ({ pa
     bossDefeated: true, dossierRecovered: false, frantaEscaped: true
   });
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#objectiveLabel")).toContainText("kopie podkladů");
+  await expect(page.locator("#objectiveLabel")).toContainText("kopie záznamů");
   await page.keyboard.press("Space");
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
   expect(errors).toEqual([]);
