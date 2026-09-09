@@ -2,12 +2,14 @@
 
 ## Přístupné modály a mobilní zoom
 
-- skutečné interaktivní překryvy mají dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu a inertní neaktivní obsah; briefing a finální výsledek jsou samostatné pojmenované obrazovky bez falešného `aria-modal` a při přechodu oznamují vlastní nadpis;
-- Escape bezpečně obsluhuje pauzu, návod, rekordy a dialog bez přeskočení povinného určení, perku nebo poroty;
-- globální blokování pinch-to-zoom bylo odstraněno; `touch-action:none` zůstává pouze na joysticku a herních tlačítkách, která potřebují kontinuální pointer;
-- joystick, akční tlačítko a kopací/zahrabávací tlačítko drží vlastní aktivní pointer; sdílený lifecycle reset nově explicitně ruší i interní `digPointer`, takže po `pointercancel`, ztrátě fokusu, skrytí stránky nebo změně orientace nemůže minihra zůstat zamčená starým dotykem;
-- HUD už není celý živý region; stručné stavové zprávy používají cílené `status`/alert regiony;
-- PWA cache byla zvýšena na `runtime-19`, aby se oprava vstupů a přístupnosti propsala i do dříve nainstalované PWA.
+- skutečné překryvy nad přerušeným stavem — NPC dialog, určení vzorku, kopání/zahrabávání, pauza, návod a rekordy — mají dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu; briefing, perky, porota a finální výsledek jsou samostatné kroky toku bez falešného `aria-modal`;
+- otevření modalu nyní samo uvolní držené herní pointery; gameplay a právě probíhající neinteraktivní boss/krádežní oznámení jsou po dobu modalu skrytá před klávesnicí a asistivní technologií bez použití `inert` na rodiči aktivního dialogu;
+- Escape bezpečně obsluhuje pauzu, návod, rekordy a NPC dialog bez přeskočení povinného určení, perku nebo poroty;
+- globální blokování pinch-to-zoom je odstraněno; HTML obrazovky včetně hlavní nabídky jsou scrollovatelné/pannable a `touch-action:none` zůstává pouze na joysticku a herních tlačítkách, která potřebují kontinuální pointer;
+- joystick, akční tlačítko a kopací/zahrabávací tlačítko drží vlastní aktivní pointer; capture/release je odolný vůči zániku pointeru a reset probíhá při `pointercancel`, `lostpointercapture`, pauze, ztrátě fokusu, skrytí stránky a změně orientace;
+- testy ověřují souběžný joystick + akci, obě minihry přes pauzu, zmrazení odložené odměny, odchod do menu bez pozdější odměny, 200% reflow/page-scale aproximaci a omezené živé regiony;
+- HUD není živý region; stručné stavové zprávy používají cílené `status`/alert regiony a časovač ani pohyb ukazatele se nepředčítají po snímcích;
+- PWA cache byla zvýšena na `runtime-20`, aby se změny vstupu, sémantiky a zoomovatelného layoutu propsaly i do dříve nainstalované PWA.
 
 ## Příběhové role hráče a Franty
 
