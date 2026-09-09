@@ -10,9 +10,9 @@ AKTUÁLNÍ RELEASE GATE
 - gameplay smoke: desktop WebKit, iPhone portrait WebKit, iPhone landscape WebKit
 - visual regression: desktop, iPhone portrait, iPhone landscape
 - motion evidence: car, tractor, excavator
-- game-smoke suite: 70 test definitions v aktuální release větvi
-- visual-regression suite: 24 test definitions / 25 test cases na každý viewport projekt
-- PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-34
+- game-smoke suite: 74 test definitions v aktuální release větvi
+- visual-regression suite: 24 test definitions; nově obsahuje samostatný screenshot Expertizy, přesný počet PASS/SKIP případů je reportován finálním CI během
+- PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-35
 - čistý Pages balík: explicitní allowlist, bez testů/nástrojů/vývojové dokumentace
 
 POKRYTÉ RELEASE SCÉNÁŘE
@@ -22,15 +22,16 @@ POKRYTÉ RELEASE SCÉNÁŘE
 - Ločenice: identifikace vzorků, chybná volba a opakované odhalení radarem
 - Nesměň: souhlas lesníka → 3 profily → 3× zahrabat → odchod
 - Besednice: theft alert → Karel → stun okna → 3 zásahy → návrat ježka → Expertiza konkrétních kamenů
-- Slávie: runtime střet s Frantou → ztracená certifikační složka → registrace certifikovaných kusů → 3 indicie → kontrola podvodu → kontrolní dossier → Franta → výstavní sál → vitrína
+- Slávie: runtime střet s Frantou → ztracená certifikační složka svázaná s konkrétními stone IDs → ověřená registrace certifikovaných kusů → 3 indicie → kontrola podvodu → oddělený kontrolní dossier → Franta → výstavní sál → vitrína
 - Slávie: Franta lze zastavit reálným akčním tlačítkem v dotykově tolerantním dosahu
 - Slávie: bez cyklistů a policejního patrolu, včetně migrace starších uložených světů
 - fallback finále zůstává dohratelné i při Frantově úniku
-- save integrity: dopadení, radar, lesník, minihra, Karel, Expertiza/pendingCertification, perk/jury transition a stabilní perk offer
+- save integrity: dopadení, radar, lesník, minihra, Karel, Expertiza/pendingCertification, certifikační stone IDs, reload arrival incidentu, perk/jury transition a stabilní perk offer
 - staré/poškozené save: schema 2, povinná Expertiza před novou Malší, zachování již rozehrané Malše a idempotentní certifikační backfill
 - starší Malše save bez certifikační položky: doplnění chybějící složky bez softlocku
 - mobile controls: joystick + action, pointer lifecycle, portrait/landscape
 - accessibility UI: focus management, modal trap, 200% reflow proxy, reduced motion
+- porota: runtime kalibrace ověřuje 10 890 / 19 540 / 22 960 bodů proti hranicím 15 000 / 21 500
 - audio lifecycle: mute, pause, background/visibility a theme switching
 - PWA: instalace, aktualizace herní cache, zachování cizí cache, offline reload
 - Pages: pouze explicitní dist/ a project-relative /Staraverze/ cesty
