@@ -1086,7 +1086,7 @@
     if(!filling)state.heat=clamp(state.heat+4,0,100);
     audio.sfx("bad");
     toast(filling?"Zahrabání se nepovedlo – zkus to znovu":"Rytmus se rozpadl – zkus profil znovu","bad",1100);
-    findNearest();updateHUD(true);
+    findNearest();updateHUD(true);save();
   }
   function finishDig(){
     if(mode!=="dig"||digKind!=="dig"||!currentDig||!currentDig.active)return;const h=currentDig;h.active=false;state.stats.digs++;mode="playing";setPlaying(true);showOnly(null);
