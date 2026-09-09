@@ -11,7 +11,8 @@ Tento dokument popisuje skutečné chování obrazovek runtime `5.4.2`. Dialogov
 | Kontrola podvodu `fraudScreen` | povinný modal | tři indicie v Malši → návrat do gameplaye po rozhodnutí | neběží | focus trap, Tab, Enter/mezerník; chybná volba vysvětlí nesrovnalosti a Escape kontrolu neobejde | dvě volby klepnutím |
 | Kopání `digScreen` | modal/minihra | hotspot → gameplay nebo pauza | běží jen čas minihry | mezerník = úder, Escape = pauza | `digButton`, vlastní pointer |
 | Zahrabávání `digScreen` | modal/minihra | otevřená díra → gameplay nebo pauza | čas běží jen při držení; v pauze stojí | držet/pustit mezerník, Escape = pauza | držet/pustit `digButton` |
-| Perky `perkScreen` | samostatný povinný krok | dokončení lokality → briefing další lokality | neběží | fokus na nadpis, Tab a Enter/mezerník; Escape neobejde výběr | klepnutí na perk |
+| Perky `perkScreen` | samostatný povinný krok | dokončení lokality → další přechod; po Besednici následuje Expertiza, jinak briefing další lokality | neběží | fokus na nadpis, Tab a Enter/mezerník; Escape neobejde výběr | klepnutí na perk |
+| Expertiza `expertiseScreen` | samostatný povinný krok | po perku za Besednicí → briefing Malše | neběží | fokus na nadpis, Tab na „PŘEVZÍT CERTIFIKÁTY“, Enter/mezerník; Escape krok neobejde | klepnutí |
 | Porota `juryScreen` | samostatný povinný krok | dokončení Malše → výsledek | neběží | fokus na nadpis, výběr kamenů a potvrzení; Escape neobejde výběr | klepnutí |
 | Výsledek `resultScreen` | samostatná stránka | porota → nová výprava nebo Rekordy | neběží | fokus na nadpis, běžná tabulace | klepnutí, posun |
 | Pauza `pauseScreen` | skutečný modal | gameplay/minihra → stejný stav nebo nabídka | vše herní i minihra stojí | focus trap; Escape/Pokračovat obnoví; nabídka ukončí rozpracovanou akci | tlačítka |
@@ -26,7 +27,7 @@ Tento dokument popisuje skutečné chování obrazovek runtime `5.4.2`. Dialogov
 - Aktivní modal má přístupný název, případný popis, focus trap a zakrytý gameplay je pro klávesnici i čtečku nedostupný.
 - `inert` ani `aria-hidden` se nikdy nepřidává na `#app`, protože `#app` obsahuje i aktivní dialog.
 - Při zavření se fokus vrací na původní prvek jen pokud je stále připojený, viditelný a není v inertním stromu; jinak se použije smysluplný cíl navazující obrazovky nebo herní canvas.
-- Povinné volby Určení vzorku, Kontrola podvodu, Perk a Porota nelze přeskočit klávesou Escape.
+- Povinné volby Určení vzorku, Kontrola podvodu, Perk, Expertiza a Porota nelze přeskočit klávesou Escape.
 - `aria-live` je vyhrazeno pro diskrétní stavové zprávy: toast, krádež, úvod protivníka a zpětnou vazbu minihry. Časovač a pohyb ukazatele nejsou živé regiony.
 - `prefers-reduced-motion` vypíná CSS animace/přechody a runtime omezuje dekorativní pohybové efekty.
 
