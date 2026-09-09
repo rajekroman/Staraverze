@@ -1,5 +1,18 @@
 # Produkční audit v5.4.2 — 8. 9. 2026
 
+## Aktualizace release stavu — 9. 9. 2026
+
+Výchozí stav této dodatečné revize je `main@2d0cee52c675b1bdeeabeba1c24d8004557958c5` po sloučení přepracovaného finále Slávie. Níže uvedený původní audit zůstává zachován jako historie nálezů, ale několik jeho otevřených bodů už není aktuálních:
+
+- Pages publish je nyní navázán na úspěšný workflow `Validate v5.4 continuation`, checkoutuje přesně `workflow_run.head_sha` a publikuje pouze explicitní `dist/`.
+- Focus management, focus trap, návrat fokusu a mobilní pinch/reflow byly doplněny a mají browserové regresní testy.
+- Finále Slávie nyní obsahuje registraci, kontrolu podvodu, Frantův útěk se složkou a výstavní vitrínu.
+- Audio lifecycle pro mute, pause, background a rychlé přepnutí theme má automatické testy. Finální hudební pass doplňuje existující ambienty procedurálním score bez nového externího audio assetu.
+- Stále zůstává ruční release gate: potvrzení distribučních práv k MP3 označeným `NOASSERTION`, poslech na reproduktorech/sluchátkách a plný průchod na fyzickém iOS/Android zařízení.
+
+Technické vydání proto po zeleném CI nemá známý blokátor v runtime/publish pipeline; zbývající blokátor je manuální licenční a fyzický QA gate.
+
+
 ## Rozsah a základ
 
 Základ: `main@629c1d3b6a43c3429d4293373276b340916e3ea2`, repozitář `rajekroman/Staraverze`.
