@@ -187,6 +187,30 @@ test("audit: Franta se nespustí před potvrzeným odhalením podvodu ani přes 
   expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
 });
 
+test("render: viewport culling vynechá objekty mimo kameru a referenční scénu nechá kompletní", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.setPlayer(360,1050);
+    window.__lovecDebug.snapCameraToPlayer();
+  });
+  await page.waitForTimeout(120);
+  const live = await page.evaluate(() => window.__lovecDebug.snapshot().renderStats);
+  expect(live.candidates).toBeGreaterThan(100);
+  expect(live.culled).toBeGreaterThan(0);
+  expect(live.rendered + live.culled).toBe(live.candidates);
+
+  await page.evaluate(() => window.__lovecDebug.startNesmenReference());
+  // WebKit can defer the first reference-scene RAF while media/resources settle; wait for rendered state, not wall time.
+  await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot().renderStats.culled),
+    { timeout: 2_000 }
+  ).toBe(0);
+  const reference = await page.evaluate(() => window.__lovecDebug.snapshot().renderStats);
+  expect(reference.candidates).toBeGreaterThan(0);
+  expect(reference.rendered).toBe(reference.candidates);
+});
+
 test("audio: continue načte mute před prvním playbackem", async ({ page }) => {
   await page.addInitScript(() => {
     window.auditAudio={plays:[],pauses:[]};
