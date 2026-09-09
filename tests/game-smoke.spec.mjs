@@ -1264,7 +1264,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#objectiveLabel")).toHaveText("Vstup do výstavního sálu");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("VSTUP");
+  await expect(page.locator("#actionText")).toHaveText("VSTOUPIT");
   await page.keyboard.press("Space");
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
   await expect(page.locator(".exhibition-hall")).toBeVisible();
