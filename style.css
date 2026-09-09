@@ -519,3 +519,9 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--nzv-mint);outline-o
 .result-stats{grid-template-columns:repeat(4,1fr)}
 @media(max-width:760px){.fraud-card{padding:19px;border-radius:19px}.evidence-grid{grid-template-columns:1fr}.fraud-actions{grid-template-columns:1fr}.exhibition-hall{height:96px}.result-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-height:490px) and (orientation:landscape){.fraud-card{padding:15px;max-width:680px}.evidence-grid{grid-template-columns:repeat(3,1fr);margin:8px 0}.evidence-grid article{padding:9px}.evidence-grid p{font-size:10px}.fraud-feedback{min-height:34px;margin:7px 0;padding:7px 9px}.fraud-actions{grid-template-columns:1fr 1fr}.exhibition-hall{height:72px;margin-bottom:8px}}
+
+/* Certification flow */
+.expertise-list{max-height:44vh}
+.expertise-footer{margin-top:10px}
+.expertise-stone small{line-height:1.35}
+@media(max-height:490px) and (orientation:landscape){.expertise-list{max-height:31vh}}

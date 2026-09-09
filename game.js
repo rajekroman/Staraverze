@@ -22,6 +22,9 @@
   };
 
   const APP_VERSION = "5.4.2";
+  const SAVE_SCHEMA = 2;
+  const JURY_RECOGNITION_SCORE = 15000;
+  const JURY_MAIN_PRIZE_SCORE = 21500;
   const SAVE_KEY = "lovecVltavinuRebornSaveV5_4_2";
   const RECORD_KEY = "lovecVltavinuRebornRecordsV5_2";
   const LEGACY_SAVE_KEYS = ["lovecVltavinuRebornSaveV5_2","lovecVltavinuRebornSaveV5_1","lovecVltavinuRebornSaveV5_0","lovecVltavinuRebornSaveV4_9","lovecVltavinuRebornSaveV4_8","lovecVltavinuRebornSaveV4_7","lovecVltavinuRebornSaveV4_6","lovecVltavinuRebornSaveV4_5"];
@@ -52,7 +55,7 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Po bouřce vyrážíš na pole za prvními kusy do sbírky. Franta je tu taky. Vltavíny sbírá na prodej a peníze chce utratit za automaty. Radar ti pomůže odhalit kusy, které v hlíně snadno přehlédneš.",
+      text: "Po bouřce vyrážíš na pole za prvními kusy do sbírky. Na podobná pole jezdí i Franta; na rozdíl od tebe hledá hlavně kusy na prodej a peníze chce utratit za automaty. Radar ti pomůže odhalit kusy, které v hlíně snadno přehlédneš.",
       why: "Ty vltavíny nehledáš kvůli penězům. Chceš sestavit co nejlepší sbírku a vybrat z ní nejzajímavější kusy pro výstavu na akci Na zelené vlně v KD Slávii.",
       goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
@@ -76,9 +79,9 @@
     },
     {
       id: "malse", name: "Malše", title: "Na zelené vlně", theme: "city",
-      text: "S certifikáty k nejlepším kusům přicházíš podél Malše ke KD Slávii. Při příchodu do tebe vrazí Franta a složka s certifikáty skončí někde na nábřeží. Bez ní sbírku k výstavě nepřihlásíš.",
-      why: "Celá výprava mířila sem. Teď musíš dostat své nejlepší kusy až do výstavní vitríny.",
-      goal: "Najdi složku s certifikáty a zaregistruj sbírku.", music: "city"
+      text: "S certifikáty ke konkrétním vybraným kusům přicházíš podél Malše ke KD Slávii. Franta se pohybuje poblíž a před registrací je znát napětí. Dostaň sbírku i dokumentaci bezpečně ke vstupu.",
+      why: "Celá výprava mířila sem. Certifikované kusy musíš zaregistrovat a dostat až do výstavní vitríny.",
+      goal: "Dones certifikáty k registraci sbírky.", music: "city"
     }
   ];
 
@@ -371,12 +374,13 @@
 
   function freshState() {
     return {
-      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0, pendingTransition:null, pendingPerks:[],
+      version:APP_VERSION, saveSchema:SAVE_SCHEMA, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
+      pendingTransition:null, pendingPerks:[], pendingCertification:[], expertiseCompleted:false,
       perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
 
-  function normalizeStone(stone, index) {
+  function normalizeStone(stone, index, legacySchema=false) {
     if (!stone || typeof stone !== "object") return null;
     const rarity = ["common", "good", "rare", "hedgehog"].includes(stone.rarity) ? stone.rarity : "common";
     return {
@@ -387,23 +391,53 @@
       quality: Math.round(finiteNumber(stone.quality, 60, 0, 100)),
       size: typeof stone.size === "string" ? stone.size.slice(0, 24) : undefined,
       qualityLabel: typeof stone.qualityLabel === "string" ? stone.qualityLabel.slice(0, 24) : undefined,
-      documented: stone.documented !== false,
+      documented: typeof stone.documented === "boolean" ? stone.documented : legacySchema,
+      certified: stone.certified === true,
       name: typeof stone.name === "string" ? stone.name.slice(0, 80) : "Vltavín",
       value: Math.round(finiteNumber(stone.value, 0, 0, 100000000))
     };
   }
 
+  function rankStonesForExpertise(stones=state.stones){
+    return [...stones].sort((a,b)=>b.quality-a.quality||Number(b.documented)-Number(a.documented)||b.value-a.value||String(a.id).localeCompare(String(b.id)));
+  }
+  function certifyLegacyStones(stones){
+    const selected=new Set(rankStonesForExpertise(stones).slice(0,Math.min(5,stones.length)).map(stone=>stone.id));
+    stones.forEach(stone=>stone.certified=selected.has(stone.id));
+    return selected.size;
+  }
+  function certifiedStoneIds(stones=state.stones){
+    return stones.filter(stone=>stone.certified).map(stone=>stone.id);
+  }
+
   function normalizeState(data) {
     if (!data || typeof data !== "object" || !Array.isArray(data.stones)) return null;
     const clean = freshState();
+    const sourceSchema=Math.round(finiteNumber(data.saveSchema,0,0,SAVE_SCHEMA));
+    const legacySchema=sourceSchema<SAVE_SCHEMA;
+    clean.saveSchema=SAVE_SCHEMA;
     clean.levelIndex = Math.round(finiteNumber(data.levelIndex, 0, 0, LEVELS.length - 1));
     clean.score = Math.round(finiteNumber(data.score, 0, 0, 1000000000));
-    clean.stones = data.stones.map(normalizeStone).filter(Boolean).slice(0, 250);
+    const usedStoneIds=new Set();
+    clean.stones = data.stones.map((stone,index)=>{
+      const normalized=normalizeStone(stone,index,legacySchema);
+      if(!normalized)return null;
+      const baseId=normalized.id;
+      let uniqueId=baseId,suffix=2;
+      while(usedStoneIds.has(uniqueId))uniqueId=`${baseId}-${suffix++}`;
+      normalized.id=uniqueId;usedStoneIds.add(uniqueId);
+      return normalized;
+    }).filter(Boolean).slice(0, 250);
     clean.heat = finiteNumber(data.heat, 0, 0, 100);
     clean.combo = Math.round(finiteNumber(data.combo, 1, 1, 6));
     clean.comboTimer = finiteNumber(data.comboTimer, 0, 0, 60);
     clean.caught = Math.round(finiteNumber(data.caught, 0, 0, 100000));
     clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="expertise"||data.pendingTransition==="jury" ? data.pendingTransition : null;
+    clean.expertiseCompleted = data.expertiseCompleted === true || clean.stones.some(stone=>stone.certified);
+    const stoneIds=new Set(clean.stones.map(stone=>stone.id));
+    clean.pendingCertification=clean.pendingTransition==="expertise"&&Array.isArray(data.pendingCertification)
+      ? [...new Set(data.pendingCertification.filter(id=>stoneIds.has(id)))].slice(0,5)
+      : [];
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
@@ -456,6 +490,7 @@
   let pausedMode = "playing";
   let hudNextUpdate = 0;
   let jurySelection = new Set();
+  let expertiseSelection = new Set();
   let dialogueCallback = null;
   let shake = 0;
   let flash = 0;
@@ -490,8 +525,40 @@
     try {
       const data=JSON.parse(storage.get(SAVE_KEY)||"null");
       const envelope=data?.state&&typeof data.state==="object"?data:null;
-      const normalized=normalizeState(envelope?data.state:data);
+      const rawState=envelope?data.state:data;
+      const sourceSchema=Math.round(finiteNumber(rawState?.saveSchema,0,0,SAVE_SCHEMA));
+      const normalized=normalizeState(rawState);
       if(!normalized) return false;
+      const hasPlayableMalseWorld=validWorldSnapshot(envelope?.world,"malse");
+      const rawValidStones=Array.isArray(rawState?.stones)?rawState.stones.filter(stone=>stone&&typeof stone==="object").slice(0,250):[];
+      const repairedStoneIds=rawValidStones.length!==normalized.stones.length||rawValidStones.some((stone,index)=>typeof stone.id!=="string"||!stone.id||normalized.stones[index]?.id!==stone.id);
+      let migrated=sourceSchema<SAVE_SCHEMA||repairedStoneIds;
+
+      if(sourceSchema<SAVE_SCHEMA&&normalized.levelIndex===3&&normalized.pendingTransition==="perk"){
+        normalized.pendingTransition="expertise";
+        normalized.pendingPerks=[];
+        migrated=true;
+      }
+      if(sourceSchema<SAVE_SCHEMA&&normalized.levelIndex===4&&normalized.pendingTransition==="jury"){
+        normalized.expertiseCompleted=true;
+        if(normalized.stones.length&&!normalized.stones.some(stone=>stone.certified))certifyLegacyStones(normalized.stones);
+        migrated=true;
+      }
+      if(normalized.levelIndex===4&&!normalized.expertiseCompleted&&normalized.pendingTransition!=="jury"){
+        if(hasPlayableMalseWorld){
+          normalized.expertiseCompleted=true;
+          certifyLegacyStones(normalized.stones);
+        }else{
+          normalized.pendingTransition="expertise";
+          normalized.pendingPerks=[];
+        }
+        migrated=true;
+      }else if(hasPlayableMalseWorld&&(!normalized.expertiseCompleted||(!normalized.stones.some(stone=>stone.certified)&&normalized.stones.length))){
+        normalized.expertiseCompleted=true;
+        if(normalized.stones.length&&!normalized.stones.some(stone=>stone.certified))certifyLegacyStones(normalized.stones);
+        migrated=true;
+      }
+
       state=normalized;
       restoredWorld=false;world=null;
       if(validWorldSnapshot(envelope?.world,LEVELS[state.levelIndex]?.id)){
@@ -500,7 +567,9 @@
         player={...player,x:finiteNumber(saved.x,player.x,0,world.w),y:finiteNumber(saved.y,player.y,0,world.h),angle:finiteNumber(saved.angle,0,-Math.PI,Math.PI),facing:saved.facing<0?-1:1,pose:["front","back","side"].includes(saved.pose)?saved.pose:"front"};
         restoredWorld=true; buildTerrainCache(world); findNearest();
       }
-      audio.setEnabled(state.sound!==false,{resume:false});syncSoundButton();return true;
+      audio.setEnabled(state.sound!==false,{resume:false});syncSoundButton();
+      if(migrated)save();
+      return true;
     } catch { return false; }
   }
   function refreshContinue(){ $("continueButton").classList.toggle("hidden",!storage.get(SAVE_KEY)); }
@@ -655,11 +724,11 @@
   }
 
   function generateChlum(){
-    world.runtime={permit:true,collected:0}; player.x=360;player.y=1070;
+    world.runtime={permit:true,collected:0,provenanceConfirmed:false}; player.x=360;player.y=1070;
     addProp("farm",135,1080,{scale:.82,visualScale:2.5}); addProp("npc",280,990,{name:"Václav",avatar:"V",role:"farmer"});
     for(let i=0;i<12;i++)addProp("soilheap",rand(260,1600),rand(240,980),{scale:rand(.65,1.2)});
     for(let i=0;i<20;i++)addProp("stubble",rand(120,1720),rand(180,1100),{scale:rand(.7,1.15)});
-    for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:true});
+    for(const [i,p] of [[500,840],[820,910],[1120,760],[1440,900],[620,480],[1040,420],[1500,500],[440,690],[1250,640]].entries())addItem("stone",p[0],p[1],{hidden:true,rarity:i===8?"good":i===6?"rare":"common",documented:false});
     addPatrol("tractor",[{x:350,y:300},{x:1570,y:300},{x:1570,y:470},{x:350,y:470}],{speed:115,vision:0,scale:1.5,working:true,variant:0});
     addPatrol("farmer",[{x:1580,y:920},{x:1480,y:650},{x:1660,y:520}],{speed:65,vision:140,requires:"permit"});
     world.exit={x:1650,y:150,r:54,label:"Odjezd"};
@@ -718,7 +787,8 @@
   }
 
   function generateMalse(){
-    world.runtime={certificateRecovered:false,papers:0,registered:false,fraudResolved:false,fraudAttempts:0,bossStarted:false,bossHits:0,bossDefeated:false,dossierRecovered:false,frantaEscaped:false};player.x=720;player.y=1060;
+    const certificateStoneIds=certifiedStoneIds();
+    world.runtime={certificateRecovered:false,certificateStoneIds:[...certificateStoneIds],recoveredCertificateStoneIds:[],papers:0,registered:false,fraudResolved:false,fraudAttempts:0,bossStarted:false,bossHits:0,bossDefeated:false,dossierRecovered:false,frantaEscaped:false,arrivalIncidentSeen:false,arrivalIncidentActive:false,arrivalIncidentTimer:0};player.x=720;player.y=1060;
     for(let y=150;y<1100;y+=145){addProp("tree",510,y,{scale:1.38});addProp("lamp",650,y);}
     // Authored park clearings keep the documents and the existing patrol routes legible.
     [[1160,690],[1370,610],[1630,550],[1730,780],[1450,920],[1190,1040],[1670,1060]].forEach(([x,y],i)=>addProp("tree",x,y,{scale:1.45+(i%3)*.16}));
@@ -726,7 +796,7 @@
     addProp("lamp",1320,455);addProp("lamp",1660,435);
     addProp("bridge",330,520,{scale:1}); addProp("slavie",1460,235,{scale:1.26}); addProp("sign",780,1000,{text:"Zátkovo nábřeží"});
     addProp("plaza",1440,400,{scale:1.0});
-    addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti"});
+    addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti",stoneIds:[...certificateStoneIds]});
     [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["detail povrchu vzorku","fotografie údajného nálezu","záznam původu a času nálezu"][i]}));
     addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:1.25,variant:0});
     world.exit={x:1450,y:250,r:66,label:"KD Slávie"};
@@ -849,11 +919,23 @@
     if(!world||world.id!=="malse")return;
     const r=world.runtime||(world.runtime={});
     r.papers=Math.round(finiteNumber(r.papers,0,0,3));
+    if(typeof r.arrivalIncidentSeen!=="boolean")r.arrivalIncidentSeen=Boolean(r.certificateRecovered||r.registered||r.papers>0||r.bossStarted||r.bossDefeated);
+    if(typeof r.arrivalIncidentActive!=="boolean")r.arrivalIncidentActive=false;
+    r.arrivalIncidentTimer=finiteNumber(r.arrivalIncidentTimer,0,0,2);
+    if(r.arrivalIncidentActive&&!world.props.some(prop=>prop.arrivalFranta))addProp("npc",player.x+210,player.y-25,{name:"Franta",avatar:"F",role:"rival",used:true,arrivalFranta:true});
     if(typeof r.certificateRecovered!=="boolean")r.certificateRecovered=Boolean(r.registered||r.papers>0||r.bossStarted||r.bossDefeated);
+    const certifiedIds=certifiedStoneIds();
+    r.certificateStoneIds=[...certifiedIds];
+    const recoveredIds=Array.isArray(r.recoveredCertificateStoneIds)?r.recoveredCertificateStoneIds:[];
+    r.recoveredCertificateStoneIds=r.certificateRecovered
+      ? [...new Set(recoveredIds.filter(id=>certifiedIds.includes(id)))]
+      : [];
+    if(r.certificateRecovered&&r.recoveredCertificateStoneIds.length!==certifiedIds.length)r.recoveredCertificateStoneIds=[...certifiedIds];
+    const certificate=world.items.find(item=>item.type==="paper"&&item.special==="certificate");
+    if(certificate)certificate.stoneIds=[...r.certificateStoneIds];
     if(!r.certificateRecovered){
-      const certificate=world.items.find(item=>item.type==="paper"&&item.special==="certificate");
       if(certificate)certificate.active=true;
-      else addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti"});
+      else addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti",stoneIds:[...r.certificateStoneIds]});
     }
     if(typeof r.registered!=="boolean")r.registered=Boolean(r.papers>0||r.bossStarted||r.bossDefeated);
     if(typeof r.fraudResolved!=="boolean")r.fraudResolved=Boolean(r.bossStarted||r.bossDefeated);
@@ -869,6 +951,7 @@
   function enterLevel(){
     if(!restoredWorld)generateLevel(state.levelIndex);
     normalizeMalseWorld();
+    if(world?.id==="malse"&&!world.runtime.arrivalIncidentSeen)startMalseArrivalIncident();
     const interruptedKarel=world?.id==="besednice"&&world.runtime?.chaseStarted&&!world.runtime?.bossDefeated&&!(world.rival?.active&&world.rival.name==="karel")
       ? world.runtime.pendingBoss||{
           x:finiteNumber(world.rival?.x,clamp(player.x+180,80,1720),80,1720),
@@ -888,13 +971,46 @@
     save();
   }
 
+  function startMalseArrivalIncident(){
+    if(!world||world.id!=="malse"||world.runtime.arrivalIncidentSeen)return;
+    const r=world.runtime;
+    r.arrivalIncidentSeen=true;r.arrivalIncidentActive=true;r.arrivalIncidentTimer=1.35;
+    if(!world.props.some(prop=>prop.arrivalFranta))addProp("npc",player.x+210,player.y-25,{name:"Franta",avatar:"F",role:"rival",used:true,arrivalFranta:true});
+    const certificate=world.items.find(item=>item.type==="paper"&&item.special==="certificate");
+    if(certificate){certificate.active=true;certificate.hidden=true;certificate.x=880;certificate.y=1030;certificate.stoneIds=[...(r.certificateStoneIds||certifiedStoneIds())];}
+    if(ui.bossIntroName)ui.bossIntroName.textContent="FRANTA";
+    if(ui.bossIntroText)ui.bossIntroText.textContent="Franta do tebe vrazil. Složka s certifikáty vypadla na nábřeží — najdi ji radarem.";
+    ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");bossIntroTimer=2.35;
+    audio.sfx("alert");haptic([25,35,25]);shake=Math.max(shake,8);flash=.12;flashColor="190,100,75";
+    toast("NÁRAZ · SLOŽKA S CERTIFIKÁTY VYPADLA","bad",2200);save();
+  }
+  function updateMalseArrivalIncident(dt){
+    if(!world||world.id!=="malse"||!world.runtime.arrivalIncidentActive)return false;
+    const r=world.runtime;
+    input.x=input.y=0;stopPlayerMotion();
+    r.arrivalIncidentTimer=Math.max(0,finiteNumber(r.arrivalIncidentTimer,0,0,2)-dt);
+    const rival=world.props.find(prop=>prop.arrivalFranta);
+    if(rival){
+      const progress=clamp(1-r.arrivalIncidentTimer/1.35,0,1);
+      rival.x=lerp(player.x+210,player.x-220,progress);
+      rival.y=player.y-25-Math.sin(progress*Math.PI)*18;
+      rival.angle=Math.PI;rival.facing=-1;rival.pose="side";
+    }
+    if(r.arrivalIncidentTimer<=0){
+      r.arrivalIncidentActive=false;
+      world.props=world.props.filter(prop=>!prop.arrivalFranta);
+      save();
+    }
+    return true;
+  }
+
   function levelGoal(){
     const r=world.runtime;
     if(world.id==="chlum")return `Sběr z povrchu ${r.collected}/6`;
     if(world.id==="locenice")return `Správně ${r.correct}/5 · pravé ${r.real}/3`;
     if(world.id==="nesmen")return r.permit?`Profily ${r.dug}/3 · zahrabáno ${r.filled}/3`:`Získej souhlas lesníka`;
     if(world.id==="besednice")return r.bossStarted?(r.bossDefeated?"Ježek je v bezpečí":"Získej ježka zpět"):r.clues<3?`Stopy ${r.clues}/3`:`Vykopej ježkový profil`;
-    if(world.id==="malse"){if(!r.certificateRecovered)return "Najdi složku s certifikáty";if(!r.registered)return "Zaregistruj sbírku u vstupu";if(r.papers<3)return `Indicie ${r.papers}/3`;if(!r.fraudResolved)return "Prověř Frantův vzorek u vstupu";if(!r.bossDefeated)return "Dostihni Frantu a vezmi složku zpět";return r.dossierRecovered?"Vstup do výstavního sálu":"Vstup do sálu · kopie záznamů zajištěna";}
+    if(world.id==="malse"){if(!r.certificateRecovered)return "Najdi složku s certifikáty";if(!r.registered)return "Zaregistruj certifikované kusy u vstupu";if(r.papers<3)return `Indicie ${r.papers}/3`;if(!r.fraudResolved)return "Prověř Frantův vzorek u vstupu";if(!r.bossDefeated)return "Dostihni Frantu a vezmi kontrolní podklady zpět";return r.dossierRecovered?"Vstup do výstavního sálu":"Vstup do sálu · kopie podkladů zajištěna";}
     return "Výprava";
   }
   function goalComplete(){
@@ -1008,7 +1124,7 @@
   }
 
   function talkNpc(npc){
-    if(world.id==="chlum"){showDialog("Václav","V","Bouřka vyplavila pár kusů přímo do brázd. Bez radaru je v té hlíně snadno přehlédneš.");return;}
+    if(world.id==="chlum"){showDialog("Václav","V","Bouřka vyplavila pár kusů přímo do brázd. Když si nálezy zapíšeš k tomuhle poli, bude jejich původ doložený.",()=>{if(!world.runtime.provenanceConfirmed){world.runtime.provenanceConfirmed=true;world.items.filter(item=>item.type==="stone").forEach(item=>item.documented=true);state.stones.filter(stone=>stone.locality==="Chlum").forEach(stone=>stone.documented=true);toast("Původ chlumských nálezů je doložený","good",1900);save();}});return;}
     if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Můžeš do tří vyznačených profilů. Každý po prohlédnutí zase zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Lesník ti dovolil kopat","good");save();});return;}
     if(npc.role==="farmer"){showDialog(npc.name,npc.avatar,"Po bouřce bývají nejlepší kusy přímo v brázdách. Koukej pořádně.");return;}
     if(npc.role==="owner"){showDialog(npc.name,npc.avatar,"Hlavně po sobě každý profil zase zahrab.");return;}
@@ -1131,21 +1247,24 @@
       world.runtime.pendingBoss={x:h.x+150,y:h.y-90};
       audio.sfx("rare");
     }else{
-      const stone=makeStone(LEVELS[state.levelIndex].name,h.rarity||"common",h.documented!==false);addStone(stone,h.x,h.y);
+      const stone=makeStone(LEVELS[state.levelIndex].name,h.rarity||"common",h.documented===true);addStone(stone,h.x,h.y);
       if(world.id==="chlum")world.runtime.collected++;
     }
     currentDig=null;findNearest();updateHUD(true);save();
   }
 
-  function makeStone(locality,rarity="common",documented=true,qualityBonus=0){
+  function makeStone(locality,rarity="common",documented=false,qualityBonus=0){
     const bases={common:[.5,1.8],good:[1.5,3.8],rare:[3.2,7.2],hedgehog:[5.5,10.5]};const b=bases[rarity]||bases.common;
     const weight=+rand(b[0],b[1]).toFixed(2);const quality=clamp(Math.round(rand(58,92)+qualityBonus+state.perks.eye*2),45,100);
     const size=weight<1.2?"drobný":weight<3.2?"střední":weight<6.5?"velký":"mimořádný";
     const qualityLabel=quality>=88?"výstavní":quality>=74?"pěkný":quality>=60?"dobrý":"surový";
     const names={common:`${size[0].toUpperCase()+size.slice(1)} vltavín`,good:`${size[0].toUpperCase()+size.slice(1)} kapka`,rare:"Výstavní celotvar",hedgehog:"Besednický ježek"};
-    return{id:`s${Date.now()}${Math.random()}`,locality,rarity,weight,quality,size,qualityLabel,documented,name:names[rarity],value:Math.round(weight*(rarity==="hedgehog"?4200:rarity==="rare"?1900:rarity==="good"?900:420)*(quality/75))};
+    return{id:`s${Date.now()}${Math.random()}`,locality,rarity,weight,quality,size,qualityLabel,documented:Boolean(documented),certified:false,name:names[rarity],value:Math.round(weight*(rarity==="hedgehog"?4200:rarity==="rare"?1900:rarity==="good"?900:420)*(quality/75))};
   }
   function addStone(stone,x=player.x,y=player.y){
+    const usedIds=new Set(state.stones.map(existing=>existing.id));
+    const baseId=typeof stone.id==="string"&&stone.id?stone.id:`s${Date.now()}`;
+    let uniqueId=baseId,suffix=2;while(usedIds.has(uniqueId))uniqueId=`${baseId}-${suffix++}`;stone.id=uniqueId;
     state.stones.push(stone);state.stats.rare+=stone.rarity==="rare"||stone.rarity==="hedgehog"?1:0;
     const mult=stone.rarity==="hedgehog"?6:stone.rarity==="rare"?3:stone.rarity==="good"?1.6:1;state.score+=Math.round(stone.value*.18*state.combo*mult);
     boostCombo(stone.rarity==="rare"||stone.rarity==="hedgehog"?2:1);burst(x,y,stone.rarity==="rare"||stone.rarity==="hedgehog"?"#f2cb72":"#63e49b",stone.rarity==="hedgehog"?28:15);
@@ -1157,7 +1276,7 @@
   function interactItem(item){
     if(!item.active)return;
     if(item.type==="stone"){
-      item.active=false;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",item.documented!==false);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;save();return;
+      item.active=false;const documented=world.id==="chlum"?Boolean(world.runtime.provenanceConfirmed):item.documented===true;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",documented);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;save();return;
     }
     if(item.type==="sample"){currentSample=item;mode="identify";setPlaying(false);$("sampleTitle").textContent=item.sample.title;$("sampleDescription").textContent=`${item.sample.text} Posuď povrch, tvar a pravidelnost vzorku.`;$("sampleGem").style.color=item.sample.real?"#70d999":"#33f48b";showOnly(screens.identify);return;}
     if(item.type==="clue"){
@@ -1168,7 +1287,11 @@
     }
     if(item.type==="paper"){
       if(world.id==="malse"&&item.special==="certificate"){
-        item.active=false;world.runtime.certificateRecovered=true;audio.sfx("paper");boostCombo();state.score+=180;
+        const certifiedIds=certifiedStoneIds();
+        const itemIds=Array.isArray(item.stoneIds)?[...new Set(item.stoneIds.filter(id=>certifiedIds.includes(id)))]:[];
+        item.active=false;world.runtime.certificateRecovered=true;world.runtime.certificateStoneIds=[...certifiedIds];
+        world.runtime.recoveredCertificateStoneIds=itemIds.length===certifiedIds.length?[...certifiedIds]:itemIds;
+        audio.sfx("paper");boostCombo();state.score+=180;
         toast("Složku s certifikáty máš zpět. Teď můžeš zaregistrovat sbírku.","rare",2200);updateHUD(true);save();return;
       }
       if(world.id==="malse"&&!world.runtime.registered){toast("Nejdřív zaregistruj sbírku u vstupu","bad",1500);return;}
@@ -1215,17 +1338,17 @@
     world.rival={name,displayName:isKarel?"KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:isKarel?3:1,speed:isKarel?150:142,baseSpeed:isKarel?150:142,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,distanceTravelled:0,target:isKarel?{x:rand(250,1550),y:rand(220,950)}:{x:1650,y:980},escapeTarget:isKarel?null:{x:1650,y:980},throwTimer:1.15,active:true,flashlight:isKarel,vision:isKarel?245:0,baseVision:isKarel?245:0,halfAngle:isKarel?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:isKarel?1.15:.65,trail:[]};
     bossIntroTimer=2.35;
     if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KAREL":"FRANTA";
-    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.":"Franta popadne složku se záznamy a vyráží k východu. Dostihni ho a zastav ho.";
+    if(ui.bossIntroText)ui.bossIntroText.textContent=isKarel?"Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.":"Franta popadne kontrolní složku s podklady k jeho vzorku a vyráží k východu. Dostihni ho a zastav ho.";
     ui.bossIntro?.classList.remove("hidden");ui.bossIntro?.classList.add("show");
     audio.sfx("boss");haptic([35,40,35]);shake=Math.max(shake,7);flash=.1;flashColor="190,100,75";
-    toast(isKarel?"Karel utíká s ježkem!":"FRANTA UTÍKÁ SE SLOŽKOU · ZASTAV HO!","bad",2100);
+    toast(isKarel?"Karel utíká s ježkem!":"FRANTA UTÍKÁ S KONTROLNÍMI PODKLADY · ZASTAV HO!","bad",2100);
   }
   function hitRival(){
     const r=world.rival;if(!r||!r.active)return;
     if(r.name==="franta"){
       r.hits=1;r.active=false;r.hitFlash=.28;world.runtime.bossDefeated=true;world.runtime.dossierRecovered=true;world.runtime.frantaEscaped=false;state.stats.dossier=1;state.score+=1200;
       ui.bossHud?.classList.add("hidden");audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
-      toast("Složku máš zpět. Vstup do výstavního sálu je volný.","rare",1900);updateHUD(true);save();return;
+      toast("Kontrolní podklady máš zpět. Vstup do výstavního sálu je volný.","rare",1900);updateHUD(true);save();return;
     }
     if(r.stunTimer<=0){toast("Je příliš rychlý · počkej na jeho zastavení","bad",950);return;}
     r.hits++;r.stunTimer=0;r.hitFlash=.28;r.phase=Math.min(3,r.hits+1);audio.sfx("catch");burst(r.x,r.y,"#ff8a72",22);shake=Math.max(shake,7);
@@ -1241,14 +1364,23 @@
       const r=world.runtime;
       if(!r.certificateRecovered){toast("Nejdřív radarem najdi složku s certifikáty u nábřeží.","bad",1700);return;}
       if(!r.registered){
-        showDialog("Pořadatel","P","Certifikáty sedí. Sbírku můžeme přihlásit k výstavě. Ještě než půjdeš do sálu, potřeboval bych tvůj názor na jeden Frantův vzorek. Něco na něm nesedí.",()=>{
-          r.registered=true;state.score+=250;toast("Sbírka zaregistrována · prověř Frantův vzorek","good",1800);save();
+        if(!state.expertiseCompleted){toast("Registrace vyžaduje dokončenou Expertizu.","bad",1900);return;}
+        const certifiedIds=certifiedStoneIds();
+        const recoveredIds=Array.isArray(r.recoveredCertificateStoneIds)?[...new Set(r.recoveredCertificateStoneIds.filter(id=>certifiedIds.includes(id)))]:[];
+        const certificatesMatch=certifiedIds.length===recoveredIds.length&&certifiedIds.every(id=>recoveredIds.includes(id));
+        if(certifiedIds.length&&!certificatesMatch){toast("Nalezená složka neodpovídá certifikovaným kamenům z Expertizy.","bad",2200);return;}
+        const certifiedCount=certifiedIds.length;
+        const registrationText=certifiedCount
+          ?`Certifikáty sedí s ${certifiedCount} ${certifiedCount===1?"vybraným kusem":"vybranými kusy"}. Sbírku můžeme přihlásit k výstavě. Ještě než půjdeš do sálu, potřeboval bych tvůj názor na jeden Frantův vzorek. Něco na něm nesedí.`
+          :"Ve složce není žádný soutěžní kámen. Výpravu můžeš dokončit mimo soutěž, aby se starý nebo poškozený save nezablokoval. Ještě prověř Frantův vzorek.";
+        showDialog("Pořadatel","P",registrationText,()=>{
+          r.registered=true;state.score+=250;toast(certifiedCount?"Certifikované kusy zaregistrovány · prověř Frantův vzorek":"Registrace mimo soutěž · prověř Frantův vzorek","good",1900);save();
         });
         return;
       }
       if(r.papers<3){toast(levelGoal(),"bad");return;}
       if(!r.fraudResolved){openFraudReview();return;}
-      if(!r.bossDefeated){toast("Franta utíká se složkou. Dostihni ho a použij akci.","bad",1400);return;}
+      if(!r.bossDefeated){toast("Franta utíká s kontrolními podklady. Dostihni ho a použij akci.","bad",1600);return;}
     }
     if(!goalComplete()){toast(levelGoal(),"bad");return;}
     finishLevel();
@@ -1257,10 +1389,11 @@
     mode="transition";setPlaying(false);
     if(!state.pendingTransition){
       state.score+=700+state.combo*120;
-      state.pendingTransition=state.levelIndex>=LEVELS.length-1?"jury":"perk";
+      state.pendingTransition=state.levelIndex>=LEVELS.length-1?"jury":state.levelIndex===3?"expertise":"perk";
       save();
     }
     if(state.pendingTransition==="jury"){showJury();return;}
+    if(state.pendingTransition==="expertise"){showExpertise();return;}
     showPerks();
   }
   function showPerks(){
@@ -1274,29 +1407,78 @@
       save();
     }
     const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingPerks=[];if(state.levelIndex===4){state.pendingTransition="expertise";save();showExpertise();return;}state.pendingTransition=null;save();showBrief(state.levelIndex);});list.append(b);});
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingPerks=[];state.pendingTransition=null;world=null;restoredWorld=false;save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
   }
 
+  function stoneMeta(s,{includeCertificate=false}={}){
+    const size=s.size||(s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");
+    const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");
+    return `${escapeHtml(s.locality)} · ${size} · stav: ${qualityLabel} · ${s.quality} % · ${s.documented?"PŮVOD DOLOŽENÝ":"PŮVOD NEDOLOŽENÝ"}${includeCertificate?` · ${s.certified?"CERTIFIKOVÁN":"NECERTIFIKOVÁN"}`:""}`;
+  }
+
   function showExpertise(){
-    mode="expertise";setPlaying(false);audio.setTheme(LEVELS[4].music);showOnly(screens.expertise);
+    mode="expertise";setPlaying(false);audio.setTheme(LEVELS[4].music);expertiseSelection.clear();
+    const ordered=rankStonesForExpertise();
+    const limit=Math.min(5,ordered.length);
+    const pending=(state.pendingCertification||[]).map(id=>ordered.find(stone=>stone.id===id)).filter(Boolean).slice(0,limit);
+    const existing=ordered.filter(stone=>stone.certified).slice(0,limit);
+    const initial=pending.length?pending:existing.length?existing:ordered.slice(0,limit);
+    initial.forEach(stone=>expertiseSelection.add(stone.id));
+    state.pendingCertification=[...expertiseSelection];save();
+    const list=$("expertiseList");list.innerHTML="";
+    const button=$("expertiseButton");
+    const refreshControls=()=>{
+      $("expertiseCount").textContent=`${expertiseSelection.size} / max. ${limit}`;
+      button.disabled=limit>0&&expertiseSelection.size===0;
+      button.textContent=limit===0?"POKRAČOVAT BEZ VITRÍNY":expertiseSelection.size===1?"PŘEVZÍT CERTIFIKÁT":"PŘEVZÍT CERTIFIKÁTY";
+    };
+    $("expertiseTitle").textContent=limit>0?(ordered.length>5?"Vyber až pět kusů k certifikaci":"Odborné posouzení"):"Expertiza bez vzorků";
+    $("expertiseText").textContent=limit===0
+      ?"V uložené výpravě nejsou žádné kameny. Hru můžeš dokončit bez soutěžní vitríny, aby se starý nebo poškozený save nezablokoval."
+      :ordered.length>5
+        ?"Odborník může před cestou do Slávie certifikovat jeden až pět konkrétních kusů. Vyber kandidáty; jejich doložený původ zůstává samostatně hodnocený porotou."
+        :limit===1
+          ?"Odborník posoudí tvůj jediný kus a vystaví k němu konkrétní certifikát. Doložený původ je samostatná vlastnost."
+          :`Odborník může certifikovat všech ${limit} dostupných kusů. Kterýkoli můžeš z výběru vyřadit, ale pro soutěž musí zůstat alespoň jeden. Doložený původ je samostatná vlastnost.`;
+    ordered.forEach(s=>{
+      const b=document.createElement("button");b.type="button";b.className="stone-card expertise-stone";
+      const selected=()=>expertiseSelection.has(s.id);
+      const refreshCard=()=>{b.classList.toggle("selected",selected());const status=b.querySelector(".expertise-status");if(status)status.textContent=selected()?"VYBRÁN K CERTIFIKACI":"NEVYBRÁN";};
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${stoneMeta(s,{includeCertificate:true})} · <b class="expertise-status"></b></small></div>`;
+      refreshCard();
+      b.addEventListener("click",()=>{
+        if(selected())expertiseSelection.delete(s.id);
+        else if(expertiseSelection.size<limit)expertiseSelection.add(s.id);
+        refreshCard();state.pendingCertification=[...expertiseSelection];save();refreshControls();
+      });
+      list.append(b);
+    });
+    refreshControls();
+    showOnly(screens.expertise);
   }
   function finishExpertise(){
     if(state.pendingTransition!=="expertise")return;
-    audio.sfx("click");state.pendingTransition=null;save();showBrief(4);
+    const limit=Math.min(5,state.stones.length);
+    if(limit>0&&(expertiseSelection.size===0||expertiseSelection.size>limit))return;
+    state.stones.forEach(stone=>stone.certified=expertiseSelection.has(stone.id));
+    state.pendingCertification=[];
+    state.expertiseCompleted=true;
+    audio.sfx("click");
+    if(state.levelIndex===3){state.pendingTransition="perk";state.pendingPerks=[];save();showPerks();return;}
+    state.pendingTransition=null;save();showBrief(4);
   }
 
   function showJury(){mode="jury";jurySelection.clear();setPlaying(false);const list=$("juryList");list.innerHTML="";
-    const target=Math.min(3,state.stones.length);
-    $("juryTitle").textContent=target===3?"Vyber tři kameny do vitríny":target===2?"Vyber dva kameny do vitríny":target===1?"Vyber kámen do vitríny":"Prázdná vitrína";
-    [...state.stones].sort((a,b)=>b.quality-a.quality||Number(b.documented)-Number(a.documented)||b.value-a.value).forEach(s=>{
+    const eligible=state.stones.filter(stone=>stone.certified);
+    const target=Math.min(3,eligible.length);
+    $("juryTitle").textContent=target===3?"Vyber tři certifikované kameny do vitríny":target===2?"Vyber dva certifikované kameny do vitríny":target===1?"Vyber certifikovaný kámen do vitríny":"Prázdná vitrína";
+    [...eligible].sort((a,b)=>b.quality-a.quality||Number(b.documented)-Number(a.documented)||b.value-a.value).forEach(s=>{
       const b=document.createElement("button");b.type="button";b.className="stone-card";
-      const size=s.size||(s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");
-      const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");
-      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · stav: ${qualityLabel} · ${s.quality} %${s.documented?" · původ doložený":" · původ nedoložený"}</small></div>`;
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${stoneMeta(s,{includeCertificate:true})}</small></div>`;
       b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<target){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / ${target}`;$("juryButton").disabled=target>0&&jurySelection.size!==target;});list.append(b);
     });
-    $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"}. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"Došel jsi bez kamenů. Výpravu lze dokončit, ale vitrína zůstane prázdná.";
+    $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"} z certifikovaných kusů. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"V tomto save není žádný certifikovaný kámen. Výpravu lze dokončit mimo soutěž, ale vitrína zůstane prázdná.";
     $("juryCount").textContent=`0 / ${target}`;$("juryButton").disabled=target>0;$("juryButton").textContent=target?"POSTAVIT VITRÍNU":"PŘEDSTOUPIT PŘED POROTU";showOnly(screens.jury);
   }
   function submitJury(){
@@ -1320,8 +1502,8 @@
     const journey=Math.min(state.score,7000)*.22;
     const jury=Math.round(1200+quality+provenance+diversity+rarity+stewardship+finale+journey);
     let title="Výprava dokončena",text="Došel jsi až do Slávie a výpravu dokončil. Porota ocenila doložený původ a férový průběh, ale vitrína tentokrát na hlavní ocenění nestačila.";
-    if(jury>=12000){title="Hlavní cena poroty";text="Porota ocenila kvalitu sbírky, její pestrost i způsob, jakým ses k nejlepším kusům během výpravy dostal.";}
-    else if(jury>=8500){title="Výstavní uznání";text="Sbírka zaujala stavem, doloženým původem a pestrostí lokalit. Hmotnost sama o sobě o výsledku nerozhodla.";}
+    if(jury>=JURY_MAIN_PRIZE_SCORE){title="Hlavní cena poroty";text="Porota ocenila kvalitu sbírky, její pestrost i způsob, jakým ses k nejlepším kusům během výpravy dostal.";}
+    else if(jury>=JURY_RECOGNITION_SCORE){title="Výstavní uznání";text="Sbírka zaujala stavem, doloženým původem a pestrostí lokalit. Hmotnost sama o sobě o výsledku nerozhodla.";}
     state.score=jury;addRecord(jury,title);storage.remove(SAVE_KEY);audio.sfx("win");
     $("resultTitle").textContent=title;$("resultScore").textContent=jury.toLocaleString("cs-CZ");$("resultText").textContent=text;
     $("resultStats").innerHTML=`<div><span>STAV</span><strong>${Math.round(quality)}</strong></div><div><span>PŮVOD</span><strong>${Math.round(provenance)}</strong></div><div><span>PESTROST</span><strong>${Math.round(diversity)}</strong></div><div><span>FÉROVOST</span><strong>${Math.round(stewardship+finale)}</strong></div>`;mode="result";showOnly(screens.result);
@@ -1329,7 +1511,7 @@
 
   function caught(reason){
     if(player.invuln>0)return;dangerActive=false;dangerExposure=0;dangerWarned=false;player.invuln=2;shake=12;flash=.22;flashColor="255,90,80";state.caught++;state.heat=20;breakCombo();audio.sfx("catch");
-    let lost=null;if(state.stones.length){const sorted=[...state.stones].sort((a,b)=>a.value-b.value);lost=state.perks.case>0&&sorted.length>1?sorted[0]:pick(sorted.slice(0,Math.min(2,sorted.length)));state.stones=state.stones.filter(s=>s.id!==lost.id);}
+    let lost=null;const vulnerable=state.stones.filter(stone=>!stone.certified&&stone.rarity!=="hedgehog");if(vulnerable.length){const sorted=[...vulnerable].sort((a,b)=>a.value-b.value);lost=state.perks.case>0&&sorted.length>1?sorted[0]:pick(sorted.slice(0,Math.min(2,sorted.length)));state.stones=state.stones.filter(s=>s.id!==lost.id);}
     player.x=world.id==="malse"?720:world.id==="chlum"?360:world.id==="nesmen"?360:170;player.y=world.id==="malse"?1060:world.id==="chlum"?1070:world.id==="nesmen"?1050:1030;stopPlayerMotion();toast(`${reason}${lost?` · ztracen ${lost.name}`:""}`,"bad",1800);updateHUD(true);save();
   }
 
@@ -1402,6 +1584,7 @@
       camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
       updateHUD();return;
     }
+    if(updateMalseArrivalIncident(elapsed)){updateParticles(dt);camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));updateHUD();return;}
     updatePlayerMovement(dt);
     updateHotspots(dt);updateProps(dt);updatePatrols(dt);updateRival(dt);resolveDanger(dt);if((dangerActive||state.heat>=68)&&dangerBeatTimer<=0){audio.sfx("heartbeat");dangerBeatTimer=state.heat>=88?.42:.68;}for(const ping of world.radarPings)ping.life-=dt;world.radarPings=world.radarPings.filter(ping=>ping.life>0);updateParticles(dt);findNearest();
     camera.x=lerp(camera.x,clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w)),1-Math.exp(-5*dt));camera.y=lerp(camera.y,clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h)),1-Math.exp(-5*dt));
@@ -1473,7 +1656,7 @@
       if(r.graceTimer<=0){
         const target=r.escapeTarget||{x:1650,y:980},dx=target.x-r.x,dy=target.y-r.y,d=Math.hypot(dx,dy)||1;
         const travel=Math.min(r.speed*dt,d);r.x+=dx/d*travel;r.y+=dy/d*travel;r.angle=Math.atan2(dy,dx);const movedX=r.x-previousX,movedY=r.y-previousY,movedDistance=Math.hypot(movedX,movedY);updateHumanoidMotionState(r,movedX,movedY,movedDistance,dt,Math.max(160,r.baseSpeed||160));
-        if(d<=24){r.active=false;world.runtime.bossDefeated=true;world.runtime.frantaEscaped=true;world.runtime.dossierRecovered=false;state.stats.dossier=0;ui.bossHud?.classList.add("hidden");toast("Franta utekl se složkou. Pořadatel má kopie záznamů, takže můžeš pokračovat do sálu.","bad",2400);save();}
+        if(d<=24){r.active=false;world.runtime.bossDefeated=true;world.runtime.frantaEscaped=true;world.runtime.dossierRecovered=false;state.stats.dossier=0;ui.bossHud?.classList.add("hidden");toast("Franta utekl s kontrolními podklady. Pořadatel má jejich kopie, takže můžeš pokračovat do sálu.","bad",2400);save();}
       }
       return;
     }
@@ -2846,7 +3029,7 @@
     else if(params.has("help"))openAuxiliary(screens.how);
     if(params.has("debug")){
       window.__lovecDebug={
-        startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
+        startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);if(state.levelIndex===4)state.expertiseCompleted=true;generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
         startScaleReference(){const result=generateScaleReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startLoceniceReference(){const result=generateLoceniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startNesmenReference(){const result=generateNesmenReference();mode="playing";showOnly(null);setPlaying(true);return result;},
@@ -2916,7 +3099,8 @@
         triggerCaught(reason="Testovací dopadení"){if(!world)return null;player.invuln=0;caught(reason);return {caught:state.caught,stones:state.stones.length,player:{x:player.x,y:player.y}};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,finishDelay:digFinishDelay,currentActive:Boolean(currentDig?.active),inputLocked:performance.now()<digInputLockUntil};},
         fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
-        malseSnapshot(){const r=world?.id==="malse"?world.runtime:null;return r?{certificateRecovered:Boolean(r.certificateRecovered),registered:Boolean(r.registered),papers:r.papers||0,fraudResolved:Boolean(r.fraudResolved),fraudAttempts:r.fraudAttempts||0,bossStarted:Boolean(r.bossStarted),bossDefeated:Boolean(r.bossDefeated),dossierRecovered:Boolean(r.dossierRecovered),frantaEscaped:Boolean(r.frantaEscaped)}:null;},
+        malseSnapshot(){const r=world?.id==="malse"?world.runtime:null;const certificate=world?.id==="malse"?world.items.find(item=>item.type==="paper"&&item.special==="certificate"):null;return r?{certificateRecovered:Boolean(r.certificateRecovered),certificateStoneIds:[...(r.certificateStoneIds||[])],recoveredCertificateStoneIds:[...(r.recoveredCertificateStoneIds||[])],certificateItemStoneIds:[...(certificate?.stoneIds||[])],certificateItemCount:world.items.filter(item=>item.type==="paper"&&item.special==="certificate").length,arrivalFrantaCount:world.props.filter(prop=>prop.arrivalFranta).length,registered:Boolean(r.registered),papers:r.papers||0,fraudResolved:Boolean(r.fraudResolved),fraudAttempts:r.fraudAttempts||0,bossStarted:Boolean(r.bossStarted),bossDefeated:Boolean(r.bossDefeated),dossierRecovered:Boolean(r.dossierRecovered),frantaEscaped:Boolean(r.frantaEscaped),arrivalIncidentSeen:Boolean(r.arrivalIncidentSeen),arrivalIncidentActive:Boolean(r.arrivalIncidentActive)}:null;},
+        stoneSnapshot(){return state.stones.map(stone=>({id:stone.id,locality:stone.locality,rarity:stone.rarity,quality:stone.quality,documented:Boolean(stone.documented),certified:Boolean(stone.certified),value:stone.value}));},
         setPatrolMotion(type="tractor",options={}){
           if(!world)return null;
           const p=world.patrols.find(item=>item.active&&item.type===type);if(!p)return null;
@@ -2932,7 +3116,7 @@
         },
         snapCameraToPlayer(){camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));return {x:camera.x,y:camera.y};},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},renderStats:{candidates:renderStats.candidates,rendered:renderStats.rendered,culled:renderStats.culled},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score,pendingTransition:state.pendingTransition,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},renderStats:{candidates:renderStats.candidates,rendered:renderStats.rendered,culled:renderStats.culled},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,certified:state.stones.filter(stone=>stone.certified).length,documented:state.stones.filter(stone=>stone.documented).length,score:state.score,pendingTransition:state.pendingTransition,expertiseCompleted:state.expertiseCompleted,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));

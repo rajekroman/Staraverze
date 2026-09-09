@@ -6,6 +6,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 test.use({ video: "off", trace: "off", screenshot: "off" });
 
 const BASELINES = {
+  "visual-desktop:expertise":[2,0,4,2,0,4,3,1,5,3,1,5,2,1,4,2,0,4,2,0,3,2,0,3,2,0,3,2,0,4,5,2,7,5,3,7,5,3,7,4,2,6,2,0,3,1,0,3,2,0,3,2,0,3,4,2,6,3,1,5,3,1,5,3,1,5,1,0,3,1,0,3,2,0,3,2,0,3,5,5,7,3,3,6,4,3,6,3,3,5,1,0,3,1,0,2,2,0,3,2,0,3,4,4,7,4,5,6,4,5,6,4,5,6,1,0,2,1,0,2,2,0,3,1,0,3,2,2,4,3,3,5,3,3,4,2,3,4,1,0,2,1,0,2],
+  "visual-iphone-portrait:expertise":[2,1,4,3,1,5,3,1,5,3,1,5,3,1,5,3,1,5,2,1,4,2,1,4,3,1,6,5,2,7,4,2,7,4,2,7,4,2,6,4,1,6,3,0,6,2,0,4,2,0,5,3,1,6,4,2,6,4,1,6,3,1,5,3,1,5,3,1,5,2,0,4,2,0,4,3,2,5,4,2,6,3,2,5,3,2,5,3,1,5,3,1,5,2,0,4,2,0,4,2,1,4,4,3,6,3,3,5,3,3,5,3,3,5,3,3,5,2,1,3,1,0,3,2,0,3,2,3,4,2,3,4,2,3,4,2,3,4,2,3,4,1,1,3],
+  "visual-iphone-landscape:expertise":[2,0,3,4,2,7,5,3,7,5,2,7,4,2,6,3,1,5,2,0,5,1,0,3,2,0,3,6,3,7,7,5,9,5,3,7,3,1,6,3,0,5,2,0,4,1,0,3,2,0,3,3,1,6,3,1,6,3,0,5,4,2,6,3,1,5,2,0,4,1,0,2,2,0,3,3,1,6,4,2,6,3,1,5,3,2,5,3,2,5,2,1,4,1,0,2,1,0,3,3,1,5,4,2,5,3,1,5,2,1,4,3,1,4,2,1,4,1,0,2,1,0,3,3,2,5,6,11,9,6,10,9,5,10,9,6,10,9,5,9,8,1,0,2],
   "visual-desktop:menu":[7,14,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,14,11,7,15,11,7,15,11,7,13,11,7,13,11,7,15,11,7,15,11,7,15,11,7,14,11,7,14,11,7,14,11,6,11,10,6,11,10,7,15,11,7,15,11,7,15,11,7,13,11,7,12,11,7,12,11,7,13,11,7,14,11,7,14,11,7,14,11,7,14,11,6,10,10,6,9,9,6,9,9,6,9,10,6,9,10,6,9,9,6,9,9,6,11,10,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,14,11],
   "visual-iphone-portrait:menu":[3,0,6,3,0,6,3,0,6,3,0,6,3,0,6,3,0,6,3,0,6,3,0,6,6,9,9,6,11,10,6,11,10,6,11,10,6,11,10,6,11,10,6,11,10,6,10,9,6,12,10,6,9,9,6,9,9,6,10,10,7,12,11,7,14,11,7,15,11,7,14,11,7,12,10,6,12,10,7,12,11,6,12,10,7,12,11,7,13,11,7,13,11,7,13,10,6,11,10,6,10,9,6,10,10,6,11,10,6,11,10,6,10,10,6,10,9,6,11,10,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11,7,13,11],
   "visual-iphone-landscape:menu":[7,14,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,14,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,14,11,7,15,11,7,15,11,7,13,11,6,12,10,7,15,11,7,15,11,7,15,11,7,13,11,7,13,11,7,12,11,7,12,10,7,12,10,6,12,10,7,13,11,7,14,11,7,14,11,7,15,11,6,9,9,6,8,9,5,8,9,6,9,9,7,15,11,7,15,11,7,14,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11,7,15,11],
@@ -186,6 +189,36 @@ test("campaign menu visual baseline", async ({ page }) => {
   await expect(page.locator("#campaignEventCard")).toBeVisible();
   await expect(page.locator("#playButton")).toBeVisible();
   await capture(page, "menu");
+});
+
+test("Expertiza selection visual baseline", async ({ page }) => {
+  const stones=Array.from({length:6},(_,i)=>({
+    id:`visual-cert-${i+1}`,
+    name:`Kandidát ${i+1}`,
+    locality:["Chlum","Ločenice","Nesměň","Besednice","Chlum","Ločenice"][i],
+    rarity:i===3?"hedgehog":i===1?"rare":"good",
+    weight:1.5+i*.4,
+    quality:72+i*4,
+    value:1000+i*350,
+    documented:i%2===0,
+    certified:false
+  }));
+  await page.goto("/", { waitUntil:"domcontentloaded" });
+  await page.evaluate(({stones})=>{
+    localStorage.clear();
+    localStorage.setItem("lovecVltavinuRebornSaveV5_4_2",JSON.stringify({
+      version:"5.4.2",saveSchema:2,levelIndex:3,score:3000,stones,
+      pendingTransition:"expertise",pendingCertification:stones.slice(0,4).map(stone=>stone.id),
+      perks:{},stats:{},sound:true
+    }));
+  },{stones});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#expertiseList .expertise-stone")).toHaveCount(6);
+  await expect(page.locator("#expertiseList .selected")).toHaveCount(4);
+  await expect(page.locator("#expertiseCount")).toHaveText("4 / max. 5");
+  await capture(page, "expertise");
 });
 
 test("Chlum visual baseline", async ({ page }) => {
