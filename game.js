@@ -3029,7 +3029,7 @@
     else if(params.has("help"))openAuxiliary(screens.how);
     if(params.has("debug")){
       window.__lovecDebug={
-        startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
+        startLevel(index=0){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);if(state.levelIndex===4)state.expertiseCompleted=true;generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);return {level:world.id,player:{x:player.x,y:player.y}};},
         startScaleReference(){const result=generateScaleReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startLoceniceReference(){const result=generateLoceniceReference();mode="playing";showOnly(null);setPlaying(true);return result;},
         startNesmenReference(){const result=generateNesmenReference();mode="playing";showOnly(null);setPlaying(true);return result;},
