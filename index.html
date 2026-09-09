@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Lovec vltavínů">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="format-detection" content="telephone=no">
-  <meta name="description" content="Herní pozvánka na Na zelené vlně 2026: nasbírej vltavíny v jižních Čechách a doraz 19. září do KD Slavie v Českých Budějovicích.">
+  <meta name="description" content="Herní pozvánka na akci Na zelené vlně 2026. Nasbírej vltavíny v jižních Čechách a doraz 19. září do KD Slávie v Českých Budějovicích.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-180.png">
   <link rel="stylesheet" href="./style.css">
@@ -19,7 +19,7 @@
     @media(max-width:760px){#titleScreen .nzv-brand-lockup{width:112px}}
     @media(max-height:490px) and (orientation:landscape){#titleScreen .nzv-brand-lockup{width:82px}}
   </style>
-  <title>Lovec vltavínů: Zelená vlna</title>
+  <title>Lovec vltavínů: Na zelené vlně</title>
 </head>
 <body>
 <main id="app">
@@ -29,7 +29,7 @@
     <div class="hud-topbar">
       <div class="mission-panel">
         <span id="missionNumber" class="mission-index">1</span>
-        <div class="mission-copy"><small id="placeLabel">CHLUM</small><strong id="objectiveLabel">Najdi 4 kameny</strong></div>
+        <div class="mission-copy"><small id="placeLabel">CHLUM</small><strong id="objectiveLabel">Najdi 6 vltavínů</strong></div>
       </div>
       <div class="system-panel">
         <div class="bag-pill" aria-label="Počet kamenů"><span>◆</span><b id="bagValue">0</b></div>
@@ -42,7 +42,7 @@
       <i><em id="heatFill"></em></i>
     </div>
     <div id="bossHud" class="boss-hud hidden">
-      <div><small>HROZBA</small><strong id="bossName">KRYSTALOVÝ KAREL</strong></div>
+      <div><small>HROZBA</small><strong id="bossName">KAREL</strong></div>
       <i><em id="bossFill"></em></i>
       <span id="bossPhase">STOPUJ HO</span>
     </div>
@@ -50,21 +50,21 @@
     <div id="combo" class="combo hidden">KOMBO ×2</div>
     <div id="hint" class="hint hidden">Rozhlédni se po okolí</div>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <div class="campaign-hud-badge" aria-label="Cíl výpravy: Na zelené vlně, 19. září 2026, KD Slavie České Budějovice">
-      <span>CÍL VÝPRAVY</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD SLAVIE</small>
+    <div class="campaign-hud-badge" aria-label="Cíl výpravy: Na zelené vlně, 19. září 2026, KD Slávie České Budějovice">
+      <span>CÍL VÝPRAVY</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD SLÁVIE</small>
     </div>
   </section>
 
   <div id="theftAlert" class="theft-alert hidden" role="alert" aria-live="assertive" aria-atomic="true">
     <small>POZOR!</small>
-    <strong>KAREL TI UKRADL JEŽKA</strong>
-    <span>Vzácný Besednický ježek ti byl vytržen přímo z profilu. Dožeň zloděje!</span>
+    <strong>KAREL TI VZAL JEŽKA</strong>
+    <span>Karel ti sebral besednického ježka přímo z profilu. Dožeň ho!</span>
   </div>
 
   <div id="bossIntro" class="boss-intro hidden" role="status" aria-live="polite" aria-atomic="true">
     <div class="boss-intro-line"></div>
     <small id="bossIntroKicker">HROZBA V LOKALITĚ</small>
-    <strong id="bossIntroName">KRYSTALOVÝ KAREL</strong>
+    <strong id="bossIntroName">KAREL</strong>
     <span id="bossIntroText">Nenech ho zmizet se vzácným nálezem.</span>
   </div>
 
@@ -88,15 +88,15 @@
         <p class="eyebrow campaign-eyebrow">HRA K AKCI NA ZELENÉ VLNĚ 2026</p>
       </div>
       <h1>Lovec<br><span>vltavínů</span></h1>
-      <p class="subtitle">Nasbírej nejkrásnější vltavíny a doraz s nimi na akci <strong>Na zelené vlně</strong> v KD Slavie.</p>
-      <div id="campaignEventCard" class="campaign-event-card" aria-label="Na zelené vlně, 19. září 2026, České Budějovice, KD Slavie">
+      <p class="subtitle">Nasbírej nejkrásnější vltavíny a doraz s nimi na akci <strong>Na zelené vlně</strong> v KD Slávii.</p>
+      <div id="campaignEventCard" class="campaign-event-card" aria-label="Na zelené vlně, 19. září 2026, České Budějovice, KD Slávie">
         <div class="event-date"><small>KDY</small><strong>19. ZÁŘÍ 2026</strong></div>
-        <div class="event-place"><small>KDE</small><strong>KD SLAVIE</strong><span>České Budějovice</span></div>
+        <div class="event-place"><small>KDE</small><strong>KD SLÁVIE</strong><span>České Budějovice</span></div>
       </div>
       <div class="campaign-storyline" aria-label="Pět lokalit, jedna sbírka, finále na akci">
         <span>5 LOKALIT</span><i>•</i><span>1 SBÍRKA</span><i>•</i><strong>FINÁLE NA AKCI</strong>
       </div>
-      <button id="playButton" class="play-button" type="button"><span>VYRAZIT ZA VLTAVÍNY</span><small>cesta končí v KD Slavii</small></button>
+      <button id="playButton" class="play-button" type="button"><span>VYRAZIT ZA VLTAVÍNY</span><small>cesta končí v KD Slávii</small></button>
       <button id="continueButton" class="continue-button hidden" type="button">POKRAČOVAT VE VÝPRAVĚ</button>
       <div class="title-tools menu-tools">
         <button id="howButton" class="menu-link-button" type="button">Jak hrát</button>
@@ -116,7 +116,7 @@
       <div class="brief-why"><span>PROČ</span><p id="briefWhy"></p></div>
       <div class="campaign-route">
         <div><span>SBÍRKA</span><i>→</i><span>5 LOKALIT</span><i>→</i><strong>NA ZELENÉ VLNĚ</strong></div>
-        <small>19. 9. 2026 · KD Slavie · České Budějovice</small>
+        <small>19. 9. 2026 · KD Slávie · České Budějovice</small>
       </div>
       <button id="briefButton" class="primary-button" type="button">JDU NA TO</button>
     </div>
@@ -168,17 +168,17 @@
 
   <section id="fraudScreen" class="screen transparent" role="dialog" aria-modal="true" aria-labelledby="fraudTitle" aria-describedby="fraudDescription" tabindex="-1">
     <div class="fraud-card">
-      <p class="eyebrow">KONTROLA PODKLADŮ</p>
+      <p class="eyebrow">KONTROLA INDICIÍ</p>
       <h2 id="fraudTitle">Sedí Frantův vzorek?</h2>
-      <p id="fraudDescription">Porovnej předložený vzorek se třemi podklady. Jedna vlastnost sama o sobě podvod nedokazuje — rozhoduje souběh nesrovnalostí.</p>
+      <p id="fraudDescription">Porovnej Frantův vzorek se třemi indiciemi. Jedna nesrovnalost sama o sobě nestačí — rozhoduje jejich souvislost.</p>
       <div class="evidence-grid">
-        <article><span>01 · POVRCH</span><strong>Opakující se skulptace</strong><p>Na dvou místech vzorku se opakuje téměř stejný reliéf.</p></article>
-        <article><span>02 · FOTOGRAFIE</span><strong>Jiný tvar</strong><p>Fotografie údajného nálezu neodpovídá obrysu předloženého kusu.</p></article>
-        <article><span>03 · PŮVOD</span><strong>Časový nesoulad</strong><p>Záznam lokality a času nálezu si odporuje s dokumentací.</p></article>
+        <article><span>01 · POVRCH</span><strong>Opakující se reliéf</strong><p>Na dvou místech se opakuje téměř stejný vzor povrchu.</p></article>
+        <article><span>02 · FOTOGRAFIE</span><strong>Jiný tvar</strong><p>Tvar kamene na fotografii neodpovídá předloženému kusu.</p></article>
+        <article><span>03 · ZÁZNAM</span><strong>Nesedí čas nálezu</strong><p>Uvedený čas nálezu neodpovídá záznamu z lokality.</p></article>
       </div>
       <p id="fraudFeedback" class="fraud-feedback" role="status" aria-live="polite" aria-atomic="true">Posuď všechny tři indicie dohromady.</p>
       <div class="fraud-actions">
-        <button id="fraudButton" class="primary-button" type="button">UPOZORNIT NA PODVOD</button>
+        <button id="fraudButton" class="primary-button" type="button">NAHLÁSIT NESROVNALOSTI</button>
         <button id="fraudWrongButton" class="secondary-button" type="button">VZOREK JE V POŘÁDKU</button>
       </div>
     </div>
@@ -195,12 +195,12 @@
   <section id="juryScreen" class="screen" aria-labelledby="juryTitle" aria-describedby="juryDescription" tabindex="-1">
     <div class="jury-card">
       <div class="exhibition-hall" aria-hidden="true">
-        <span>VÝSTAVNÍ SÁL KD SLAVIE</span>
+        <span>VÝSTAVNÍ SÁL KD SLÁVIE</span>
         <div class="hall-lights"><i></i><i></i><i></i></div>
         <div class="hall-cases"><i></i><i></i><i></i></div>
       </div>
-      <div class="event-arrival-banner"><span>DORAZIL JSI NA AKCI</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD Slavie · České Budějovice</small></div>
-      <p class="eyebrow">FINÁLE V KD SLAVII</p>
+      <div class="event-arrival-banner"><span>DORAZIL JSI NA AKCI</span><strong>NA ZELENÉ VLNĚ</strong><small>19. 9. 2026 · KD Slávie · České Budějovice</small></div>
+      <p class="eyebrow">FINÁLE V KD SLÁVII</p>
       <h2 id="juryTitle" tabindex="-1" data-autofocus>Vyber tři kameny do vitríny</h2>
       <p id="juryDescription">Porota hodnotí stav, doložený původ a pestrost lokalit. Samotná hmotnost nerozhoduje.</p>
       <div id="juryList" class="jury-list"></div>
@@ -219,7 +219,7 @@
         <img src="./assets/ui/nzv-logo-purple.png" alt="" aria-hidden="true">
         <div><strong>Teď doraz i ve skutečnosti.</strong><span>19. 9. 2026 · KD Slavie · České Budějovice</span></div>
       </div>
-      <a class="primary-button result-event-link" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer">NAZELEVLNE.CZ ↗</a>
+      <a class="primary-button result-event-link" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer">NAZELENEVLNE.CZ ↗</a>
       <button id="againButton" class="secondary-button" type="button">NOVÁ VÝPRAVA</button>
       <button id="resultRecordsButton" class="text-button" type="button">Zobrazit rekordy</button>
     </div>
@@ -231,11 +231,11 @@
 
   <section id="howScreen" class="screen" role="dialog" aria-modal="true" aria-labelledby="howTitle" tabindex="-1">
     <div class="how-card">
-      <p class="eyebrow">JEDEN PALEC, JEDNO TLAČÍTKO</p><h2 id="howTitle">Jak se hraje</h2>
+      <p class="eyebrow">POHYB + JEDNO AKČNÍ TLAČÍTKO</p><h2 id="howTitle">Jak se hraje</h2>
       <div class="how-grid">
-        <div><b>1</b><strong>Pohyb</strong><p>Táhni palcem vlevo. Na okraji joysticku běžíš automaticky.</p></div>
-        <div><b>2</b><strong>Radar a akce</strong><p>Radar nejdřív odhalí skryté nálezy. U odhaleného cíle stejné tlačítko automaticky přepne na sběr, kopání, rozhovor nebo zahrabání.</p></div>
-        <div><b>3</b><strong>Risk</strong><p>Hluk a pohled hlídky plní červenou pozornost. Při dopadení ztratíš slabý kámen.</p></div>
+        <div><b>1</b><strong>Pohyb</strong><p>Mobil: pohybuj se levým joystickem. Na klávesnici použij WASD nebo šipky.</p></div>
+        <div><b>2</b><strong>Radar a akce</strong><p>Radar odhaluje skryté nálezy. U cíle se akce sama změní na sběr, kopání, rozhovor nebo zahrabání. Na klávesnici použij mezerník.</p></div>
+        <div><b>3</b><strong>Pozornost</strong><p>Hluk a pobyt ve světle zvyšují pozornost. Při dopadení můžeš přijít o jeden z méně cenných kamenů.</p></div>
         <div><b>4</b><strong>Kombo</strong><p>Rychlé správné nálezy násobí skóre. Vzácný kus kombo prodlouží.</p></div>
       </div>
       <button id="closeHowButton" class="primary-button" type="button">ROZUMÍM</button>
