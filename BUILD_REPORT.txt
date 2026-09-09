@@ -10,9 +10,9 @@ AKTUÁLNÍ RELEASE GATE
 - gameplay smoke: desktop WebKit, iPhone portrait WebKit, iPhone landscape WebKit
 - visual regression: desktop, iPhone portrait, iPhone landscape
 - motion evidence: car, tractor, excavator
-- game-smoke suite: 63 test definitions v aktuální release větvi
+- game-smoke suite: 64 test definitions v aktuální release větvi
 - visual-regression suite: 24 test definitions / 25 test cases na každý viewport projekt
-- PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-30
+- PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-32
 - čistý Pages balík: explicitní allowlist, bez testů/nástrojů/vývojové dokumentace
 
 POKRYTÉ RELEASE SCÉNÁŘE
