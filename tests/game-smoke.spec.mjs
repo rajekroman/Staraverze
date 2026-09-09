@@ -1253,9 +1253,11 @@ test("syntetický 200% Chromium page scale zachová visualViewport a souřadnice
 
   await page.evaluate(() => window.__lovecDebug.startScaleReference());
   const zone=page.locator("#moveZone");
-  const box=await zone.boundingBox();
-  expect(box).toBeTruthy();
-  const cx=box.x+box.width/2,cy=box.y+box.height/2;
+  const box=await zone.evaluate(element=>{
+    const r=element.getBoundingClientRect();
+    return {left:r.left,top:r.top,width:r.width,height:r.height};
+  });
+  const cx=box.left+box.width/2,cy=box.top+box.height/2;
   await zone.dispatchEvent("pointerdown",{pointerId:81,pointerType:"touch",clientX:cx,clientY:cy,bubbles:true,cancelable:true});
   await zone.dispatchEvent("pointermove",{pointerId:81,pointerType:"touch",clientX:cx+box.width*.25,clientY:cy,bubbles:true,cancelable:true});
   expect((await page.evaluate(() => window.__lovecDebug.snapshot().input)).x).toBeGreaterThan(.2);
