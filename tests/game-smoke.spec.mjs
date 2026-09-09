@@ -1182,6 +1182,51 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   expect(errors).toEqual([]);
 });
 
+test("Slávie nemá cyklisty ani policii a Frantu lze chytit přímo akčním tlačítkem", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+  });
+
+  expect((await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type)))).not.toContain("bike");
+  expect((await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type)))).not.toContain("police");
+
+  await page.evaluate(() => {
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.spawnBoss("franta");
+    const player = window.__lovecDebug.snapshot().player;
+    window.__lovecDebug.setBossPose(player.x + 125, player.y, 0);
+  });
+  await expect(page.locator("#actionText")).toHaveText("ZASTAVIT");
+  await page.locator("#actionButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
+    name:"franta",active:false,hits:1,maxHits:1
+  });
+});
+
+test("starší Slávie save při načtení odstraní cyklisty a policii", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.world.patrols.push(
+      {type:"bike",x:620,y:820,points:[{x:620,y:820},{x:620,y:180}],index:1,speed:155,active:true},
+      {type:"police",x:1180,y:980,points:[{x:1180,y:980},{x:1220,y:260}],index:1,speed:92,vision:190,active:true}
+    );
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const types=await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type));
+  expect(types).not.toContain("bike");
+  expect(types).not.toContain("police");
+});
+
 test("Malše zůstane dohratelná, když Franta se složkou unikne", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
