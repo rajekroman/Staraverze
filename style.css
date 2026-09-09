@@ -501,3 +501,12 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--nzv-mint);outline-o
 
 /* Accessibility/zoom: local gesture capture only where continuous pointer tracking is required. */
 #digButton{touch-action:none}.screen[tabindex="-1"]:focus{outline:none}
+
+
+/* Accessibility: HTML screens remain pannable/scrollable when browser page scale is enlarged. */
+.screen{
+  touch-action:pan-x pan-y pinch-zoom;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+}
+#titleScreen{overflow:auto}

@@ -62,27 +62,49 @@ test("audit: mezerník aktivuje tlačítko nabídky", async ({ page }) => {
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
 });
 
-test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page }) => {
+test("audit: kopání přes pauzu zmrazí čas i odloženou odměnu a dokončí se právě jednou", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+
   await page.locator("#digPauseButton").click();
   await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
   const time = await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft);
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
   await page.locator("#resumeButton").click();
   await expect(page.locator("#digScreen")).toHaveClass(/visible/);
   await expect(page.locator("#digPauseButton")).toBeFocused();
+
   await page.locator("#digButton").focus();
-  await expect(page.locator("#digButton")).toBeFocused();
   for (let i=0;i<3;i++) {
-    await page.evaluate(() => { window.__lovecDebug.setDigSpeed(0); window.__lovecDebug.setDigMarker(); });
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
     await page.keyboard.press("Space");
-    if(i<2) await page.waitForTimeout(120);
+    if(i<2) await page.waitForTimeout(125);
   }
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const pending = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+  expect(pending.hits).toBe(3);
+  expect(pending.finishDelay).toBeGreaterThan(0);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
+  await page.waitForTimeout(500);
+  const frozen = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+  expect(frozen.finishDelay).toBe(pending.finishDelay);
+  expect(frozen.timeLeft).toBe(pending.timeLeft);
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#digButton")).toBeFocused();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(1);
-  await page.waitForTimeout(200);
-  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(1);
+  const score = await page.evaluate(() => window.__lovecDebug.snapshot().state.score);
+  await page.waitForTimeout(500);
+  const stable = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(stable.state.stones).toBe(1);
+  expect(stable.state.score).toBe(score);
 });
 
 test("audit: chybně určený vzorek lze dohledat a opravit", async ({ page }) => {
@@ -873,7 +895,7 @@ test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ pa
 
 test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
   await page.goto("/");
-  const modalIds = ["digScreen","identifyScreen","dialogScreen","perkScreen","juryScreen","pauseScreen","howScreen","recordsScreen"];
+  const modalIds = ["digScreen","identifyScreen","dialogScreen","pauseScreen","howScreen","recordsScreen"];
   for (const id of modalIds) {
     const attrs = await page.locator(`#${id}`).evaluate(element => ({
       role: element.getAttribute("role"),
@@ -893,7 +915,7 @@ test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertn�
     if (attrs.describedby) await expect(page.locator(`#${attrs.describedby}`), `${id} description`).toHaveCount(1);
   }
 
-  for (const id of ["briefScreen","resultScreen"]) {
+  for (const id of ["briefScreen","perkScreen","juryScreen","resultScreen"]) {
     await expect(page.locator(`#${id}`), `${id} is a standalone flow screen`).not.toHaveAttribute("role","dialog");
     await expect(page.locator(`#${id}`)).not.toHaveAttribute("aria-modal","true");
     await expect(page.locator(`#${id}`)).toHaveAttribute("aria-labelledby",/.+/);
@@ -912,6 +934,49 @@ test("briefing je samostatná obrazovka a po přechodu oznámí svůj nadpis", a
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
   await expect(page.locator("#briefScreen")).not.toHaveAttribute("aria-modal","true");
   await expect(page.locator("#briefTitle")).toBeFocused();
+});
+
+test("perk a porota jsou povinné samostatné kroky, které Escape neobejde", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#perkScreen")).not.toHaveAttribute("role","dialog");
+  await expect(page.locator("#perkScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#perkTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryScreen")).not.toHaveAttribute("role","dialog");
+  await expect(page.locator("#juryScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#juryTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+});
+
+test("povinné určení vzorku nejde obejít Escape", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(1);
+    window.__lovecDebug.setPlayer(420,850);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(40);
+  await page.keyboard.press("Space");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#realButton")).toBeFocused();
 });
 
 test("fokus se přesune do modálu, zůstane uvnitř a vrátí se na spouštěč", async ({ page }) => {
@@ -966,6 +1031,8 @@ test("skryté herní ovládání nelze zaměřit během modálu", async ({ page 
   await page.locator("#pauseButton").focus();
   expect(await page.evaluate(() => document.activeElement?.id)).not.toBe("pauseButton");
   await expect(page.locator("#controls")).toHaveAttribute("inert","");
+  await expect(page.locator("#app")).not.toHaveAttribute("inert","");
+  await expect(page.locator("#app")).not.toHaveAttribute("aria-hidden","true");
 });
 
 test("joystick drží jediný pointer a pointercancel vždy uvolní pohyb", async ({ page }) => {
@@ -993,54 +1060,102 @@ test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvoln
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startScaleReference());
   const button = page.locator("#actionButton");
-  const box = await button.boundingBox();
-  expect(box).toBeTruthy();
 
-  await page.mouse.move(box.x + box.width / 2,box.y + box.height / 2);
-  await page.mouse.down();
+  await button.dispatchEvent("pointerdown",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
   await button.dispatchEvent("pointerdown",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await button.dispatchEvent("pointercancel",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
+  await button.dispatchEvent("lostpointercapture",{pointerId:51,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
+  await expect(button).not.toHaveClass(/active/);
+
+  await button.dispatchEvent("pointerdown",{pointerId:53,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
   await expect(button).not.toHaveClass(/active/);
-  await page.mouse.up();
-
-  await page.mouse.down();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
-  await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
 });
-test("kopací tlačítko po blur, pagehide a změně orientace nezůstane zamčené starým pointerem", async ({ page }) => {
+test("kopací tlačítko po ztrátě capture, blur, pagehide a změně orientace nezůstane zamčené", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startFillChallenge());
   const button = page.locator("#digButton");
-  const box = await button.boundingBox();
-  expect(box).toBeTruthy();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
+  await button.dispatchEvent("pointerdown",{pointerId:61,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+  await button.dispatchEvent("lostpointercapture",{pointerId:61,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+  await expect(button).not.toHaveClass(/pressed/);
+
+  let pointerId=62;
   for (const lifecycleEvent of ["blur","pagehide","orientationchange"]) {
-    await page.mouse.down();
+    await button.dispatchEvent("pointerdown",{pointerId,pointerType:"touch",bubbles:true,cancelable:true});
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
     await expect(button).toHaveClass(/pressed/);
 
-    await button.dispatchEvent("pointerdown",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
-    await button.dispatchEvent("pointercancel",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointerdown",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointercancel",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
 
     await page.evaluate(name => window.dispatchEvent(new Event(name)), lifecycleEvent);
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
     await expect(button).not.toHaveClass(/pressed/);
-    await page.mouse.up();
+    pointerId++;
   }
+});
 
-  await page.mouse.down();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
-  await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+test("syntetický souběh joysticku a akčního tlačítka drží dva nezávislé pointery", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.startsWith("desktop-"),"Vícedotykové ovládání se ověřuje v mobilních projektech; nejde o fyzický multi-touch test.");
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const zone=page.locator("#moveZone");
+  const action=page.locator("#actionButton");
+  const box=await zone.boundingBox();
+  expect(box).toBeTruthy();
+
+  const startX=box.x+box.width*.5,startY=box.y+box.height*.5;
+  await zone.dispatchEvent("pointerdown",{pointerId:71,pointerType:"touch",clientX:startX,clientY:startY,bubbles:true,cancelable:true});
+  await zone.dispatchEvent("pointermove",{pointerId:71,pointerType:"touch",clientX:startX+box.width*.28,clientY:startY-box.height*.12,bubbles:true,cancelable:true});
+  const moving=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(Math.abs(moving.x)+Math.abs(moving.y)).toBeGreaterThan(.1);
+
+  await action.dispatchEvent("pointerdown",{pointerId:72,pointerType:"touch",bubbles:true,cancelable:true});
+  const combined=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(combined.pressed).toBe(true);
+  expect(Math.abs(combined.x)+Math.abs(combined.y)).toBeGreaterThan(.1);
+
+  await action.dispatchEvent("pointerup",{pointerId:72,pointerType:"touch",bubbles:true,cancelable:true});
+  const afterAction=await page.evaluate(() => window.__lovecDebug.snapshot().input);
+  expect(afterAction.pressed).toBe(false);
+  expect(Math.abs(afterAction.x)+Math.abs(afterAction.y)).toBeGreaterThan(.1);
+
+  await zone.dispatchEvent("lostpointercapture",{pointerId:71,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
+});
+
+test("modal skryje gameplay i probíhající neinteraktivní oznámení před asistivní technologií", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.triggerTheft();
+  });
+  await expect(page.locator("#theftAlert")).not.toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).not.toHaveAttribute("aria-hidden","true");
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#game")).toHaveAttribute("inert","");
+  await expect(page.locator("#hud")).toHaveAttribute("inert","");
+  await expect(page.locator("#controls")).toHaveAttribute("inert","");
+  await expect(page.locator("#theftAlert")).toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).toHaveAttribute("aria-hidden","true");
+
+  await page.keyboard.press("Escape");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  await expect(page.locator("#theftAlert")).not.toHaveAttribute("aria-hidden","true");
+  await expect(page.locator("#bossIntro")).not.toHaveAttribute("aria-hidden","true");
 });
 
 test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo herní ovladače", async ({ page }) => {
@@ -1068,7 +1183,170 @@ test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo hern�
   expect(audit.digTouch).toBe("none");
 });
 
-test("zahrabávání po pauze zruší rozpracované držení a odmění právě jednou", async ({ page }) => {
+test("HTML obrazovky zůstávají dosažitelné při 200% reflow proxy v portrait i landscape", async ({ page }) => {
+  const screens=[
+    ["titleScreen","#recordsButton"],
+    ["briefScreen","#briefButton"],
+    ["digScreen","#digButton"],
+    ["identifyScreen","#glassButton"],
+    ["dialogScreen","#dialogButton"],
+    ["perkScreen","#perkTitle"],
+    ["juryScreen","#juryButton"],
+    ["resultScreen","#resultRecordsButton"],
+    ["pauseScreen","#menuButton"],
+    ["howScreen","#closeHowButton"],
+    ["recordsScreen","#closeRecordsButton"]
+  ];
+  for(const viewport of [{width:195,height:422},{width:422,height:195}]){
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    for(const [screenId,targetSelector] of screens){
+      await page.evaluate(id=>{
+        for(const node of document.querySelectorAll(".screen")){
+          node.classList.toggle("visible",node.id===id);
+          node.toggleAttribute("inert",node.id!==id);
+          if(node.id===id)node.removeAttribute("aria-hidden");else node.setAttribute("aria-hidden","true");
+        }
+        const active=document.getElementById(id);
+        active.scrollTop=0;active.scrollLeft=0;
+      },screenId);
+      const target=page.locator(targetSelector);
+      await target.evaluate(element=>element.scrollIntoView({block:"nearest",inline:"nearest"}));
+      const metrics=await page.evaluate(({screenId,targetSelector})=>{
+        const screen=document.getElementById(screenId),target=document.querySelector(targetSelector);
+        const r=target.getBoundingClientRect();
+        return {
+          overflowY:getComputedStyle(screen).overflowY,
+          touchAction:getComputedStyle(screen).touchAction,
+          scrollHeight:screen.scrollHeight,
+          clientHeight:screen.clientHeight,
+          rect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},
+          viewport:{width:innerWidth,height:innerHeight}
+        };
+      },{screenId,targetSelector});
+      expect(metrics.overflowY,screenId).toMatch(/auto|scroll/);
+      expect(metrics.touchAction,screenId).toMatch(/pinch-zoom|auto|manipulation/);
+      expect(metrics.rect.right,screenId).toBeGreaterThan(0);
+      expect(metrics.rect.left,screenId).toBeLessThan(metrics.viewport.width);
+      expect(metrics.rect.bottom,screenId).toBeGreaterThan(0);
+      expect(metrics.rect.top,screenId).toBeLessThan(metrics.viewport.height);
+    }
+  }
+});
+
+test("syntetický 200% Chromium page scale zachová visualViewport a souřadnice joysticku", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name!=="iphone-portrait","CDP pageScaleFactor je Chromium-only automatická aproximace, nikoli skutečný pinch.");
+  await openDebug(page);
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:2});
+  await expect.poll(() => page.evaluate(() => visualViewport?.scale||1)).toBeGreaterThan(1.9);
+  await page.locator("#recordsButton").evaluate(element=>element.scrollIntoView({block:"nearest",inline:"nearest"}));
+  const reach=await page.evaluate(()=>{
+    const vv=visualViewport,rect=document.getElementById("recordsButton").getBoundingClientRect();
+    return {scale:vv.scale,left:rect.left,top:rect.top,right:rect.right,bottom:rect.bottom,vvLeft:vv.offsetLeft,vvTop:vv.offsetTop,vvRight:vv.offsetLeft+vv.width,vvBottom:vv.offsetTop+vv.height};
+  });
+  expect(reach.scale).toBeGreaterThan(1.9);
+  expect(reach.right).toBeGreaterThan(reach.vvLeft);
+  expect(reach.left).toBeLessThan(reach.vvRight);
+  expect(reach.bottom).toBeGreaterThan(reach.vvTop);
+  expect(reach.top).toBeLessThan(reach.vvBottom);
+
+  await page.evaluate(() => window.__lovecDebug.startScaleReference());
+  const zone=page.locator("#moveZone");
+  const box=await zone.evaluate(element=>{
+    const r=element.getBoundingClientRect();
+    return {left:r.left,top:r.top,width:r.width,height:r.height};
+  });
+  const cx=box.left+box.width/2,cy=box.top+box.height/2;
+  await zone.dispatchEvent("pointerdown",{pointerId:81,pointerType:"touch",clientX:cx,clientY:cy,bubbles:true,cancelable:true});
+  await zone.dispatchEvent("pointermove",{pointerId:81,pointerType:"touch",clientX:cx+box.width*.25,clientY:cy,bubbles:true,cancelable:true});
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot().input)).x).toBeGreaterThan(.2);
+  await zone.dispatchEvent("pointercancel",{pointerId:81,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({x:0,y:0,pressed:false});
+  await cdp.send("Emulation.setPageScaleFactor",{pageScaleFactor:1});
+});
+
+test("živé regiony neobsahují časovač ani průběžný pohyb ukazatele", async ({ page }) => {
+  await page.goto("/");
+  const live=await page.evaluate(() => [...document.querySelectorAll("[aria-live]")].map(node=>node.id).sort());
+  expect(live).toEqual(["bossIntro","digFeedback","theftAlert","toast"].sort());
+  await expect(page.locator("#digMeter")).not.toHaveAttribute("aria-live",/.+/);
+  await expect(page.locator("#digTimerFill")).not.toHaveAttribute("aria-live",/.+/);
+  await expect(page.locator("#hud")).not.toHaveAttribute("aria-live",/.+/);
+});
+
+test("prefers-reduced-motion vypne CSS pohybové efekty a přechody", async ({ page }) => {
+  await page.emulateMedia({reducedMotion:"reduce"});
+  await page.goto("/");
+  const audit=await page.evaluate(() => {
+    const parse=values=>values.split(",").map(value=>{
+      const trimmed=value.trim();
+      return trimmed.endsWith("ms")?parseFloat(trimmed)/1000:parseFloat(trimmed)||0;
+    });
+    const action=getComputedStyle(document.getElementById("actionButton"),"::before");
+    const boss=getComputedStyle(document.getElementById("bossIntro"));
+    const alert=getComputedStyle(document.getElementById("theftAlert"));
+    return {
+      matches:matchMedia("(prefers-reduced-motion: reduce)").matches,
+      actionDurations:parse(action.animationDuration),
+      bossTransitions:parse(boss.transitionDuration),
+      alertDurations:parse(alert.animationDuration)
+    };
+  });
+  expect(audit.matches).toBe(true);
+  expect(Math.max(...audit.actionDurations,0)).toBeLessThan(.01);
+  expect(Math.max(...audit.bossTransitions,0)).toBeLessThan(.01);
+  expect(Math.max(...audit.alertDurations,0)).toBeLessThan(.01);
+});
+
+
+test("odchod z pauzy zruší čekající odměnu kopání i zahrabávání", async ({ page }) => {
+  await openDebug(page);
+
+  await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+  for(let hit=0;hit<3;hit++){
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
+    await page.keyboard.press("Space");
+    if(hit<2)await page.waitForTimeout(125);
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(() => window.__lovecDebug.digSnapshot())).finishDelay).toBeGreaterThan(0);
+  await page.locator("#menuButton").click();
+  await page.waitForTimeout(500);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restoredDig=await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(restoredDig.state.stones).toBe(0);
+  expect(restoredDig.world.hotspots).toBe(4);
+
+  await page.evaluate(() => window.__lovecDebug.startFillChallenge());
+  for(let transfer=0;transfer<3;transfer++){
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
+    await page.keyboard.down("Space");
+    await page.keyboard.up("Space");
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(() => window.__lovecDebug.digSnapshot())).finishDelay).toBeGreaterThan(0);
+  await page.locator("#menuButton").click();
+  await page.waitForTimeout(500);
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restoredFill=await page.evaluate(() => ({fill:window.__lovecDebug.fillSnapshot(),snapshot:window.__lovecDebug.snapshot()}));
+  expect(restoredFill.fill.open).toBe(1);
+  expect(restoredFill.fill.filled).toBe(0);
+  expect(restoredFill.snapshot.state.score).toBe(0);
+});
+
+test("zahrabávání přes pauzu zruší držení, zmrazí odměnu a započítá ji právě jednou", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startFillChallenge());
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().kind)).toBe("fill");
@@ -1088,8 +1366,22 @@ test("zahrabávání po pauze zruší rozpracované držení a odmění právě 
     });
     await page.keyboard.down("Space");
     await page.keyboard.up("Space");
-    if (transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
+    if(transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
   }
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const pending = await page.evaluate(() => ({dig:window.__lovecDebug.digSnapshot(),fill:window.__lovecDebug.fillSnapshot(),score:window.__lovecDebug.snapshot().state.score}));
+  expect(pending.dig.hits).toBe(3);
+  expect(pending.dig.finishDelay).toBeGreaterThan(0);
+  expect(pending.fill.filled).toBe(0);
+  await page.waitForTimeout(500);
+  const frozen = await page.evaluate(() => ({dig:window.__lovecDebug.digSnapshot(),fill:window.__lovecDebug.fillSnapshot(),score:window.__lovecDebug.snapshot().state.score}));
+  expect(frozen.dig.finishDelay).toBe(pending.dig.finishDelay);
+  expect(frozen.fill.filled).toBe(0);
+  expect(frozen.score).toBe(pending.score);
+
+  await page.keyboard.press("Escape");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
   const after = await page.evaluate(() => ({snapshot:window.__lovecDebug.snapshot(),fill:window.__lovecDebug.fillSnapshot()}));
   expect(after.fill.filled).toBe(1);
