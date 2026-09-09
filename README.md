@@ -22,10 +22,13 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - smoke matrix ověřuje desktop a obě orientace iPhonu v Chromiu i WebKitu jako CI aproximaci Chrome/Safari;
 - samostatný offline smoke ověřuje spuštění PWA z cache bez sítě.
 - ambientní zvuk lokalit doplňuje lehká procedurální hudební vrstva s odlišným motivem pro každou kapitolu; po návratu do menu pokračuje vlastní menu motiv bez obcházení autoplay omezení prohlížeče;
-- save checkpointy chrání dopadení, radarové odhalení, souhlas lesníka, výsledky minihry, Karlův souboj a pending perk/jury přechody před reload exploity a softlocky;
-- finále Slávie začíná ztracenými certifikáty pravosti, pokračuje registrací a prověřením Frantova vzorku a končí honičkou, vitrínou a porotou;
+- save checkpointy chrání dopadení, radarové odhalení, souhlas lesníka, výsledky minihry, Karlův souboj, pending Expertizu/perky/porotu a rozpracovaný výběr kamenů k certifikaci před reload exploity a softlocky;
+- kámen rozlišuje `documented` (doložený původ) a `certified` (konkrétní kus odborně certifikovaný); v Chlumu může hráč původ doložit rozhovorem s Václavem;
+- po Besednici následuje Expertiza, v níž se vybere až pět konkrétních kamenů, teprve potom perk a cesta do Malše; vitrína nabízí jen certifikované kusy;
+- první vstup do Malše skutečně odehraje krátký střet s Frantou a ztrátu certifikační složky; pozdější honička se týká oddělené kontrolní složky s podklady k Frantovu vzorku;
+- certifikované kameny a povinný Besednický ježek jsou chráněné před náhodnou ztrátou při dopadení;
 - ze Slávie byli odstraněni cyklisté a policejní patrol; akce ZASTAVIT na Frantu má prioritní dotykově tolerantní dosah a je pokrytá browserovým testem;
-- starší Malše/Slávie save se při načtení migrují tak, aby nechyběla certifikační složka a aby odstraněné hlídky nezůstaly ve světě.
+- save schema 2 bezpečně převádí starší stavy: flat save na začátku Malše projde Expertizou, zatímco už rozehraná stará Malše zůstane na místě a dostane deterministický certifikační backfill.
 
 ## Vývoj a ověření
 
