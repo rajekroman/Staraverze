@@ -710,8 +710,9 @@ test("neúspěšné kopání uloží důsledky před návratem do hry", async ({
 
   await page.reload({waitUntil:"domcontentloaded"});
   await page.locator("#continueButton").click();
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().heat)).toBe(saved.state.heat);
   await page.locator("#briefButton").click();
-  expect((await page.evaluate(() => window.__lovecDebug.snapshot().heat))).toBeGreaterThanOrEqual(4);
 });
 
 test("souhlas lesníka v Nesměni přežije reload před prvním kopáním", async ({ page }) => {
