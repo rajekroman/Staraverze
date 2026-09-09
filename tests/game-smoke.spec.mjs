@@ -193,6 +193,7 @@ test("render: viewport culling vynechá objekty mimo kameru a referenční scén
   expect(live.rendered + live.culled).toBe(live.candidates);
 
   await page.evaluate(() => window.__lovecDebug.startNesmenReference());
+  // WebKit can defer the first reference-scene RAF while media/resources settle; wait for rendered state, not wall time.
   await expect.poll(
     () => page.evaluate(() => window.__lovecDebug.snapshot().renderStats.culled),
     { timeout: 2_000 }
