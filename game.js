@@ -11,7 +11,7 @@
 
   const screens = {
     title: $("titleScreen"), brief: $("briefScreen"), dig: $("digScreen"), identify: $("identifyScreen"),
-    dialog: $("dialogScreen"), fraud: $("fraudScreen"), perk: $("perkScreen"), jury: $("juryScreen"), result: $("resultScreen"),
+    dialog: $("dialogScreen"), fraud: $("fraudScreen"), perk: $("perkScreen"), expertise: $("expertiseScreen"), jury: $("juryScreen"), result: $("resultScreen"),
     pause: $("pauseScreen"), how: $("howScreen"), records: $("recordsScreen")
   };
 
@@ -76,7 +76,7 @@
     },
     {
       id: "malse", name: "Malše", title: "Na zelené vlně", theme: "city",
-      text: "Sbírka je kompletní. Než vyrazíš do Slávie, necháš nejlepší kusy posoudit odborníkem a získáš k nim certifikáty. S nimi přicházíš podél Malše ke KD Slávii. Při příchodu do tebe vrazí Franta a složka s certifikáty skončí někde na nábřeží. Bez ní sbírku k výstavě nepřihlásíš.",
+      text: "S certifikáty k nejlepším kusům přicházíš podél Malše ke KD Slávii. Při příchodu do tebe vrazí Franta a složka s certifikáty skončí někde na nábřeží. Bez ní sbírku k výstavě nepřihlásíš.",
       why: "Celá výprava mířila sem. Teď musíš dostat své nejlepší kusy až do výstavní vitríny.",
       goal: "Najdi složku s certifikáty a zaregistruj sbírku.", music: "city"
     }
@@ -403,7 +403,7 @@
     clean.combo = Math.round(finiteNumber(data.combo, 1, 1, 6));
     clean.comboTimer = finiteNumber(data.comboTimer, 0, 0, 60);
     clean.caught = Math.round(finiteNumber(data.caught, 0, 0, 100000));
-    clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="jury" ? data.pendingTransition : null;
+    clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="expertise"||data.pendingTransition==="jury" ? data.pendingTransition : null;
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
@@ -831,6 +831,7 @@
     if(state.pendingTransition){
       audio.setTheme(LEVELS[state.levelIndex]?.music||"menu");audio.start();
       if(state.pendingTransition==="jury"){showJury();return;}
+      if(state.pendingTransition==="expertise"){showExpertise();return;}
       showPerks();return;
     }
     showBrief(state.levelIndex);audio.start();
@@ -1269,8 +1270,16 @@
       save();
     }
     const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingTransition=null;state.pendingPerks=[];save();showBrief(state.levelIndex);});list.append(b);});
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingPerks=[];if(state.levelIndex===4){state.pendingTransition="expertise";save();showExpertise();return;}state.pendingTransition=null;save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
+  }
+
+  function showExpertise(){
+    mode="expertise";setPlaying(false);audio.setTheme(LEVELS[4].music);showOnly(screens.expertise);
+  }
+  function finishExpertise(){
+    if(state.pendingTransition!=="expertise")return;
+    audio.sfx("click");state.pendingTransition=null;save();showBrief(4);
   }
 
   function showJury(){mode="jury";jurySelection.clear();setPlaying(false);const list=$("juryList");list.innerHTML="";
@@ -2760,7 +2769,7 @@
 
   function bindUI(){
     $("digPauseButton").addEventListener("click",pause);
-    $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);
+    $("playButton").addEventListener("click",startNew);$("continueButton").addEventListener("click",continueGame);$("briefButton").addEventListener("click",enterLevel);$("expertiseButton").addEventListener("click",finishExpertise);
     const digButton=$("digButton");let digPointer=null;
     resetDigPointer=()=>{const active=digPointer;digPointer=null;releasePointer(digButton,active);digButton.classList.remove("pressed");};
     digButton.addEventListener("pointerdown",event=>{if(digPointer!==null)return;event.preventDefault();digPointer=event.pointerId;capturePointer(digButton,digPointer);digButton.classList.add("pressed");digPress();});
