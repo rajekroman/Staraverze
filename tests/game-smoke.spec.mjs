@@ -551,6 +551,40 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
   expect(errors).toEqual([]);
 });
 
+test("starší Malše save bez certifikační položky se migruje bez softlocku", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.setPlayer(720,1060);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+
+  await page.evaluate(saveKey => {
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    delete save.world.runtime.certificateRecovered;
+    save.world.runtime.registered=false;
+    save.world.runtime.papers=0;
+    save.world.runtime.bossStarted=false;
+    save.world.runtime.bossDefeated=false;
+    save.world.items=save.world.items.filter(item=>item.special!=="certificate");
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  const migrated = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  const certificate = migrated.world.items.find(item=>item.special==="certificate");
+  expect(certificate).toMatchObject({type:"paper",active:true,hidden:true});
+
+  await recoverMalseCertificates(page);
+  await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
+});
+
 test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
