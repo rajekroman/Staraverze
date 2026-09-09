@@ -1247,7 +1247,7 @@
       world.runtime.pendingBoss={x:h.x+150,y:h.y-90};
       audio.sfx("rare");
     }else{
-      const stone=makeStone(LEVELS[state.levelIndex].name,h.rarity||"common",h.documented!==false);addStone(stone,h.x,h.y);
+      const stone=makeStone(LEVELS[state.levelIndex].name,h.rarity||"common",h.documented===true);addStone(stone,h.x,h.y);
       if(world.id==="chlum")world.runtime.collected++;
     }
     currentDig=null;findNearest();updateHUD(true);save();
@@ -1276,7 +1276,7 @@
   function interactItem(item){
     if(!item.active)return;
     if(item.type==="stone"){
-      item.active=false;const documented=world.id==="chlum"?Boolean(world.runtime.provenanceConfirmed):item.documented!==false;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",documented);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;save();return;
+      item.active=false;const documented=world.id==="chlum"?Boolean(world.runtime.provenanceConfirmed):item.documented===true;const stone=makeStone(LEVELS[state.levelIndex].name,item.rarity||"common",documented);addStone(stone,item.x,item.y);if(world.id==="chlum")world.runtime.collected++;save();return;
     }
     if(item.type==="sample"){currentSample=item;mode="identify";setPlaying(false);$("sampleTitle").textContent=item.sample.title;$("sampleDescription").textContent=`${item.sample.text} Posuď povrch, tvar a pravidelnost vzorku.`;$("sampleGem").style.color=item.sample.real?"#70d999":"#33f48b";showOnly(screens.identify);return;}
     if(item.type==="clue"){
