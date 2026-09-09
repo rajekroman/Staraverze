@@ -477,6 +477,11 @@
     const payload={version:APP_VERSION,state,world:world?JSON.parse(JSON.stringify(world)):null,player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose}};
     storage.set(SAVE_KEY, JSON.stringify(payload)); refreshContinue();
   }
+  function validWorldSnapshot(candidate,levelId){
+    if(!candidate||candidate.id!==levelId||!candidate.runtime||typeof candidate.runtime!=="object"||Array.isArray(candidate.runtime))return false;
+    if(!Number.isFinite(candidate.w)||candidate.w<=0||!Number.isFinite(candidate.h)||candidate.h<=0)return false;
+    return ["items","props","obstacles","hotspots","patrols","hazards","particles","radarPings"].every(key=>Array.isArray(candidate[key]));
+  }
   function load() {
     try {
       const data=JSON.parse(storage.get(SAVE_KEY)||"null");
@@ -484,8 +489,8 @@
       const normalized=normalizeState(envelope?data.state:data);
       if(!normalized) return false;
       state=normalized;
-      restoredWorld=false;
-      if(envelope?.world&&envelope.world.id===LEVELS[state.levelIndex]?.id&&Array.isArray(envelope.world.items)&&Array.isArray(envelope.world.props)){
+      restoredWorld=false;world=null;
+      if(validWorldSnapshot(envelope?.world,LEVELS[state.levelIndex]?.id)){
         world=envelope.world;
         const saved=envelope.player||{};
         player={...player,x:finiteNumber(saved.x,player.x,0,world.w),y:finiteNumber(saved.y,player.y,0,world.h),angle:finiteNumber(saved.angle,0,-Math.PI,Math.PI),facing:saved.facing<0?-1:1,pose:["front","back","side"].includes(saved.pose)?saved.pose:"front"};
