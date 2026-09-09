@@ -2,19 +2,29 @@
 
 ## Aktualizace certifikace a narativní návaznosti — 9. 9. 2026
 
-Pracovní dokončovací revize vychází z `main@98f6949cf598c254eecb8c9b1b176b9361fdd39f`. Níže uvedený starší audit zůstává jako historie, ale pro certifikaci a finále platí novější stav:
+Pracovní dokončovací revize vychází z `main@7412095799ff911f94b1af8caa27878f647a56f6`. Níže uvedený starší audit zůstává jako historie, ale pro certifikaci a finále platí novější stav:
 
 - kámen má explicitně oddělené `documented` a `certified`; certifikace je navázaná na konkrétní stone ID a funguje jako eligibility gate pro vitrínu;
 - Chlum může vytvořit nález s nedoloženým původem a Václav jej následně umí herně doložit, takže provenance již není automatické maximum;
 - tok kampaně je Besednice → Expertiza → perk → Malše; rozpracovaná Expertiza se ukládá včetně výběru konkrétních kamenů;
 - certifikované kameny a Besednický ježek nejsou součástí poolu náhodně ztratitelných kamenů;
-- první příchod do Malše má skutečný krátký runtime incident s Frantou; certifikační složka a pozdější kontrolní dossier jsou dva různé předměty;
+- první příchod do Malše má skutečný krátký runtime incident s Frantou; certifikační složka nese konkrétní ID certifikovaných kamenů z Expertizy a registrace ověřuje jejich shodu, zatímco pozdější kontrolní dossier je samostatný stav/předmět příběhové kontroly Frantova vzorku;
 - porota nabízí pouze certifikované kameny, ale `documented` zůstává samostatně bodované;
 - save schema 2 řeší starý `levelIndex=4` bez Expertizy, rozehranou Malši zachovává a migraci provádí idempotentně;
 - browser smoke, visual regression a offline testy se nově spouštějí i na pull requestu, nikoli až po merge do `main`;
-- PWA runtime cache této revize je `lovec-vltavinu-reborn-v5-4-2-runtime-34`.
+- PWA runtime cache této revize je `lovec-vltavinu-reborn-v5-4-2-runtime-35`.
 
 Nulová vitrína zůstává pouze defenzivním fallbackem pro legacy nebo poškozený save; normální průchod po Besednici garantuje alespoň příběhový ježek.
+
+### Kalibrace poroty po zavedení proměnlivého původu
+
+Runtime vzorec poroty byl přepočten na třech deterministických, dosažitelných profilech tříkusové vitríny a stejná čísla hlídá browserový regresní test:
+
+- slabý profil: tři 60% běžné kusy z jedné lokality, bez doloženého původu, tři dopadení, tři zahrabané profily, vyřešený podvod bez získaného dossieru a journey score 3 500 → **10 890 bodů**;
+- solidní profil: kvality 75/78/82, dvě doložené provenience, tři lokality, ježek + good + common, jedno dopadení, kompletní finále a journey score 5 500 → **19 540 bodů**;
+- výborný profil: kvality 92/90/88, všechny provenience doložené, tři lokality, ježek + rare + good, bez dopadení, kompletní finále a journey score 7 000 → **22 960 bodů**.
+
+Původní hranice 8 500 / 12 000 po změně modelu téměř nerozlišovaly solidní a výborný průchod. Runtime proto používá **15 000** pro „Výstavní uznání“ a **21 500** pro „Hlavní cenu poroty“.
 
 
 ## Aktualizace release stavu — 9. 9. 2026
