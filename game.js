@@ -418,7 +418,16 @@
     clean.saveSchema=SAVE_SCHEMA;
     clean.levelIndex = Math.round(finiteNumber(data.levelIndex, 0, 0, LEVELS.length - 1));
     clean.score = Math.round(finiteNumber(data.score, 0, 0, 1000000000));
-    clean.stones = data.stones.map((stone,index)=>normalizeStone(stone,index,legacySchema)).filter(Boolean).slice(0, 250);
+    const usedStoneIds=new Set();
+    clean.stones = data.stones.map((stone,index)=>{
+      const normalized=normalizeStone(stone,index,legacySchema);
+      if(!normalized)return null;
+      const baseId=normalized.id;
+      let uniqueId=baseId,suffix=2;
+      while(usedStoneIds.has(uniqueId))uniqueId=`${baseId}-${suffix++}`;
+      normalized.id=uniqueId;usedStoneIds.add(uniqueId);
+      return normalized;
+    }).filter(Boolean).slice(0, 250);
     clean.heat = finiteNumber(data.heat, 0, 0, 100);
     clean.combo = Math.round(finiteNumber(data.combo, 1, 1, 6));
     clean.comboTimer = finiteNumber(data.comboTimer, 0, 0, 60);
@@ -521,7 +530,9 @@
       const normalized=normalizeState(rawState);
       if(!normalized) return false;
       const hasPlayableMalseWorld=validWorldSnapshot(envelope?.world,"malse");
-      let migrated=sourceSchema<SAVE_SCHEMA;
+      const rawValidStones=Array.isArray(rawState?.stones)?rawState.stones.filter(stone=>stone&&typeof stone==="object").slice(0,250):[];
+      const repairedStoneIds=rawValidStones.length!==normalized.stones.length||rawValidStones.some((stone,index)=>typeof stone.id!=="string"||!stone.id||normalized.stones[index]?.id!==stone.id);
+      let migrated=sourceSchema<SAVE_SCHEMA||repairedStoneIds;
 
       if(sourceSchema<SAVE_SCHEMA&&normalized.levelIndex===3&&normalized.pendingTransition==="perk"){
         normalized.pendingTransition="expertise";
@@ -1251,6 +1262,9 @@
     return{id:`s${Date.now()}${Math.random()}`,locality,rarity,weight,quality,size,qualityLabel,documented:Boolean(documented),certified:false,name:names[rarity],value:Math.round(weight*(rarity==="hedgehog"?4200:rarity==="rare"?1900:rarity==="good"?900:420)*(quality/75))};
   }
   function addStone(stone,x=player.x,y=player.y){
+    const usedIds=new Set(state.stones.map(existing=>existing.id));
+    const baseId=typeof stone.id==="string"&&stone.id?stone.id:`s${Date.now()}`;
+    let uniqueId=baseId,suffix=2;while(usedIds.has(uniqueId))uniqueId=`${baseId}-${suffix++}`;stone.id=uniqueId;
     state.stones.push(stone);state.stats.rare+=stone.rarity==="rare"||stone.rarity==="hedgehog"?1:0;
     const mult=stone.rarity==="hedgehog"?6:stone.rarity==="rare"?3:stone.rarity==="good"?1.6:1;state.score+=Math.round(stone.value*.18*state.combo*mult);
     boostCombo(stone.rarity==="rare"||stone.rarity==="hedgehog"?2:1);burst(x,y,stone.rarity==="rare"||stone.rarity==="hedgehog"?"#f2cb72":"#63e49b",stone.rarity==="hedgehog"?28:15);
@@ -1431,7 +1445,7 @@
       const b=document.createElement("button");b.type="button";b.className="stone-card expertise-stone";
       const selected=()=>expertiseSelection.has(s.id);
       const refreshCard=()=>{b.classList.toggle("selected",selected());const status=b.querySelector(".expertise-status");if(status)status.textContent=selected()?"VYBRÁN K CERTIFIKACI":"NEVYBRÁN";};
-      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${stoneMeta(s)} · <b class="expertise-status"></b></small></div>`;
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${stoneMeta(s,{includeCertificate:true})} · <b class="expertise-status"></b></small></div>`;
       refreshCard();
       b.addEventListener("click",()=>{
         if(selected())expertiseSelection.delete(s.id);
