@@ -1,5 +1,7 @@
 # Audio release gate
 
+Hudební vrstva hry nově obsahuje i projektově původní procedurální score generované za běhu přes Web Audio. Nepoužívá externí samply ani nový distribuovaný audio soubor a nevstupuje proto do licenčního gate MP3 assetů.
+
 Automaticky je ověřeno, že aktivní MP3 soubory existují, jsou součástí manifestu service workeru a mají záznam integrity v `assets/audio/v73-audio-build-audit.json`.
 
 Ruční gate zůstává záměrně otevřený: soubory označené `NOASSERTION` nemají potvrzené distribuční právo a tento běh nemůže předstírat poslech člověkem. Před vydáním vlastník provede poslech na reproduktoru i sluchátkách:

@@ -107,7 +107,7 @@
       this.sfxGain = null;
       this.enabled = true;
       this.started = false;
-      this.theme = "field";
+      this.theme = "menu";
       this.music = new Audio();
       this.music.loop = true;
       this.music.preload = "auto";
@@ -118,7 +118,21 @@
       this.musicToken = 0;
       this.lifecyclePaused = false;
       this.activeSources = new Set();
+      this.scoreSources = new Set();
+      this.scoreGain = null;
+      this.scoreTimer = 0;
+      this.scoreBeat = 0;
+      this.scoreNextTime = 0;
+      this.scoreThemes = {
+        menu: { root:48, chords:[0,5,9,7], melody:[0,4,7,9,7,4,2,0] },
+        field: { root:48, chords:[0,7,9,5], melody:[0,2,4,7,9,12,9,7] },
+        meadow: { root:50, chords:[2,9,11,6], melody:[2,4,6,9,11,14,11,9] },
+        forest: { root:45, chords:[9,4,0,7], melody:[9,11,12,16,14,12,11,9] },
+        night: { root:52, chords:[4,11,7,2], melody:[4,7,11,14,11,9,7,4] },
+        city: { root:55, chords:[7,2,9,0], melody:[7,9,11,14,16,14,11,9] }
+      };
       this.musicTracks = {
+        menu: "./assets/audio/ambient/ambient-chlum.mp3",
         field: "./assets/audio/ambient/ambient-chlum.mp3",
         meadow: "./assets/audio/ambient/ambient-nesmen.mp3",
         forest: "./assets/audio/ambient/ambient-nesmen.mp3",
@@ -165,9 +179,12 @@
           this.ctx = new AC();
           this.master = this.ctx.createGain();
           this.sfxGain = this.ctx.createGain();
+          this.scoreGain = this.ctx.createGain();
           this.master.gain.value = this.enabled ? .42 : 0;
           this.sfxGain.gain.value = .6;
+          this.scoreGain.gain.value = .12;
           this.sfxGain.connect(this.master);
+          this.scoreGain.connect(this.master);
           this.master.connect(this.ctx.destination);
         }
       }
@@ -204,6 +221,7 @@
     }
     playMusic(restart = false) {
       if(!this.enabled||this.lifecyclePaused)return;
+      this.startScore(restart);
       const token=++this.musicToken;
       const src = this.musicTracks[this.theme] || this.musicTracks.field;
       let absolute=src;try{absolute=new URL(src,location.href).href;}catch{}
@@ -218,6 +236,51 @@
       if(change&&this.music.src&&this.music.volume>.01)this.fadeMusic(0,180,switchTrack,token);else switchTrack();
     }
     pauseMusic(){this.musicToken+=1;clearInterval(this.fadeTimer);this.fadeTimer=0;this.music.pause();}
+    noteFrequency(note){return 440*Math.pow(2,(note-69)/12);}
+    scoreVoice(frequency,start,duration,volume,type="sine"){
+      if(!this.enabled||!this.ctx||!this.scoreGain||this.lifecyclePaused)return;
+      const osc=this.ctx.createOscillator(),gain=this.ctx.createGain();
+      const attack=Math.min(.14,duration*.2),release=Math.min(.36,duration*.38);
+      osc.type=type;osc.frequency.setValueAtTime(frequency,start);
+      gain.gain.setValueAtTime(.0001,start);
+      gain.gain.linearRampToValueAtTime(volume,start+attack);
+      gain.gain.setValueAtTime(volume,start+Math.max(attack,duration-release));
+      gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+      osc.connect(gain);gain.connect(this.scoreGain);
+      this.scoreSources.add(osc);
+      osc.addEventListener("ended",()=>this.scoreSources.delete(osc),{once:true});
+      osc.start(start);osc.stop(start+duration+.03);
+    }
+    scheduleScore(){
+      if(!this.enabled||!this.ctx||!this.scoreGain||this.lifecyclePaused)return;
+      const config=this.scoreThemes[this.theme]||this.scoreThemes.field;
+      const beatLength=.75,horizon=this.ctx.currentTime+.9;
+      while(this.scoreNextTime<horizon){
+        const beat=this.scoreBeat++,chordIndex=Math.floor(beat/4)%config.chords.length;
+        const root=config.root+config.chords[chordIndex],start=this.scoreNextTime;
+        if(beat%4===0){
+          [[0,.032],[7,.022],[12,.014]].forEach(([offset,volume])=>this.scoreVoice(this.noteFrequency(root+offset),start,beatLength*3.92,volume,"sine"));
+        }
+        this.scoreVoice(this.noteFrequency(root-24),start,beatLength*.55,.022,"sine");
+        const octave=Math.floor(beat/config.melody.length)%2?12:0;
+        const note=config.root+12+config.melody[beat%config.melody.length]+octave;
+        this.scoreVoice(this.noteFrequency(note),start,beatLength*.72,.026,"triangle");
+        this.scoreNextTime+=beatLength;
+      }
+    }
+    startScore(restart=false){
+      if(!this.enabled||!this.ctx||!this.scoreGain||this.lifecyclePaused)return;
+      if(restart)this.stopScore();
+      if(this.scoreTimer)return;
+      this.scoreBeat=0;this.scoreNextTime=this.ctx.currentTime+.05;
+      this.scheduleScore();
+      this.scoreTimer=setInterval(()=>this.scheduleScore(),240);
+    }
+    stopScore(){
+      clearInterval(this.scoreTimer);this.scoreTimer=0;this.scoreBeat=0;this.scoreNextTime=0;
+      for(const source of this.scoreSources){try{source.stop();}catch{}}
+      this.scoreSources.clear();
+    }
     stopEffects(){
       for (const clip of Object.values(this.effects)) { clip.pause(); try { clip.currentTime = 0; } catch {} }
       for (const source of this.activeSources) { try { source.stop(); } catch {} }
@@ -226,6 +289,7 @@
     pauseAll(){
       this.lifecyclePaused=true;
       this.pauseMusic();
+      this.stopScore();
       this.stopEffects();
       if(this.ctx?.state==="running")this.ctx.suspend().catch(()=>{});
     }
@@ -237,7 +301,7 @@
     }
     resumeMusic(){this.resumeAll();}
     toggle() { return this.setEnabled(!this.enabled); }
-    snapshot(){return {enabled:this.enabled,started:this.started,lifecyclePaused:this.lifecyclePaused,contextState:this.ctx?.state||"none",activeSources:this.activeSources.size,theme:this.theme};}
+    snapshot(){return {enabled:this.enabled,started:this.started,lifecyclePaused:this.lifecyclePaused,contextState:this.ctx?.state||"none",activeSources:this.activeSources.size,scoreSources:this.scoreSources.size,scoreRunning:Boolean(this.scoreTimer),theme:this.theme};}
     tone(freq, dur=.1, type="triangle", vol=.16, when=0, slide=0) {
       if (!this.enabled || !this.ctx || !this.sfxGain) return;
       const t = this.ctx.currentTime + when;
@@ -749,11 +813,11 @@
   }
 
   function startNew(){
-    state=freshState();audio.setEnabled(state.sound,{resume:false});audio.start();audio.sfx("click");syncSoundButton();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);
+    state=freshState();audio.setEnabled(state.sound,{resume:false});syncSoundButton();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);audio.start();audio.sfx("click");
   }
-  function continueGame(){if(!load()){startNew();return;}audio.start();syncSoundButton();showBrief(state.levelIndex);}
+  function continueGame(){if(!load()){startNew();return;}syncSoundButton();showBrief(state.levelIndex);audio.start();}
   function showBrief(index){
-    state.levelIndex=index;mode="brief";setPlaying(false);const l=LEVELS[index];
+    state.levelIndex=index;mode="brief";setPlaying(false);const l=LEVELS[index];audio.setTheme(l.music);
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
     showOnly(screens.brief);
   }
@@ -2611,7 +2675,7 @@
     }else showOnly(null);
     last=performance.now();
   }
-  function toMenu(){save();audio.pauseAll();currentDig=null;digHolding=false;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();}
+  function toMenu(){save();currentDig=null;digHolding=false;digFinishDelay=0;mode="menu";world=null;setPlaying(false);showOnly(screens.title);refreshContinue();audio.setTheme("menu");audio.resumeAll();}
   function showRecords(){const list=$("recordsList"),rows=getRecords();list.innerHTML="";if(!rows.length){list.innerHTML="<li><span>–</span><div>Zatím žádná dokončená výprava</div></li>";}else rows.forEach((r,i)=>{const li=document.createElement("li");li.innerHTML=`<b>${i+1}.</b><div><strong>${escapeHtml(r.title)}</strong><small>${r.stones} kamenů · ${new Date(r.date).toLocaleDateString("cs-CZ")}</small></div><strong>${Number(r.score).toLocaleString("cs-CZ")}</strong>`;list.append(li);});openAuxiliary(screens.records);}
 
   function bindUI(){
@@ -2624,7 +2688,7 @@
     digButton.addEventListener("pointerup",releaseDigButton);digButton.addEventListener("pointercancel",releaseDigButton);digButton.addEventListener("lostpointercapture",event=>{if(event.pointerId===digPointer){digPointer=null;digButton.classList.remove("pressed");if(digKind==="fill"){digHolding=false;digMarker=.06;}}});
     digButton.addEventListener("click",event=>{if(event.detail===0&&digKind==="dig")digAttempt();});$("realButton").addEventListener("click",()=>resolveSample(true));$("glassButton").addEventListener("click",()=>resolveSample(false));$("dialogButton").addEventListener("click",closeDialog);
     $("fraudButton").addEventListener("click",()=>resolveFraudReview(true));$("fraudWrongButton").addEventListener("click",()=>resolveFraudReview(false));
-    $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";showOnly(screens.title);refreshContinue();});
+    $("juryButton").addEventListener("click",judge);$("againButton").addEventListener("click",()=>{state=freshState();world=null;mode="menu";audio.setTheme("menu");audio.resumeAll();showOnly(screens.title);refreshContinue();});
     $("pauseButton").addEventListener("click",pause);$("resumeButton").addEventListener("click",resume);$("menuButton").addEventListener("click",toMenu);
     $("soundButton").addEventListener("click",()=>{state.sound=audio.toggle();syncSoundButton();save();});
     $("howButton").addEventListener("click",()=>openAuxiliary(screens.how));$("closeHowButton").addEventListener("click",()=>closeAuxiliary(screens.how));
@@ -2729,7 +2793,7 @@
     addEventListener("resize",()=>requestAnimationFrame(resize));
     addEventListener("orientationchange",()=>{resetControls();setTimeout(resize,120);});
     visualViewport?.addEventListener("resize",()=>requestAnimationFrame(resize));
-    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();if(mode==="playing"||mode==="dig")pause();else audio.pauseAll();}else if(activeScreen)requestAnimationFrame(()=>focusInitial(activeScreen));});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){resetControls();if(mode==="playing"||mode==="dig")pause();else audio.pauseAll();}else{if(mode!=="pause")audio.resumeAll();if(activeScreen)requestAnimationFrame(()=>focusInitial(activeScreen));}});
     if("serviceWorker" in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
     requestAnimationFrame(loop);
   }

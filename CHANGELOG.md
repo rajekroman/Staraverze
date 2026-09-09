@@ -1,5 +1,14 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Finální hudební pass
+
+- Aktivní ambientní MP3 doplňuje lehká procedurální hudební vrstva s měkkými pady, basou a melodickým motivem; každá lokalita má vlastní harmonii a menu vlastní klidný motiv.
+- Návrat z pauzy do hlavního menu znovu rozběhne audio lifecycle, zatímco skutečná pauza zůstává tichá.
+- Návrat z backgroundu obnoví hudbu na briefingu a dalších nepauzovaných obrazovkách.
+- Score vzniká za běhu přes Web Audio, nepřidává nový externí asset ani další licenční závislost.
+- Přidán regresní test start → pauza → menu a PWA runtime cache zvýšena na revizi 25.
+
+
 ## Finále Slávie — registrace, podvod a výstavní vitrína
 
 - vstup do KD Slávie nyní skutečně obsluhuje registraci sbírky, kontrolu tří podkladů a povinné vyhodnocení Frantova vzorku;

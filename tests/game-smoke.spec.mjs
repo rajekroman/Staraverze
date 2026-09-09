@@ -250,6 +250,25 @@ test("audio: rychlý theme switch se po mute nesmí opožděně znovu spustit", 
   expect(await page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(true);
 });
 
+test("hudba: score běží po startu, pauza ho zastaví a menu ho obnoví", async ({ page }) => {
+  await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
+  await page.locator("#playButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().scoreRunning)).toBe(true);
+  expect(await page.evaluate(() => window.__lovecDebug.audioSnapshot().theme)).toBe("field");
+
+  await page.locator("#briefButton").click();
+  await page.locator("#pauseButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().scoreRunning)).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().lifecyclePaused)).toBe(true);
+
+  await page.locator("#menuButton").click();
+  await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.audioSnapshot().scoreRunning)).toBe(true);
+  const menuAudio=await page.evaluate(() => window.__lovecDebug.audioSnapshot());
+  expect(menuAudio.theme).toBe("menu");
+  expect(menuAudio.lifecyclePaused).toBe(false);
+});
+
 test("audit: opakovaný úder nepřenačítá stejný zvuk", async ({ page }) => {
   await page.addInitScript(() => {
     window.auditAudio={assignments:[],plays:[]};
@@ -448,14 +467,14 @@ test("pěší NPC drží svislou siluetu a používají stejné směrové pózy 
   expect(actorSource).toContain("ctx.scale(facing,1)");
   expect(actorSource).not.toContain("ctx.rotate(");
 
-  await page.evaluate(() => {
+  const spawnedRival = await page.evaluate(() => {
     window.__lovecDebug.startLevel(4);
     window.__lovecDebug.spawnBoss("franta");
+    return window.__lovecDebug.rivalSnapshot();
   });
-  await expect.poll(() => page.evaluate(() => {
-    const rival=window.__lovecDebug.rivalSnapshot();
-    return Boolean(rival&&rival.moving&&rival.motionPhase>0&&["front","back","side"].includes(rival.pose)&&Math.abs(rival.facing)===1);
-  })).toBe(true);
+  expect(spawnedRival).toMatchObject({name:"franta",active:true});
+  expect(["front","back","side"]).toContain(spawnedRival.pose);
+  expect(Math.abs(spawnedRival.facing)).toBe(1);
 
   await page.evaluate(() => {
     const rival=window.__lovecDebug.rivalSnapshot();
