@@ -578,6 +578,7 @@
       world.runtime.pendingBoss=null;
       startRival("karel",pending.x,pending.y);
       toast("Dožeň zloděje ve chvíli, kdy se zastaví!","bad",2200);
+      save();
     }
   }
   function showHint(text){ui.hint.textContent=text;ui.hint.classList.remove("hidden");}
@@ -847,7 +848,20 @@
     delete r.bossDelay;
     if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
   }
-  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);normalizeMalseWorld();restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
+  function enterLevel(){
+    if(!restoredWorld)generateLevel(state.levelIndex);
+    normalizeMalseWorld();
+    const pendingKarel=world?.id==="besednice"&&world.runtime?.pendingBoss&&!world.runtime.bossStarted
+      ? world.runtime.pendingBoss
+      : null;
+    restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();
+    if(pendingKarel){
+      world.runtime.pendingBoss=null;
+      startRival("karel",pendingKarel.x,pendingKarel.y);
+      toast("Karel pokračuje v útěku s ježkem","bad",1800);
+    }
+    save();
+  }
 
   function levelGoal(){
     const r=world.runtime;
@@ -950,6 +964,7 @@
     for(const h of world.hotspots){if(h.active&&dist(player,h)<=radius){h.revealed=true;h.ttl=9;world.radarPings.push({x:h.x,y:h.y,life:.62,maxLife:.62,kind:"profile"});count++;}}
     for(const item of world.items){if(item.active&&item.hidden&&dist(player,item)<=radius){item.hidden=false;world.radarPings.push({x:item.x,y:item.y,life:.62,maxLife:.62,kind:"stone"});count++;}}
     toast(count?`Radar odhalil ${count} ${count===1?"nález":"nálezy"}`:"Radar tady nic nezachytil",count?"good":"",900);
+    if(count)save();
   }
 
   function performAction(){
@@ -967,7 +982,7 @@
 
   function talkNpc(npc){
     if(world.id==="chlum"){showDialog("Václav","V","Vltavíny leží po bouřce v brázdách, ale splývají s hlínou. Projdi pole s radarem a odhalené kameny seber z povrchu.");return;}
-    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři vyznačené průzkumné profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");});return;}
+    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři vyznačené průzkumné profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");save();});return;}
     showDialog(npc.name,npc.avatar,"Drž se úkolu a sleduj okolí.");
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
@@ -1190,6 +1205,7 @@
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
     if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);}
     else toast(`Zastavení ${r.hits}/${r.maxHits} · Karel zrychluje`,"good",1100);
+    updateHUD(true);save();
   }
 
   function tryExit(){
