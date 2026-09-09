@@ -142,25 +142,31 @@ test("audit: skrytí stránky pozastaví kopání a odchod zruší odměnu", asy
   expect(await page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(0);
 });
 
-test("audit: odložený Franta respektuje pauzu a neopustí svůj level", async ({ page }) => {
+test("audit: Franta se nespustí před potvrzeným odhalením podvodu ani přes pauzu", async ({ page }) => {
   await openDebug(page);
-  const collectPapers=() => page.evaluate(() => {
-    window.__lovecDebug.startLevel(4);
-    for(const [x,y] of [[760,860],[1040,560],[1280,360]]){
-      window.__lovecDebug.setPlayer(x,y);
-      dispatchEvent(new KeyboardEvent("keydown",{code:"Space"}));
-      dispatchEvent(new KeyboardEvent("keyup",{code:"Space"}));
-    }
-    dispatchEvent(new KeyboardEvent("keydown",{code:"Escape"}));
-  });
-  await collectPapers();
-  await page.waitForTimeout(650);
+  await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await page.keyboard.press("Space");
+  await page.locator("#dialogButton").click();
+  for (const [x,y] of [[760,860],[1040,560],[1280,360]]) {
+    await page.evaluate(([px,py]) => window.__lovecDebug.setPlayer(px,py), [x,y]);
+    await page.keyboard.press("Space");
+  }
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
   await page.locator("#resumeButton").click();
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await page.keyboard.press("Space");
+  await expect(page.locator("#fraudScreen")).toHaveClass(/visible/);
+  await page.locator("#fraudWrongButton").click();
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
+  await page.locator("#fraudButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss?.name)).toBe("franta");
-  await collectPapers();
   await page.evaluate(() => window.__lovecDebug.startLevel(0));
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(250);
   expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
 });
 
@@ -506,6 +512,30 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
   expect(errors).toEqual([]);
 });
 
+test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", async ({ page }) => {
+  const errors = watchErrors(page);
+  await openDebug(page);
+  await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await page.keyboard.press("Space");
+  await page.locator("#dialogButton").click();
+  await page.evaluate(saveKey => {
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.world.runtime={papers:3,bossStarted:false,bossDefeated:false,bossDelay:.45};
+    delete save.state.stats.filled;delete save.state.stats.fraud;delete save.state.stats.dossier;
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
+  await page.locator("#briefButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.malseSnapshot())).toMatchObject({registered:true,papers:3,fraudResolved:false,bossStarted:false,bossDefeated:false});
+  await expect(page.locator("#objectiveLabel")).toHaveText("Prověř Frantův vzorek u vstupu");
+  await page.waitForTimeout(700);
+  expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss)).toBeNull();
+  expect(errors).toEqual([]);
+});
+
 test("starý nebo poškozený save se bezpečně obnoví", async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto("/");
@@ -812,68 +842,67 @@ test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async (
   expect(errors).toEqual([]);
 });
 
-test("Malše projdou dokumenty, Frantou a vstupem do Slávie", async ({ page }) => {
+test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty a vitrínou", async ({ page }) => {
   const errors = watchErrors(page);
-  const papers = [
-    { x: 760, y: 860, objective: "Dokumenty 1/3" },
-    { x: 1040, y: 560, objective: "Dokumenty 2/3" },
-    { x: 1280, y: 360, objective: "Dokumenty 3/3" }
-  ];
-
+  const evidence = [{x:760,y:860,objective:"Podklady 1/3"},{x:1040,y:560,objective:"Podklady 2/3"},{x:1280,y:360,objective:"Podklady 3/3"}];
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dokumenty 0/3");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await expect(page.locator("#actionText")).toHaveText("REGISTRACE");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#dialogScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#dialogName")).toHaveText("POŘADATEL");
+  await page.locator("#dialogButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Podklady 0/3");
+  for(const item of evidence){await page.evaluate(({x,y})=>window.__lovecDebug.setPlayer(x,y),item);await expect(page.locator("#actionText")).toHaveText("PROVĚŘIT");await page.keyboard.press("Space");await expect(page.locator("#objectiveLabel")).toHaveText(item.objective);}
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await expect(page.locator("#actionText")).toHaveText("KONTROLA");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#fraudScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#fraudButton")).toBeFocused();
+  await page.locator("#fraudWrongButton").click();
+  await expect(page.locator("#fraudFeedback")).toHaveClass(/bad/);
+  await expect(page.locator("#fraudFeedback")).toContainText("Posuď celek znovu");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#fraudScreen")).toHaveClass(/visible/);
+  await page.locator("#fraudButton").click();
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({name:"franta",active:true,maxHits:1});
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zachraň složku před Frantou");
+  await page.evaluate(() => {const player=window.__lovecDebug.snapshot().player;window.__lovecDebug.setBossPose(player.x+35,player.y,0);});
+  await expect(page.locator("#actionText")).toHaveText("ZASTAVIT");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({name:"franta",active:false,hits:1,maxHits:1});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.malseSnapshot())).toMatchObject({bossDefeated:true,dossierRecovered:true,frantaEscaped:false});
+  await expect(page.locator("#objectiveLabel")).toHaveText("Vstup do výstavního sálu");
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
+  await expect(page.locator("#actionText")).toHaveText("VSTUP");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator(".exhibition-hall")).toBeVisible();
+  expect(errors).toEqual([]);
+});
 
-  for (let index = 0; index < papers.length; index += 1) {
-    const paper = papers[index];
-    await page.evaluate(({ x, y }) => window.__lovecDebug.setPlayer(x, y), paper);
-    await expect(page.locator("#actionText")).toHaveText("SEBRAT");
-    await page.keyboard.press("Space");
-    if (index < papers.length - 1) {
-      await expect(page.locator("#objectiveLabel")).toHaveText(paper.objective);
-    } else {
-      await expect(page.locator("#objectiveLabel")).toHaveText(/Dokumenty 3\/3|Dožeň Frantu/);
-    }
-  }
-
-  await page.evaluate(() => {
-    window.__lovecDebug.setPlayer(720, 1060);
-    window.__lovecDebug.setHeat(0);
-  });
-
-  await expect.poll(
-    () => page.evaluate(() => window.__lovecDebug.snapshot().boss?.name || null),
-    { timeout: 5_000 }
-  ).toBe("franta");
-  await expect(page.locator("#objectiveLabel")).toHaveText("Dožeň Frantu");
-  await expect(page.locator("#bossName")).toHaveText("FRANTA");
-
-  for (let hit = 1; hit <= 2; hit += 1) {
-    await page.evaluate(() => {
-      const player = window.__lovecDebug.snapshot().player;
-      window.__lovecDebug.setBossPose(player.x + 42, player.y, 0);
-      window.__lovecDebug.setBossStun(5);
-    });
-    await expect(page.locator("#actionText")).toHaveText("DOHNAT");
-    await page.keyboard.press("Space");
-
-    if (hit === 1) {
-      await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss.hits)).toBe(1);
-      expect(await page.evaluate(() => window.__lovecDebug.snapshot().boss.active)).toBe(true);
-    }
-  }
-
-  await expect.poll(
-    () => page.evaluate(() => window.__lovecDebug.snapshot().boss),
-    { timeout: 5_000 }
-  ).toMatchObject({ name: "franta", active: false, hits: 2, maxHits: 2 });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Vstup do Slávie");
-
-  await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("ODEJÍT");
+test("Malše zůstane dohratelná, když Franta se složkou unikne", async ({ page }) => {
+  const errors=watchErrors(page);await openDebug(page);
+  await page.evaluate(()=>{window.__lovecDebug.startLevel(4);window.__lovecDebug.completeGoal();window.__lovecDebug.spawnBoss("franta");window.__lovecDebug.setBossPose(1650,980,0);});
+  await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot()),{timeout:3000}).toMatchObject({bossDefeated:true,dossierRecovered:false,frantaEscaped:true});
+  await page.evaluate(()=>window.__lovecDebug.setPlayer(1450,250));
+  await expect(page.locator("#objectiveLabel")).toContainText("kopie podkladů");
   await page.keyboard.press("Space");
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
   expect(errors).toEqual([]);
+});
+
+test("finále lze dokončit i s prázdnou sbírkou", async ({ page }) => {
+  await openDebug(page);await page.evaluate(()=>{window.__lovecDebug.startLevel(4);window.__lovecDebug.completeGoal();window.__lovecDebug.exitCurrentLevel();});
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryCount")).toHaveText("0 / 0");
+  await expect(page.locator("#juryButton")).toBeEnabled();
+  await expect(page.locator("#juryDescription")).toContainText("prázdná");
+  await page.locator("#juryButton").click();
+  await expect(page.locator("#resultScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#resultScore")).not.toHaveText("0");
 });
 
 test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ page }) => {
@@ -920,7 +949,7 @@ test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ pa
 
 test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
   await page.goto("/");
-  const modalIds = ["digScreen","identifyScreen","dialogScreen","pauseScreen","howScreen","recordsScreen"];
+  const modalIds = ["digScreen","identifyScreen","dialogScreen","fraudScreen","pauseScreen","howScreen","recordsScreen"];
   for (const id of modalIds) {
     const attrs = await page.locator(`#${id}`).evaluate(element => ({
       role: element.getAttribute("role"),
