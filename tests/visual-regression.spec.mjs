@@ -188,6 +188,36 @@ test("campaign menu visual baseline", async ({ page }) => {
   await capture(page, "menu");
 });
 
+test("Expertiza selection visual baseline", async ({ page }) => {
+  const stones=Array.from({length:6},(_,i)=>({
+    id:`visual-cert-${i+1}`,
+    name:`Kandidát ${i+1}`,
+    locality:["Chlum","Ločenice","Nesměň","Besednice","Chlum","Ločenice"][i],
+    rarity:i===3?"hedgehog":i===1?"rare":"good",
+    weight:1.5+i*.4,
+    quality:72+i*4,
+    value:1000+i*350,
+    documented:i%2===0,
+    certified:false
+  }));
+  await page.goto("/", { waitUntil:"domcontentloaded" });
+  await page.evaluate(({stones})=>{
+    localStorage.clear();
+    localStorage.setItem("lovecVltavinuRebornSaveV5_4_2",JSON.stringify({
+      version:"5.4.2",saveSchema:2,levelIndex:3,score:3000,stones,
+      pendingTransition:"expertise",pendingCertification:stones.slice(0,4).map(stone=>stone.id),
+      perks:{},stats:{},sound:true
+    }));
+  },{stones});
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#expertiseScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#expertiseList .expertise-stone")).toHaveCount(6);
+  await expect(page.locator("#expertiseList .selected")).toHaveCount(4);
+  await expect(page.locator("#expertiseCount")).toHaveText("4 / max. 5");
+  await capture(page, "expertise");
+});
+
 test("Chlum visual baseline", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
