@@ -62,27 +62,49 @@ test("audit: mezerník aktivuje tlačítko nabídky", async ({ page }) => {
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
 });
 
-test("audit: kopání lze pozastavit a dokončit právě jednou", async ({ page }) => {
+test("audit: kopání přes pauzu zmrazí čas i odloženou odměnu a dokončí se právě jednou", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startDigChallenge());
+
   await page.locator("#digPauseButton").click();
   await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
   const time = await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft);
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(300);
   expect(await page.evaluate(() => window.__lovecDebug.digSnapshot().timeLeft)).toBe(time);
   await page.locator("#resumeButton").click();
   await expect(page.locator("#digScreen")).toHaveClass(/visible/);
   await expect(page.locator("#digPauseButton")).toBeFocused();
+
   await page.locator("#digButton").focus();
-  await expect(page.locator("#digButton")).toBeFocused();
   for (let i=0;i<3;i++) {
-    await page.evaluate(() => { window.__lovecDebug.setDigSpeed(0); window.__lovecDebug.setDigMarker(); });
+    await page.evaluate(() => {
+      window.__lovecDebug.setDigSpeed(0);
+      window.__lovecDebug.setDigMarker(window.__lovecDebug.digSnapshot().zoneCenter);
+    });
     await page.keyboard.press("Space");
-    if(i<2) await page.waitForTimeout(120);
+    if(i<2) await page.waitForTimeout(125);
   }
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const pending = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+  expect(pending.hits).toBe(3);
+  expect(pending.finishDelay).toBeGreaterThan(0);
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(0);
+  await page.waitForTimeout(500);
+  const frozen = await page.evaluate(() => window.__lovecDebug.digSnapshot());
+  expect(frozen.finishDelay).toBe(pending.finishDelay);
+  expect(frozen.timeLeft).toBe(pending.timeLeft);
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#digScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#digButton")).toBeFocused();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().state.stones)).toBe(1);
-  await page.waitForTimeout(200);
-  expect((await page.evaluate(() => window.__lovecDebug.snapshot())).state.stones).toBe(1);
+  const score = await page.evaluate(() => window.__lovecDebug.snapshot().state.score);
+  await page.waitForTimeout(500);
+  const stable = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(stable.state.stones).toBe(1);
+  expect(stable.state.score).toBe(score);
 });
 
 test("audit: chybně určený vzorek lze dohledat a opravit", async ({ page }) => {
@@ -1107,7 +1129,7 @@ test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo hern�
   expect(audit.digTouch).toBe("none");
 });
 
-test("zahrabávání po pauze zruší rozpracované držení a odmění právě jednou", async ({ page }) => {
+test("zahrabávání přes pauzu zruší držení, zmrazí odměnu a započítá ji právě jednou", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startFillChallenge());
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().kind)).toBe("fill");
@@ -1127,8 +1149,22 @@ test("zahrabávání po pauze zruší rozpracované držení a odmění právě 
     });
     await page.keyboard.down("Space");
     await page.keyboard.up("Space");
-    if (transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
+    if(transfer<3) await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().hits)).toBe(transfer);
   }
+
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#pauseScreen")).toHaveClass(/visible/);
+  const pending = await page.evaluate(() => ({dig:window.__lovecDebug.digSnapshot(),fill:window.__lovecDebug.fillSnapshot(),score:window.__lovecDebug.snapshot().state.score}));
+  expect(pending.dig.hits).toBe(3);
+  expect(pending.dig.finishDelay).toBeGreaterThan(0);
+  expect(pending.fill.filled).toBe(0);
+  await page.waitForTimeout(500);
+  const frozen = await page.evaluate(() => ({dig:window.__lovecDebug.digSnapshot(),fill:window.__lovecDebug.fillSnapshot(),score:window.__lovecDebug.snapshot().state.score}));
+  expect(frozen.dig.finishDelay).toBe(pending.dig.finishDelay);
+  expect(frozen.fill.filled).toBe(0);
+  expect(frozen.score).toBe(pending.score);
+
+  await page.keyboard.press("Escape");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
   const after = await page.evaluate(() => ({snapshot:window.__lovecDebug.snapshot(),fill:window.__lovecDebug.fillSnapshot()}));
   expect(after.fill.filled).toBe(1);
