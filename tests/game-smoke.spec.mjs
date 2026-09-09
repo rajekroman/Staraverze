@@ -34,7 +34,7 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).not.toContain("playerName");
 });
 
-test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy"test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
+test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
   await expect(page.locator("#campaignEventCard")).toContainText("19. ZÁŘÍ 2026");
@@ -686,7 +686,7 @@ test("starý nebo poškozený save se bezpečně obnoví a projde povinnou Exper
   expect(errors).toEqual([]);
 });
 
-test("strukturálně poškozený snapshot světa se zahodí a lokalita se bezpečně obnoví"test("rozehraná stará Malše se nevrací do Expertizy a certifikace se doplní idempotentně", async ({ page }) => {
+test("rozehraná stará Malše se nevrací do Expertizy a certifikace se doplní idempotentně", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(({ saveKey }) => {
     localStorage.clear();
@@ -1168,7 +1168,7 @@ test("perk, Expertiza a porota se po reloadu obnoví bez opakovaného bodového 
   expect((await page.evaluate(key => JSON.parse(localStorage.getItem(key)).state.score, SAVE_KEY))).toBe(juryScore);
 });
 
-test("celá výprava projde z Chlumu až k porotě a výsledku"test("celá výprava projde z Chlumu přes Expertizu až k porotě a výsledku", async ({ page }) => {
+test("celá výprava projde z Chlumu přes Expertizu až k porotě a výsledku", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => localStorage.clear());
@@ -1223,7 +1223,7 @@ test("celá výprava projde z Chlumu až k porotě a výsledku"test("celá výpr
   expect(errors).toEqual([]);
 });
 
-test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknech"test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknech", async ({ page }) => {
+test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknech", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(3));
@@ -1707,7 +1707,7 @@ test("perk, expertiza a porota jsou povinné samostatné kroky, které Escape ne
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
 });
 
-test("povinné určení vzorku nejde obejít Escape"test("povinné určení vzorku nejde obejít Escape", async ({ page }) => {
+test("povinné určení vzorku nejde obejít Escape", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(1);
