@@ -10,7 +10,7 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Ty vltavíny nehledáš kvůli penězům");
   expect(source).toContain("vystavit na akci Na zelené vlně v KD Slavie");
   expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
-  expect(source).toContain("utratit peníze za drogy");
+  expect(source).toContain("utratit peníze za automaty");
   expect(source).toContain("kolem akce čeká kupce");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
