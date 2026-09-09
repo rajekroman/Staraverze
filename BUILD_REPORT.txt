@@ -11,7 +11,7 @@ AKTUÁLNÍ RELEASE GATE
 - visual regression: desktop, iPhone portrait, iPhone landscape
 - motion evidence: car, tractor, excavator
 - game-smoke suite: 75 test definitions v aktuální release větvi
-- visual-regression suite: 24 test definitions; nově obsahuje samostatný screenshot Expertizy, přesný počet PASS/SKIP případů je reportován finálním CI během
+- visual-regression suite: 24 test definitions / 26 test cases na každý viewport projekt; Expertiza má pevný fingerprint baseline
 - PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-35
 - čistý Pages balík: explicitní allowlist, bez testů/nástrojů/vývojové dokumentace
 
