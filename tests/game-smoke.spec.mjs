@@ -873,7 +873,7 @@ test("Chlum projde radarem, šesti povrchovými nálezy a odchodem", async ({ pa
 
 test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertní", async ({ page }) => {
   await page.goto("/");
-  const modalIds = ["digScreen","identifyScreen","dialogScreen","perkScreen","juryScreen","pauseScreen","howScreen","recordsScreen"];
+  const modalIds = ["digScreen","identifyScreen","dialogScreen","pauseScreen","howScreen","recordsScreen"];
   for (const id of modalIds) {
     const attrs = await page.locator(`#${id}`).evaluate(element => ({
       role: element.getAttribute("role"),
@@ -893,7 +893,7 @@ test("skutečné modály mají názvy, modalitu a skryté obrazovky jsou inertn�
     if (attrs.describedby) await expect(page.locator(`#${attrs.describedby}`), `${id} description`).toHaveCount(1);
   }
 
-  for (const id of ["briefScreen","resultScreen"]) {
+  for (const id of ["briefScreen","perkScreen","juryScreen","resultScreen"]) {
     await expect(page.locator(`#${id}`), `${id} is a standalone flow screen`).not.toHaveAttribute("role","dialog");
     await expect(page.locator(`#${id}`)).not.toHaveAttribute("aria-modal","true");
     await expect(page.locator(`#${id}`)).toHaveAttribute("aria-labelledby",/.+/);
@@ -912,6 +912,49 @@ test("briefing je samostatná obrazovka a po přechodu oznámí svůj nadpis", a
   await expect(page.locator("#briefScreen")).toHaveClass(/visible/);
   await expect(page.locator("#briefScreen")).not.toHaveAttribute("aria-modal","true");
   await expect(page.locator("#briefTitle")).toBeFocused();
+});
+
+test("perk a porota jsou povinné samostatné kroky, které Escape neobejde", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#perkScreen")).not.toHaveAttribute("role","dialog");
+  await expect(page.locator("#perkScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#perkTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryScreen")).not.toHaveAttribute("role","dialog");
+  await expect(page.locator("#juryScreen")).not.toHaveAttribute("aria-modal","true");
+  await expect(page.locator("#juryTitle")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+});
+
+test("povinné určení vzorku nejde obejít Escape", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(1);
+    window.__lovecDebug.setPlayer(420,850);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(40);
+  await page.keyboard.press("Space");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#identifyScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#realButton")).toBeFocused();
 });
 
 test("fokus se přesune do modálu, zůstane uvnitř a vrátí se na spouštěč", async ({ page }) => {
@@ -993,54 +1036,50 @@ test("akční tlačítko drží jediný pointer a lifecycle reset ho vždy uvoln
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startScaleReference());
   const button = page.locator("#actionButton");
-  const box = await button.boundingBox();
-  expect(box).toBeTruthy();
 
-  await page.mouse.move(box.x + box.width / 2,box.y + box.height / 2);
-  await page.mouse.down();
+  await button.dispatchEvent("pointerdown",{pointerId:51,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
   await button.dispatchEvent("pointerdown",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await button.dispatchEvent("pointercancel",{pointerId:52,pointerType:"touch",bubbles:true,cancelable:true});
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
 
+  await button.dispatchEvent("lostpointercapture",{pointerId:51,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
+  await expect(button).not.toHaveClass(/active/);
+
+  await button.dispatchEvent("pointerdown",{pointerId:53,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
   await page.evaluate(() => window.dispatchEvent(new Event("blur")));
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
   await expect(button).not.toHaveClass(/active/);
-  await page.mouse.up();
-
-  await page.mouse.down();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(true);
-  await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input.pressed)).toBe(false);
 });
-test("kopací tlačítko po blur, pagehide a změně orientace nezůstane zamčené starým pointerem", async ({ page }) => {
+test("kopací tlačítko po ztrátě capture, blur, pagehide a změně orientace nezůstane zamčené", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startFillChallenge());
   const button = page.locator("#digButton");
-  const box = await button.boundingBox();
-  expect(box).toBeTruthy();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 
+  await button.dispatchEvent("pointerdown",{pointerId:61,pointerType:"touch",bubbles:true,cancelable:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
+  await button.dispatchEvent("lostpointercapture",{pointerId:61,pointerType:"touch",bubbles:true});
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
+  await expect(button).not.toHaveClass(/pressed/);
+
+  let pointerId=62;
   for (const lifecycleEvent of ["blur","pagehide","orientationchange"]) {
-    await page.mouse.down();
+    await button.dispatchEvent("pointerdown",{pointerId,pointerType:"touch",bubbles:true,cancelable:true});
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
     await expect(button).toHaveClass(/pressed/);
 
-    await button.dispatchEvent("pointerdown",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
-    await button.dispatchEvent("pointercancel",{pointerId:162,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointerdown",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
+    await button.dispatchEvent("pointercancel",{pointerId:pointerId+100,pointerType:"touch",bubbles:true,cancelable:true});
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
 
     await page.evaluate(name => window.dispatchEvent(new Event(name)), lifecycleEvent);
     await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
     await expect(button).not.toHaveClass(/pressed/);
-    await page.mouse.up();
+    pointerId++;
   }
-
-  await page.mouse.down();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(true);
-  await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.__lovecDebug.digSnapshot().holding)).toBe(false);
 });
 
 test("automatické podmínky pro pinch-to-zoom zůstávají povolené mimo herní ovladače", async ({ page }) => {
