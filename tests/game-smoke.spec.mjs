@@ -7,6 +7,7 @@ const LEGACY_SAVE_KEY = "lovecVltavinuRebornSaveV5_2";
 test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli penězům", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const source = await page.evaluate(async () => (await fetch("/game.js")).text());
+  const html = await page.evaluate(async () => (await fetch("/index.html")).text());
   expect(source).toContain("Ty vltavíny nehledáš kvůli penězům");
   expect(source).toContain("vystavit na akci Na zelené vlně v KD Slavie");
   expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
@@ -14,7 +15,10 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Frantovu podezřelému vzorku");
   expect(source).toContain("certifikáty pravosti");
   expect(source).toContain("Franta ti při příchodu vyrazí složku");
+  expect(html).toContain("FRANTA TI UKRADL NÁLEZ");
   expect(source).not.toContain("sběratel Franta");
+  expect(html).not.toContain("FEŤÁK");
+  expect(html).not.toContain("FEŤÁKA");
   expect(source).not.toContain("SBĚRATEL FRANTA");
   expect(source).not.toContain("FETÁK FRANTA");
   expect(source).not.toContain("playerName");
