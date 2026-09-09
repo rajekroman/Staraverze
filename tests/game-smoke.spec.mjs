@@ -663,6 +663,23 @@ test("dopadení se uloží okamžitě včetně ztraceného kamene a návratové 
   expect(restored.player).toMatchObject({x:360,y:1070});
 });
 
+test("neúspěšné kopání uloží důsledky před návratem do hry", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startDigChallenge(2);
+    window.__lovecDebug.setDigTime(0);
+  });
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().mode)).toBe("playing");
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.state.heat).toBeGreaterThanOrEqual(4);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  expect((await page.evaluate(() => window.__lovecDebug.snapshot().heat))).toBeGreaterThanOrEqual(4);
+});
+
 test("souhlas lesníka v Nesměni přežije reload před prvním kopáním", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
