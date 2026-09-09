@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-21";
+const CACHE_NAME = "lovec-vltavinu-reborn-v5-4-2-runtime-22";
 
 test("PWA se po prvním načtení spustí i bez sítě", async ({ page, context }) => {
   await page.addInitScript(() => {
