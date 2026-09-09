@@ -11,7 +11,7 @@
 
   const screens = {
     title: $("titleScreen"), brief: $("briefScreen"), dig: $("digScreen"), identify: $("identifyScreen"),
-    dialog: $("dialogScreen"), perk: $("perkScreen"), jury: $("juryScreen"), result: $("resultScreen"),
+    dialog: $("dialogScreen"), fraud: $("fraudScreen"), perk: $("perkScreen"), jury: $("juryScreen"), result: $("resultScreen"),
     pause: $("pauseScreen"), how: $("howScreen"), records: $("recordsScreen")
   };
 
@@ -76,9 +76,9 @@
     },
     {
       id: "malse", name: "Malše", title: "Příchod ke Slávii", theme: "city",
-      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie v centru Českých Budějovic. Za parkem se vzrostlými stromy stojí světlá novorenesanční budova se schodištěm k řece. Franta tu kolem akce čeká kupce pro své vltavíny. Ty tam naopak vezeš svou sbírku vystavit. Posbírej dokumentaci, dožeň ho a doraz na Na zelené vlně s doloženým původem kamenů.",
-      why: "Tady končí hledání a začíná výstava. Nejde ti o prodej — chceš ukázat nejlepší sbírku, kterou se ti během výpravy podařilo sestavit.",
-      goal: "Seber 3 složky, dožeň Frantu a vstup do KD Slávie.", music: "city"
+      text: "Po nábřeží Malše přicházíš ke Kulturnímu domu Slávie na akci Na zelené vlně. U vstupu zaregistruješ svou sbírku. Pak prověříš tři podklady k Frantovu podezřelému vzorku, upozorníš pořadatele na nesrovnalost a zachráníš složku, se kterou se pokusí utéct.",
+      why: "Tady se uzavře celá výprava. Nejde o největší kámen ani o prodej: rozhodne stav kamenů, doložený původ, pestrost sbírky a to, jak ses během cesty choval.",
+      goal: "Zaregistruj sbírku, prověř 3 podklady, vyřeš podvod a připrav vitrínu.", music: "city"
     }
   ];
 
@@ -308,7 +308,7 @@
   function freshState() {
     return {
       version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
-      perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0}, sound:true
+      perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
 
@@ -639,7 +639,7 @@
   }
 
   function generateMalse(){
-    world.runtime={papers:0,bossStarted:false,bossHits:0,bossDefeated:false};player.x=720;player.y=1060;
+    world.runtime={papers:0,registered:false,fraudResolved:false,fraudAttempts:0,bossStarted:false,bossHits:0,bossDefeated:false,dossierRecovered:false,frantaEscaped:false};player.x=720;player.y=1060;
     for(let y=150;y<1100;y+=145){addProp("tree",510,y,{scale:1.38});addProp("lamp",650,y);}
     // Authored park clearings keep the documents and the existing patrol routes legible.
     [[1160,690],[1370,610],[1630,550],[1730,780],[1450,920],[1190,1040],[1670,1060]].forEach(([x,y],i)=>addProp("tree",x,y,{scale:1.45+(i%3)*.16}));
@@ -647,7 +647,7 @@
     addProp("lamp",1320,455);addProp("lamp",1660,435);
     addProp("bridge",330,520,{scale:1}); addProp("slavie",1460,235,{scale:1.26}); addProp("sign",780,1000,{text:"Zátkovo nábřeží"});
     addProp("plaza",1440,400,{scale:1.0});
-    [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["fotografie nálezů","souhlasy vlastníků","vážní protokol"][i]}));
+    [[760,860],[1040,560],[1280,360]].forEach((p,i)=>addItem("paper",p[0],p[1],{label:["detail povrchu vzorku","fotografie údajného nálezu","záznam původu a času nálezu"][i]}));
     addPatrol("bike",[{x:620,y:820},{x:620,y:180},{x:620,y:1080}],{speed:155,vision:0,scale:1.35});
     addPatrol("car",[{x:970,y:1080},{x:970,y:160}],{speed:190,vision:0,scale:1.7,visualScale:1.25,variant:0});
     addPatrol("police",[{x:1180,y:980},{x:1220,y:260}],{speed:92,vision:190,scale:1.35});
@@ -757,7 +757,21 @@
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
     showOnly(screens.brief);
   }
-  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
+  function normalizeMalseWorld(){
+    if(!world||world.id!=="malse")return;
+    const r=world.runtime||(world.runtime={});
+    r.papers=Math.round(finiteNumber(r.papers,0,0,3));
+    if(typeof r.registered!=="boolean")r.registered=Boolean(r.papers>0||r.bossStarted||r.bossDefeated);
+    if(typeof r.fraudResolved!=="boolean")r.fraudResolved=Boolean(r.bossStarted||r.bossDefeated);
+    if(typeof r.bossStarted!=="boolean")r.bossStarted=false;
+    if(typeof r.bossDefeated!=="boolean")r.bossDefeated=false;
+    if(typeof r.frantaEscaped!=="boolean")r.frantaEscaped=false;
+    if(typeof r.dossierRecovered!=="boolean")r.dossierRecovered=Boolean(r.bossDefeated&&!r.frantaEscaped);
+    r.fraudAttempts=Math.round(finiteNumber(r.fraudAttempts,0,0,99));
+    delete r.bossDelay;
+    if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
+  }
+  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);normalizeMalseWorld();restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
 
   function levelGoal(){
     const r=world.runtime;
@@ -765,7 +779,7 @@
     if(world.id==="locenice")return `Správně ${r.correct}/5 · pravé ${r.real}/3`;
     if(world.id==="nesmen")return r.permit?`Profily ${r.dug}/3 · zahrabáno ${r.filled}/3`:`Získej souhlas lesníka`;
     if(world.id==="besednice")return r.bossStarted?(r.bossDefeated?"Ježek je v bezpečí":"Dostaň ježek zpět"):r.clues<3?`Stopy ${r.clues}/3`:`Vykopej ježkový profil`;
-    if(world.id==="malse")return r.bossStarted?(r.bossDefeated?"Vstup do Slávie":"Dožeň Frantu"): `Dokumenty ${r.papers}/3`;
+    if(world.id==="malse"){if(!r.registered)return "Registrace u vstupu do Slávie";if(r.papers<3)return `Podklady ${r.papers}/3`;if(!r.fraudResolved)return "Prověř Frantův vzorek u vstupu";if(!r.bossDefeated)return "Zachraň složku před Frantou";return r.dossierRecovered?"Vstup do výstavního sálu":"Vstup do sálu · kopie podkladů zajištěna";}
     return "Výprava";
   }
   function goalComplete(){
@@ -774,7 +788,7 @@
     if(world.id==="locenice")return r.correct>=5&&r.real>=3;
     if(world.id==="nesmen")return r.permit&&r.dug>=3&&r.filled>=3;
     if(world.id==="besednice")return r.bossDefeated;
-    if(world.id==="malse")return r.papers>=3&&r.bossDefeated;
+    if(world.id==="malse")return Boolean(r.registered&&r.papers>=3&&r.fraudResolved&&r.bossDefeated);
     return false;
   }
 
