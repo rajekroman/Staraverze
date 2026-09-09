@@ -64,7 +64,6 @@ jobs:
 
   browser:
     name: Playwright - ${{ matrix.project }}
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -102,7 +101,6 @@ jobs:
 
   visual:
     name: Visual regression - ${{ matrix.project }}
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -190,7 +188,6 @@ jobs:
 
   offline:
     name: Playwright - offline-chromium
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
