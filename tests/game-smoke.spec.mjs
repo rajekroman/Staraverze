@@ -663,6 +663,112 @@ test("dopadení se uloží okamžitě včetně ztraceného kamene a návratové 
   expect(restored.player).toMatchObject({x:360,y:1070});
 });
 
+test("souhlas lesníka v Nesměni přežije reload před prvním kopáním", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(2);
+    window.__lovecDebug.setPlayer(290,980);
+  });
+  await page.keyboard.press("Space");
+  await expect(page.locator("#dialogScreen")).toHaveClass(/visible/);
+  await page.locator("#dialogButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Profily 0/3 · zahrabáno 0/3");
+
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.world.runtime.permit).toBe(true);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Profily 0/3 · zahrabáno 0/3");
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).world.runtime.permit, SAVE_KEY)).toBe(true);
+});
+
+test("radarem odhalený nález zůstane odhalený po reloadu i bez sebrání", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.setPlayer(500,840);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+  await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+
+  const before = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  const revealed = before.world.items.find(item => item.type==="stone" && item.x===500 && item.y===840);
+  expect(revealed?.hidden).toBe(false);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await page.evaluate(() => window.__lovecDebug.setPlayer(500,840));
+  await expect(page.locator("#actionText")).toHaveText("SEBRAT");
+});
+
+test("čekající Karel se po reloadu znovu spustí místo softlocku Besednice", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.state.stones=save.state.stones.filter(stone=>stone.rarity!=="hedgehog");
+    save.world.runtime.hedgehog=true;
+    save.world.runtime.chaseStarted=true;
+    save.world.runtime.bossStarted=false;
+    save.world.runtime.bossDefeated=false;
+    save.world.runtime.pendingBoss={x:1100,y:430};
+    delete save.world.rival;
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
+    name:"karel",active:true,hits:0,maxHits:3
+  });
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostaň ježek zpět");
+  const restored = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(restored.world.runtime.bossStarted).toBe(true);
+  expect(restored.world.runtime.pendingBoss ?? null).toBeNull();
+});
+
+test("každý platný zásah Karla se checkpointuje a finální ježek přežije reload", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(3);
+    window.__lovecDebug.spawnBoss("karel");
+    window.__lovecDebug.setBossStun(1);
+    window.__lovecDebug.hitBoss();
+  });
+
+  let saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.world.rival.hits).toBe(1);
+  expect(saved.world.runtime.bossStarted).toBe(true);
+  expect(saved.world.runtime.bossDefeated).toBe(false);
+
+  for(let hit=2;hit<=3;hit+=1){
+    await page.evaluate(() => {
+      window.__lovecDebug.setBossStun(1);
+      window.__lovecDebug.hitBoss();
+    });
+  }
+  saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.world.runtime.bossDefeated).toBe(true);
+  expect(saved.world.rival.active).toBe(false);
+  expect(saved.state.stones.some(stone=>stone.rarity==="hedgehog")).toBe(true);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Ježek je v bezpečí");
+});
+
 test("perk a porota se po reloadu obnoví bez opakovaného bodového bonusu", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => {
