@@ -13,6 +13,12 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-180.png">
   <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Critical title-logo sizing also bypasses stale PWA stylesheet caches on the first refreshed navigation. */
+    #titleScreen .nzv-brand-lockup{width:clamp(128px,11vw,164px)}
+    @media(max-width:760px){#titleScreen .nzv-brand-lockup{width:112px}}
+    @media(max-height:490px) and (orientation:landscape){#titleScreen .nzv-brand-lockup{width:82px}}
+  </style>
   <title>Lovec vltavínů: Zelená vlna</title>
 </head>
 <body>
@@ -77,7 +83,7 @@
     <div class="title-copy">
       <div class="menu-brand-row">
         <a class="nzv-brand-lockup" href="https://www.nazelenevlne.cz" target="_blank" rel="noopener noreferrer" aria-label="Na zelené vlně – informace o akci">
-          <img src="./assets/ui/nzv-logo-purple.png" alt="Na zelené vlně">
+          <img src="./assets/ui/nzv-logo-purple.png" alt="Na zelené vlně" width="560" height="545" decoding="sync" fetchpriority="high">
         </a>
         <p class="eyebrow campaign-eyebrow">HRA K AKCI NA ZELENÉ VLNĚ 2026</p>
       </div>
