@@ -371,7 +371,7 @@
 
   function freshState() {
     return {
-      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
+      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0, pendingTransition:null,
       perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
@@ -403,6 +403,7 @@
     clean.combo = Math.round(finiteNumber(data.combo, 1, 1, 6));
     clean.comboTimer = finiteNumber(data.comboTimer, 0, 0, 60);
     clean.caught = Math.round(finiteNumber(data.caught, 0, 0, 100000));
+    clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="jury" ? data.pendingTransition : null;
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
@@ -815,7 +816,16 @@
   function startNew(){
     state=freshState();audio.setEnabled(state.sound,{resume:false});syncSoundButton();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);audio.start();audio.sfx("click");
   }
-  function continueGame(){if(!load()){startNew();return;}syncSoundButton();showBrief(state.levelIndex);audio.start();}
+  function continueGame(){
+    if(!load()){startNew();return;}
+    syncSoundButton();
+    if(state.pendingTransition){
+      audio.setTheme(LEVELS[state.levelIndex]?.music||"menu");audio.start();
+      if(state.pendingTransition==="jury"){showJury();return;}
+      showPerks();return;
+    }
+    showBrief(state.levelIndex);audio.start();
+  }
   function showBrief(index){
     state.levelIndex=index;mode="brief";setPlaying(false);const l=LEVELS[index];audio.setTheme(l.music);
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
@@ -1193,13 +1203,19 @@
     finishLevel();
   }
   function finishLevel(){
-    mode="transition";setPlaying(false);state.score+=700+state.combo*120;save();
-    if(state.levelIndex>=LEVELS.length-1){showJury();return;}
+    mode="transition";setPlaying(false);
+    if(!state.pendingTransition){
+      state.score+=700+state.combo*120;
+      state.pendingTransition=state.levelIndex>=LEVELS.length-1?"jury":"perk";
+      save();
+    }
+    if(state.pendingTransition==="jury"){showJury();return;}
     showPerks();
   }
   function showPerks(){
+    mode="transition";setPlaying(false);
     const candidates=PERKS.filter(p=>(state.perks[p.id]||0)<p.max).sort(()=>Math.random()-.5).slice(0,3);const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;save();showBrief(state.levelIndex);});list.append(b);});
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingTransition=null;save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
   }
 
@@ -1237,7 +1253,7 @@
   function caught(reason){
     if(player.invuln>0)return;dangerActive=false;dangerExposure=0;dangerWarned=false;player.invuln=2;shake=12;flash=.22;flashColor="255,90,80";state.caught++;state.heat=20;breakCombo();audio.sfx("catch");
     let lost=null;if(state.stones.length){const sorted=[...state.stones].sort((a,b)=>a.value-b.value);lost=state.perks.case>0&&sorted.length>1?sorted[0]:pick(sorted.slice(0,Math.min(2,sorted.length)));state.stones=state.stones.filter(s=>s.id!==lost.id);}
-    player.x=world.id==="malse"?720:world.id==="chlum"?360:world.id==="nesmen"?360:170;player.y=world.id==="malse"?1060:world.id==="chlum"?1070:world.id==="nesmen"?1050:1030;stopPlayerMotion();toast(`${reason}${lost?` · ztracen ${lost.name}`:""}`,"bad",1800);updateHUD(true);
+    player.x=world.id==="malse"?720:world.id==="chlum"?360:world.id==="nesmen"?360:170;player.y=world.id==="malse"?1060:world.id==="chlum"?1070:world.id==="nesmen"?1050:1030;stopPlayerMotion();toast(`${reason}${lost?` · ztracen ${lost.name}`:""}`,"bad",1800);updateHUD(true);save();
   }
 
   function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));}
@@ -2769,6 +2785,7 @@
           return {level:world.id,complete:goalComplete(),stones:state.stones.length};
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
+        triggerCaught(reason="Testovací dopadení"){if(!world)return null;player.invuln=0;caught(reason);return {caught:state.caught,stones:state.stones.length,player:{x:player.x,y:player.y}};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,finishDelay:digFinishDelay,currentActive:Boolean(currentDig?.active),inputLocked:performance.now()<digInputLockUntil};},
         fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
         malseSnapshot(){const r=world?.id==="malse"?world.runtime:null;return r?{registered:Boolean(r.registered),papers:r.papers||0,fraudResolved:Boolean(r.fraudResolved),fraudAttempts:r.fraudAttempts||0,bossStarted:Boolean(r.bossStarted),bossDefeated:Boolean(r.bossDefeated),dossierRecovered:Boolean(r.dossierRecovered),frantaEscaped:Boolean(r.frantaEscaped)}:null;},
@@ -2787,7 +2804,7 @@
         },
         snapCameraToPlayer(){camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));return {x:camera.x,y:camera.y};},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score,pendingTransition:state.pendingTransition,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
