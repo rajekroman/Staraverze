@@ -8,12 +8,12 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   await page.goto("/", { waitUntil: "domcontentloaded" });
   const source = await page.evaluate(async () => (await fetch("/game.js")).text());
   expect(source).toContain("Ty vltavíny nehledáš kvůli penězům");
-  expect(source).toContain("vystavit na akci Na zelené vlně v KD Slavie");
-  expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
+  expect(source).toContain("vybrat z ní nejzajímavější kusy pro výstavu na akci Na zelené vlně v KD Slávii");
+  expect(source).toContain("Vltavíny sbírá na prodej");
   expect(source).toContain("utratit peníze za automaty");
-  expect(source).toContain("Frantovu podezřelému vzorku");
-  expect(source).toContain("certifikáty pravosti");
-  expect(source).toContain("Franta ti při příchodu vyrazí složku");
+  expect(source).toContain("potřeboval bych tvůj názor na jeden Frantův vzorek");
+  expect(source).toContain("necháš nejlepší kusy posoudit odborníkem a získáš k nim certifikáty");
+  expect(source).toContain("složka s certifikáty skončí někde na nábřeží");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
   expect(source).not.toContain("FETÁK FRANTA");
@@ -25,7 +25,7 @@ test("menu jasně propaguje Na zelené vlně a vysvětluje cíl výpravy", async
   await expect(page.locator("#titleScreen")).toHaveClass(/visible/);
   await expect(page.locator("#campaignEventCard")).toContainText("19. ZÁŘÍ 2026");
   await expect(page.locator("#campaignEventCard")).toContainText("České Budějovice");
-  await expect(page.locator("#campaignEventCard")).toContainText("KD SLAVIE");
+  await expect(page.locator("#campaignEventCard")).toContainText("KD SLÁVIE");
   await expect(page.locator(".campaign-storyline")).toContainText("FINÁLE NA AKCI");
   await expect(page.locator("#titleScreen .subtitle")).toContainText("Nasbírej nejkrásnější vltavíny a doraz s nimi na akci");
   await expect(page.locator("#playButton")).toContainText("VYRAZIT ZA VLTAVÍNY");
@@ -315,7 +315,7 @@ async function recoverMalseCertificates(page) {
   });
   await page.keyboard.press("Space");
   await page.evaluate(() => window.__lovecDebug.setPlayer(880,1030));
-  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
+  await expect(page.locator("#actionText")).toHaveText("VZÍT SLOŽKU");
   await page.keyboard.press("Space");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.malseSnapshot()?.certificateRecovered)).toBe(true);
 }
@@ -576,14 +576,14 @@ test("starší Malše save bez certifikační položky se migruje bez softlocku"
   await page.reload({waitUntil:"domcontentloaded"});
   await page.locator("#continueButton").click();
   await page.locator("#briefButton").click();
-  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   const migrated = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
   const certificate = migrated.world.items.find(item=>item.special==="certificate");
   expect(certificate).toMatchObject({type:"paper",active:true,hidden:true});
 
   await recoverMalseCertificates(page);
-  await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj sbírku u vstupu");
 });
 
 test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", async ({ page }) => {
@@ -875,7 +875,7 @@ test("rozběhnutý Frantův útěk bez rival objektu se po reloadu sám obnoví"
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
     name:"franta",active:true,hits:0,maxHits:1
   });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Zachraň složku před Frantou");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi složku zpět");
 });
 
 test("každý platný zásah Karla se checkpointuje a finální ježek přežije reload", async ({ page }) => {
@@ -1204,30 +1204,30 @@ test("Nesměň vyžaduje souhlas a projde třemi profily až k odchodu", async (
 test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty a vitrínou", async ({ page }) => {
   const errors = watchErrors(page);
   const evidence = [
-    { x: 760, y: 860, objective: "Podklady 1/3" },
-    { x: 1040, y: 560, objective: "Podklady 2/3" },
+    { x: 760, y: 860, objective: "Indicie 1/3" },
+    { x: 1040, y: 560, objective: "Indicie 2/3" },
     { x: 1280, y: 360, objective: "Prověř Frantův vzorek u vstupu" }
   ];
 
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
-  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
+  await expect(page.locator("#actionText")).toHaveText("VZÍT SLOŽKU");
   await page.keyboard.press("Space");
-  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   await recoverMalseCertificates(page);
-  await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Zaregistruj sbírku u vstupu");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("REGISTRACE");
+  await expect(page.locator("#actionText")).toHaveText("REGISTROVAT");
   await page.keyboard.press("Space");
   await expect(page.locator("#dialogScreen")).toHaveClass(/visible/);
   await expect(page.locator("#dialogName")).toHaveText("POŘADATEL");
   await page.locator("#dialogButton").click();
-  await expect(page.locator("#objectiveLabel")).toHaveText("Podklady 0/3");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Indicie 0/3");
 
   for (const item of evidence) {
     await page.evaluate(({ x, y }) => window.__lovecDebug.setPlayer(x, y), item);
@@ -1244,13 +1244,13 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
 
   await page.locator("#fraudWrongButton").click();
   await expect(page.locator("#fraudFeedback")).toHaveClass(/bad/);
-  await expect(page.locator("#fraudFeedback")).toContainText("Posuď celek znovu");
+  await expect(page.locator("#fraudFeedback")).toContainText("Posuď všechny tři nesrovnalosti společně");
   await page.keyboard.press("Escape");
   await expect(page.locator("#fraudScreen")).toHaveClass(/visible/);
 
   await page.locator("#fraudButton").click();
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({ name: "franta", active: true, maxHits: 1 });
-  await expect(page.locator("#objectiveLabel")).toHaveText("Zachraň složku před Frantou");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Dostihni Frantu a vezmi složku zpět");
   await expect(page.locator("#bossPhase")).toContainText(/BERE SLOŽKU|JEDEN ZÁSAH/);
 
   await page.evaluate(() => {
