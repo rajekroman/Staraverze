@@ -1,5 +1,12 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Společný pohyb pěších postav — základ
+
+- Franta a Karel mají stejný stav směru a chůze jako ostatní pěší postavy: `facing`, `pose`, `moving`, `motionRatio` a `motionPhase`;
+- jejich skutečný posun ve světě nyní řídí front/back/side pózu i krokový cyklus přes společný humanoidní motion helper, nikoli časový fallback rendereru;
+- při zastavení nebo omráčení se rivalovi okamžitě zastaví kroková animace a `motionRatio` klesne na nulu;
+- regresní smoke test hlídá pohyb i úplné zastavení Franty a PWA cache byla zvýšena na `runtime-21`.
+
 ## Přístupné modály a mobilní zoom
 
 - skutečné překryvy nad přerušeným stavem — NPC dialog, určení vzorku, kopání/zahrabávání, pauza, návod a rekordy — mají dialogovou sémantiku, přístupný název, focus trap, přesun a návrat fokusu; briefing, perky, porota a finální výsledek jsou samostatné kroky toku bez falešného `aria-modal`;
