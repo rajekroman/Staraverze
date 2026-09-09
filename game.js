@@ -52,7 +52,7 @@
   const LEVELS = [
     {
       id: "chlum", name: "Chlum", title: "Chlum po bouřce", theme: "field",
-      text: "Po bouřce vyrážíš na pole za prvními kusy do své sbírky. Nejsi tu ale sám — Franta sbírá stejné vltavíny, aby je mohl prodat a utratit peníze za drogy. Radar ti pomůže odhalit nálezy dřív než on.",
+      text: "Po bouřce vyrážíš na pole za prvními kusy do své sbírky. Nejsi tu ale sám — Franta sbírá stejné vltavíny, aby je mohl prodat a utratit peníze za automaty. Radar ti pomůže odhalit nálezy dřív než on.",
       why: "Ty vltavíny nehledáš kvůli penězům. Chceš sestavit co nejlepší sbírku a na konci výpravy ji vystavit na akci Na zelené vlně v KD Slavie.",
       goal: "Radarem najdi a sesbírej 6 vltavínů z povrchu pole.", music: "field"
     },
