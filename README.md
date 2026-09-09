@@ -28,6 +28,8 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - první vstup do Malše skutečně odehraje krátký střet s Frantou a ztrátu certifikační složky; složka nese ID přesně těch kamenů, které byly vybrány při Expertize, a registrace tuto vazbu ověřuje; pozdější honička se týká oddělené kontrolní složky s podklady k Frantovu vzorku;
 - certifikované kameny a povinný Besednický ježek jsou chráněné před náhodnou ztrátou při dopadení;
 - ze Slávie byli odstraněni cyklisté a policejní patrol; akce ZASTAVIT na Frantu má prioritní dotykově tolerantní dosah a je pokrytá browserovým testem;
+- vizuální polish nahrazuje kruhové koruny deterministickými organickými siluetami, uzemňuje NPC/soupeře stínem nezávislým na bob animaci a rozbíjí pravidelnost dlažby Malše/Slávie bez změny kolizí;
+- runtime cleanup rozděluje dispatch render fronty, kontextové akční popisky a obrazovkové efekty do menších helperů při zachování stávající Canvas 2D architektury a gameplay pravidel;
 - save schema 2 bezpečně převádí starší stavy: flat save na začátku Malše projde Expertizou, zatímco už rozehraná stará Malše zůstane na místě a dostane deterministický certifikační backfill.
 
 ## Vývoj a ověření

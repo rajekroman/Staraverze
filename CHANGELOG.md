@@ -1,5 +1,13 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Vizuální polish a konzervativní runtime cleanup
+
+- stromové a borovicové koruny mají deterministické organické obrysy místo čistě kruhových laloků; fade při překrytí hráče a kolize zůstávají beze změny;
+- stín NPC a soupeřů zůstává ukotvený na terénu i při bob animaci těla, což zlepšuje kontakt postav se zemí;
+- dlažba nábřeží a plochy u KD Slávie používá nepravidelné spáry, patinu a lokální opravy; odstraněno je i staré vizuální značení cyklopruhu po dřívějším odstranění cyklistů;
+- render queue dispatch, kontextové akční popisky, vignette a objective arrow byly rozděleny do menších helperů bez změny mechanik, dosahů nebo save formátu;
+- PWA cache zvýšena na `runtime-36`.
+
 ## Certifikace, doložený původ a návaznost finále
 
 - datový model kamene nově odděluje `documented` (doložený původ) a `certified` (konkrétní odborně posouzený kus);
