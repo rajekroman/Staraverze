@@ -832,16 +832,20 @@ test("perk a porota se po reloadu obnoví bez opakovaného bodového bonusu", as
   await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
   const perkSave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
   expect(perkSave.state.pendingTransition).toBe("perk");
+  expect(perkSave.state.pendingPerks).toHaveLength(3);
   const perkScore = perkSave.state.score;
+  const perkOffer = [...perkSave.state.pendingPerks];
 
   await page.reload({waitUntil:"domcontentloaded"});
   await page.locator("#continueButton").click();
   await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
-  expect((await page.evaluate(key => JSON.parse(localStorage.getItem(key)).state.score, SAVE_KEY))).toBe(perkScore);
+  const restoredPerkSave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(restoredPerkSave.state.score).toBe(perkScore);
+  expect(restoredPerkSave.state.pendingPerks).toEqual(perkOffer);
   await page.locator(".perk-option").first().click();
   await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 2 / 5");
   const advanced = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
-  expect(advanced.state).toMatchObject({levelIndex:1,pendingTransition:null});
+  expect(advanced.state).toMatchObject({levelIndex:1,pendingTransition:null,pendingPerks:[]});
 
   await page.evaluate(() => {
     window.__lovecDebug.startLevel(4);
