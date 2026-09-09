@@ -92,8 +92,8 @@
   ];
 
   const SAMPLES = [
-    { real: true, title: "Olivová kapka", text: "Olivově zelený nepravidelný kus s jamkami, drobnými kanálky a několika uzavřenými bublinkami." },
-    { real: false, title: "Jasně zelený střep", text: "Jasně zelený kus s velmi rovnoměrným odstínem, hladkým leskem a pravidelným tvarem." },
+    { real: true, title: "Olivová kapka", text: "Olivově zelený nepravidelný kus s jamkami, kanálky a několika drobnými bublinkami." },
+    { real: false, title: "Jasně zelený střep", text: "Jasně zelený kus s velmi hladkým povrchem, pravidelnými hranami a téměř stejnou tloušťkou." },
     { real: true, title: "Hnědozelená kapka", text: "Hnědozelený kus s nepravidelnými kanálky, drobnými krátery a místy ostrými výstupky." },
     { real: false, title: "Lesklý zelený kus", text: "Povrch je velmi hladký, hrany zaoblené a reliéf se na několika místech nápadně opakuje." },
     { real: true, title: "Drobný celotvar", text: "Nepravidelný kus s různě hlubokou skulptací bez zjevně se opakujícího vzoru." },
@@ -1085,14 +1085,14 @@
       digTimeLeft=Math.min(8,digTimeLeft+.35);
       audio.sfx("impactWet");haptic([12,24,14]);shake=Math.max(shake,2);
       $("digHits").textContent=[0,1,2].map(i=>i<digHits?"◆":"◇").join(" ");
-      setDigFeedback(`Hlína v díře · přenos ${digHits}/3`,"good");
+      setDigFeedback(`Zásyp profilu · ${digHits}/3`,"good");
       const card=$("digScreen").querySelector(".dig-card");card.classList.remove("hit");void card.offsetWidth;card.classList.add("hit");
       if(digHits>=3){digFinishDelay=.35;return;}
     }else{
       state.stats.misses++;
       digTimeLeft=Math.max(0,digTimeLeft-.8);
       audio.sfx("bad");haptic([24,28,20]);shake=Math.max(shake,4);
-      setDigFeedback("Hlína spadla vedle · naber znovu","bad");
+      setDigFeedback("Hlína spadla vedle. Naber ji znovu.","bad");
     }
     digMarker=.06;digZoneCenter=rand(.58,.74);updateDigZone();
   }
@@ -1293,7 +1293,7 @@
       const b=document.createElement("button");b.type="button";b.className="stone-card";
       const size=s.size||(s.weight<1.2?"drobný":s.weight<3.2?"střední":s.weight<6.5?"velký":"mimořádný");
       const qualityLabel=s.qualityLabel||(s.quality>=88?"výstavní":s.quality>=74?"pěkný":s.quality>=60?"dobrý":"surový");
-      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · stav ${qualityLabel} (${s.quality} %)${s.documented?" · původ doložený":" · původ nedoložený"}</small></div>`;
+      b.innerHTML=`<span>◆</span><div><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.locality)} · ${size} · stav: ${qualityLabel} · ${s.quality} %${s.documented?" · původ doložený":" · původ nedoložený"}</small></div>`;
       b.addEventListener("click",()=>{if(jurySelection.has(s.id)){jurySelection.delete(s.id);b.classList.remove("selected");}else if(jurySelection.size<target){jurySelection.add(s.id);b.classList.add("selected");}$("juryCount").textContent=`${jurySelection.size} / ${target}`;$("juryButton").disabled=target>0&&jurySelection.size!==target;});list.append(b);
     });
     $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"}. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"Došel jsi bez kamenů. Výpravu lze dokončit, ale vitrína zůstane prázdná.";
