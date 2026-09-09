@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,8 +26,23 @@ jobs:
       - run: npm ci
       - run: npm run validate
 
+  pr-publish:
+    name: PR publish validation
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:publish
+      - run: npm run validate:publish
+
   publish:
     name: Clean Pages publish
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -48,6 +64,7 @@ jobs:
 
   browser:
     name: Playwright - ${{ matrix.project }}
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -85,6 +102,7 @@ jobs:
 
   visual:
     name: Visual regression - ${{ matrix.project }}
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -112,6 +130,7 @@ jobs:
 
   motion:
     name: Motion evidence - tractor
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -131,6 +150,7 @@ jobs:
 
   excavator-motion:
     name: Motion evidence - excavator
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -150,6 +170,7 @@ jobs:
 
   car-motion:
     name: Motion evidence - car
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -169,6 +190,7 @@ jobs:
 
   offline:
     name: Playwright - offline-chromium
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
