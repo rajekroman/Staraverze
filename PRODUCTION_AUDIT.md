@@ -6,7 +6,8 @@ Výchozí stav této dodatečné revize je `main@2d0cee52c675b1bdeeabeba1c24d800
 
 - Pages publish je nyní navázán na úspěšný workflow `Validate v5.4 continuation`, checkoutuje přesně `workflow_run.head_sha` a publikuje pouze explicitní `dist/`.
 - Focus management, focus trap, návrat fokusu a mobilní pinch/reflow byly doplněny a mají browserové regresní testy.
-- Finále Slávie nyní obsahuje registraci, kontrolu podvodu, Frantův útěk se složkou a výstavní vitrínu.
+- Finále Slávie nyní obsahuje certifikáty pravosti, registraci, kontrolu podvodu, Frantův útěk se složkou a výstavní vitrínu. Cyklisté a policejní patrol byli z finále odstraněni; Frantův catch používá tolerantnější prioritní akci vhodnou pro dotykové ovládání.
+- Save integrity pokrývá dopadení, radarové odhalení, souhlas lesníka, neúspěšné minihry, pending perk/jury přechody, stabilní nabídku perků a obnovu Karlova souboje bez reload softlocku.
 - Audio lifecycle pro mute, pause, background a rychlé přepnutí theme má automatické testy. Finální hudební pass doplňuje existující ambienty procedurálním score bez nového externího audio assetu.
 - Stále zůstává ruční release gate: potvrzení distribučních práv k MP3 označeným `NOASSERTION`, poslech na reproduktorech/sluchátkách a plný průchod na fyzickém iOS/Android zařízení.
 
@@ -40,11 +41,11 @@ Při vstupní kontrole nebyly otevřené issues ani PR. Byly přečteny runtime,
 ## Nalezené problémy — neuzavřené
 
 - **Vyřešeno v této etapě — pokračování rozehrané lokality.** Uložený stav nyní obsahuje verzovaný snapshot `state`, aktuální svět, runtime hodnoty, aktivitu nálezů a pozici postavy. Staré ploché save formáty zůstávají migrovatelné a při jejich načtení se svět bezpečně vygeneruje nově. Regresní test ověřuje Chlum: sebraný kámen, `runtime.collected`, pozici a obnovení po reloadu.
-- **High / Small–Medium — nasazení není závislé na výsledku testů.** `pages.yml` běží nezávisle na `validate.yml` při push na main. Navíc publikuje celý kořen, tedy i testy, nástroje a vývojovou dokumentaci. Změnu publikační politiky je vhodné oddělit od runtime opravy a ověřit na konkrétním SHA.
-- **High / Small + součinnost vlastníka — audio práva a poslech.** Část dodaných zvuků má `NOASSERTION`; technická integrita nenahrazuje právo distribuce. Nutný poslech na reproduktoru/sluchátkách a potvrzení vlastníka. Původní dokumentace popisuje 21 položek v7.3, aktuální offline seznam obsahuje i další sdílené zvuky.
-- **Medium / Medium — přístupnost.** Dialogy mají role a popisky, ale chybí důsledný focus management/focus trap a vracení fokusu. Celostránkové blokování vícedotykových gest brání přiblížení textu. Canvas neposkytuje ekvivalent prostorové navigace pro nevidomého hráče. Omezení pohybu se čte při startu a neomezuje všechny lokální pulsy.
-- **Medium / Small–Medium — audio lifecycle.** Pokračování spouští audio před načtením uloženého nastavení zvuku; nové hry mohou nesjednotit `state.sound` a audio přepínač. Pauza zastavuje hudbu, nikoli všechny už běžící efekty. Asynchronní přepínání hudby si zaslouží test rychlých přechodů/mute/background.
-- **Medium / Medium — vizuální testy.** Současná automatická brána obsahuje hlavní campaign menu, Chlum, radar a kopání ve třech viewportových variantách, nikoli obrazové reference všech pěti map. Otisk 8×6 průměrných barev s tolerancí 1,25 může přehlédnout malý lokální detail; screenshot artefakty proto zůstávají důležitou ruční kontrolou.
+- **Vyřešeno — exact-SHA Pages publish.** Produkční deploy navazuje na úspěšný validační workflow, checkoutuje přesně ověřené SHA a publikuje pouze explicitně allowlistovaný `dist/`. Publish smoke ověřuje také offline migraci cache.
+- **High / Small + součinnost vlastníka — audio práva a poslech.** Část dodaných zvuků má `NOASSERTION`; technická integrita nenahrazuje právo distribuce. Nutný poslech na reproduktoru/sluchátkách a potvrzení vlastníka.
+- **Vyřešeno pro podporované HTML UI — přístupnost a zoom.** Focus management, focus trap, návrat fokusu, reduced-motion, mobilní reflow a pinch-to-zoom proxy mají regresní testy. Canvasová prostorová navigace pro nevidomého hráče zůstává inherentním omezením této architektury a není deklarována jako plná screen-reader herní podpora.
+- **Vyřešeno — audio lifecycle.** Mute, pokračování, pauza, background/visibility a rychlé přepínání theme mají automatické testy a společný AudioEngine lifecycle.
+- **Medium / Medium — vizuální testy.** Automatická brána nyní pokrývá více scén včetně Slávie a běží ve třech viewportových variantách. Fingerprint 8×6 s tolerancí 1,25 může stále přehlédnout malý lokální detail; screenshot artefakty proto zůstávají důležitou ruční kontrolou.
 - **Medium / Medium — výkon.** Terén čtyř map již má cache; drawable seznam se stále znovu alokuje a třídí, Malše překresluje celý povrch. Bez měření na slabším telefonu není odůvodněné zavádět pooling nebo nový renderer. Nové stínování korun přidává gradienty; je kandidátem na sprite cache až po profilu.
 - **Low / Small — údržba.** Jednosouborový runtime odpovídá cílové architektuře, ale dlouhé jednořádkové funkce komplikují review. Původní generátor WAV není současný MP3 build pipeline. Neexistují samostatné unit/lint/typecheck/build kroky; jde o statickou aplikaci s vlastní validací a Playwrightem, ne o rozbitý bundler.
 
@@ -54,7 +55,7 @@ Nová úprava řeší konkrétní čitelnost postavy a ploché koruny, nikoli ce
 
 ## Gameplay
 
-Pět kapitol má odlišné úkoly: povrchový sběr, určování vzorků, povolené profily se zasypáním, hledání stop s Karlem, dokumenty s Frantou a porota. Tato smyčka má funkční základ. Největší problém pro důvěru hráče je nyní skutečné pokračování rozpracovaného levelu. Další malá iterace má zlepšit navigaci k povolení v Nesměni, vysvětlení prázdného radarového skenu a čitelnost zranitelného okamžiku bossů. Pro pacing a obtížnost je potřeba průchod bez teleportů/testovacích zkratek; automatický přechod k porotě není uživatelský playtest.
+Pět kapitol má odlišné úkoly: povrchový sběr, určování vzorků, povolené profily se zasypáním, hledání stop s Karlem, certifikáty a dokumenty s Frantou a porota. Save-state přechody jsou checkpointované a staré Malše save se migrují bez certifikačního softlocku. Slávie byla zjednodušena odstraněním cyklistů a policie; Frantův catch je prioritní a tolerantnější pro dotyk. Pro pacing a obtížnost stále zůstává vhodný skutečný fyzický průchod bez teleportů/testovacích zkratek; automatizace není náhradou uživatelského playtestu.
 
 ## Technologie a ověření
 
@@ -74,12 +75,9 @@ Konkrétní finální výsledky testů jsou doplněny po dokončení běhů. Aut
 
 | Pořadí | Krok | Přínos / náročnost / riziko |
 |---|---|---|
-| 1 | Závislost Pages nasazení na úspěšném exact-SHA QA; explicitní distribuční seznam | High / Small–Medium / Medium |
-| 2 | Uzavřít práva k audio souborům a skutečný mobilní poslech | High / Small + vlastník / Low |
-| 3 | Sjednotit mute, pokračování a background audio lifecycle | Medium / Small–Medium / Low |
-| 4 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | High / Medium / Low |
-| 5 | Focus management, přiblížení textu a test klávesnice/čtečky | Medium / Medium / Medium |
-| 6 | Reálný průchod všech kapitol na iOS/Android bez debug zkratek | High / Medium / Low |
-| 7 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat prokázanou příčinu | Medium / Medium / Low |
-| 8 | Přirozenější koruny a městské povrchy se srovnáním před/po | Medium / Medium / Low |
-| 9 | Zpřesnit dokumentaci aktivního audia, testovacího pokrytí a odstranit prokazatelně mrtvé artefakty | Low / Small / Low |
+| 1 | Uzavřít práva k audio souborům a skutečný mobilní poslech | High / Small + vlastník / Low |
+| 2 | Reálný průchod všech kapitol na fyzickém iOS/Android bez debug zkratek | High / Medium / Low |
+| 3 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat pouze prokázanou příčinu | Medium / Medium / Low |
+| 4 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | Medium / Medium / Low |
+| 5 | Odlišit binárně duplicitní finding-b/finding-c feedback a případně přidat výraznější finální hudební motiv | Low / Small–Medium / Low |
+| 6 | Přirozenější koruny a městské povrchy se srovnáním před/po | Low / Medium / Low |
