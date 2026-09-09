@@ -8,7 +8,7 @@ Tento dokument popisuje skutečné chování obrazovek runtime `5.4.2`. Dialogov
 | Úvod lokality `briefScreen` | samostatný krok | Nová/Pokračovat nebo po výběru perku → gameplay | neběží | fokus na nadpis, Tab na „JDU NA TO“, Enter/mezerník | klepnutí, posun |
 | NPC `dialogScreen` | skutečný modal | akce u NPC → stejný gameplay | neběží | focus trap, Enter/mezerník, Escape zavře | klepnutí |
 | Určení vzorku `identifyScreen` | povinný modal | interakce se vzorkem → gameplay | neběží | focus trap, Tab, Enter/mezerník; Escape volbu neobejde | dvě volby klepnutím |
-| Kontrola podvodu `fraudScreen` | povinný modal | tři podklady v Malši → návrat do gameplaye po rozhodnutí | neběží | focus trap, Tab, Enter/mezerník; chybná volba vysvětlí nesrovnalosti a Escape kontrolu neobejde | dvě volby klepnutím |
+| Kontrola podvodu `fraudScreen` | povinný modal | tři indicie v Malši → návrat do gameplaye po rozhodnutí | neběží | focus trap, Tab, Enter/mezerník; chybná volba vysvětlí nesrovnalosti a Escape kontrolu neobejde | dvě volby klepnutím |
 | Kopání `digScreen` | modal/minihra | hotspot → gameplay nebo pauza | běží jen čas minihry | mezerník = úder, Escape = pauza | `digButton`, vlastní pointer |
 | Zahrabávání `digScreen` | modal/minihra | otevřená díra → gameplay nebo pauza | čas běží jen při držení; v pauze stojí | držet/pustit mezerník, Escape = pauza | držet/pustit `digButton` |
 | Perky `perkScreen` | samostatný povinný krok | dokončení lokality → briefing další lokality | neběží | fokus na nadpis, Tab a Enter/mezerník; Escape neobejde výběr | klepnutí na perk |

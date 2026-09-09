@@ -1,5 +1,18 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Narativní a UX copy pass
+
+- Chlum už netvrdí, že hráč vlastní certifikáty před začátkem sběru; certifikáty vznikají až po expertize nejlepších kusů před cestou do Slávie.
+- briefing finále vysvětluje expertizu a ztrátu složky s certifikáty, ale už neprozrazuje celý pozdější konflikt s Frantou;
+- Ločenická určovací minihra používá neutrální popisy znaků a před volbou neprozrazuje správnou odpověď;
+- Nesměň správně vede hráče nejdřív k souhlasu lesníka a teprve potom ke kopání a zahrabání profilů;
+- Besednice neprozrazuje krádež ježka předem a používá jednotně jméno Karel bez staré přezdívky;
+- finále používá „indicie“ místo neurčitých „podkladů“, civilnější dialog pořadatele a jasnější akční texty;
+- sjednoceno pojmenování KD Slávie, české UI texty, pluralizace nálezů a rekordů a výsledkové hodnocení;
+- dokončeny poslední textové návaznosti: Karel je po krádeži jmenován přímo, vstup do Slávie vede k nalezení složky, generický NPC fallback byl odstraněn a před výsledkem poroty se zobrazí krátký mezikrok s hotovou vitrínou;
+- PWA cache zvýšena na `runtime-31`.
+
+
 ## Finální hudební pass
 
 - Aktivní ambientní MP3 doplňuje lehká procedurální hudební vrstva s měkkými pady, basou a melodickým motivem; každá lokalita má vlastní harmonii a menu vlastní klidný motiv.
