@@ -523,6 +523,11 @@
         normalized.pendingPerks=[];
         migrated=true;
       }
+      if(sourceSchema<SAVE_SCHEMA&&normalized.levelIndex===4&&normalized.pendingTransition==="jury"){
+        normalized.expertiseCompleted=true;
+        if(normalized.stones.length&&!normalized.stones.some(stone=>stone.certified))certifyLegacyStones(normalized.stones);
+        migrated=true;
+      }
       if(normalized.levelIndex===4&&!normalized.expertiseCompleted&&normalized.pendingTransition!=="jury"){
         if(hasPlayableMalseWorld){
           normalized.expertiseCompleted=true;
