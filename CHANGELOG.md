@@ -1,5 +1,15 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Expertiza mezi Besednicí a Slávií
+
+- po dokončení Besednice a výběru perku se nově otevře samostatná povinná obrazovka Expertiza;
+- hráč se v ní dozví, že nejlepší kusy byly odborně posouzeny a byly k nim vystaveny certifikáty, které následně přebírá;
+- briefing Malše už expertizu nevypráví zpětně a začíná až příchodem s certifikáty ke KD Slávii;
+- přechod `pendingTransition="expertise"` se ukládá a po reloadu se obnoví bez přeskočení nebo opakovaného bodového bonusu;
+- smoke testy pokrývají plný narativní tok, reload, Escape a reflow nové obrazovky;
+- PWA cache zvýšena na `runtime-32`.
+
+
 ## Narativní a UX copy pass
 
 - Chlum už netvrdí, že hráč vlastní certifikáty před začátkem sběru; certifikáty vznikají až po expertize nejlepších kusů před cestou do Slávie.
