@@ -371,7 +371,7 @@
 
   function freshState() {
     return {
-      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0,
+      version:APP_VERSION, levelIndex:0, score:0, stones:[], heat:0, combo:1, comboTimer:0, caught:0, pendingTransition:null, pendingPerks:[],
       perks:{boots:0,scanner:0,shovel:0,quiet:0,case:0,eye:0}, stats:{digs:0,correct:0,misses:0,rare:0,filled:0,fraud:0,dossier:0}, sound:true
     };
   }
@@ -403,9 +403,14 @@
     clean.combo = Math.round(finiteNumber(data.combo, 1, 1, 6));
     clean.comboTimer = finiteNumber(data.comboTimer, 0, 0, 60);
     clean.caught = Math.round(finiteNumber(data.caught, 0, 0, 100000));
+    clean.pendingTransition = data.pendingTransition==="perk"||data.pendingTransition==="jury" ? data.pendingTransition : null;
     for (const [key, maximum] of Object.entries({ boots:3, scanner:3, shovel:3, quiet:3, case:2, eye:3 })) {
       clean.perks[key] = Math.round(finiteNumber(data.perks?.[key], 0, 0, maximum));
     }
+    const availablePerks=new Set(PERKS.filter(perk=>(clean.perks[perk.id]||0)<perk.max).map(perk=>perk.id));
+    clean.pendingPerks=clean.pendingTransition==="perk"&&Array.isArray(data.pendingPerks)
+      ? [...new Set(data.pendingPerks.filter(id=>availablePerks.has(id)))].slice(0,3)
+      : [];
     for (const key of Object.keys(clean.stats)) {
       clean.stats[key] = Math.round(finiteNumber(data.stats?.[key], 0, 0, 1000000));
     }
@@ -577,6 +582,7 @@
       world.runtime.pendingBoss=null;
       startRival("karel",pending.x,pending.y);
       toast("Dožeň zloděje ve chvíli, kdy se zastaví!","bad",2200);
+      save();
     }
   }
   function showHint(text){ui.hint.textContent=text;ui.hint.classList.remove("hidden");}
@@ -815,7 +821,16 @@
   function startNew(){
     state=freshState();audio.setEnabled(state.sound,{resume:false});syncSoundButton();world=null;restoredWorld=false;storage.remove(SAVE_KEY);showBrief(0);audio.start();audio.sfx("click");
   }
-  function continueGame(){if(!load()){startNew();return;}syncSoundButton();showBrief(state.levelIndex);audio.start();}
+  function continueGame(){
+    if(!load()){startNew();return;}
+    syncSoundButton();
+    if(state.pendingTransition){
+      audio.setTheme(LEVELS[state.levelIndex]?.music||"menu");audio.start();
+      if(state.pendingTransition==="jury"){showJury();return;}
+      showPerks();return;
+    }
+    showBrief(state.levelIndex);audio.start();
+  }
   function showBrief(index){
     state.levelIndex=index;mode="brief";setPlaying(false);const l=LEVELS[index];audio.setTheme(l.music);
     $("briefKicker").textContent=`LOKALITA ${index+1} / ${LEVELS.length}`;$("briefTitle").textContent=l.title;$("briefText").textContent=l.text;$("briefGoal").textContent=l.goal;const whyEl=$("briefWhy"); if(whyEl) whyEl.textContent=l.why||"Posil sbírku a pokračuj směrem do KD Slávie na akci Na zelené vlně.";
@@ -835,7 +850,20 @@
     delete r.bossDelay;
     if(world.rival?.name==="franta"){world.rival.maxHits=1;world.rival.baseSpeed=142;world.rival.speed=Math.min(finiteNumber(world.rival.speed,142,0,500),190);world.rival.escapeTarget={x:1650,y:980};}
   }
-  function enterLevel(){if(!restoredWorld)generateLevel(state.levelIndex);normalizeMalseWorld();restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();save();}
+  function enterLevel(){
+    if(!restoredWorld)generateLevel(state.levelIndex);
+    normalizeMalseWorld();
+    const pendingKarel=world?.id==="besednice"&&world.runtime?.pendingBoss&&!world.runtime.bossStarted
+      ? world.runtime.pendingBoss
+      : null;
+    restoredWorld=false;mode="playing";showOnly(null);setPlaying(true);audio.start();
+    if(pendingKarel){
+      world.runtime.pendingBoss=null;
+      startRival("karel",pendingKarel.x,pendingKarel.y);
+      toast("Karel pokračuje v útěku s ježkem","bad",1800);
+    }
+    save();
+  }
 
   function levelGoal(){
     const r=world.runtime;
@@ -938,6 +966,7 @@
     for(const h of world.hotspots){if(h.active&&dist(player,h)<=radius){h.revealed=true;h.ttl=9;world.radarPings.push({x:h.x,y:h.y,life:.62,maxLife:.62,kind:"profile"});count++;}}
     for(const item of world.items){if(item.active&&item.hidden&&dist(player,item)<=radius){item.hidden=false;world.radarPings.push({x:item.x,y:item.y,life:.62,maxLife:.62,kind:"stone"});count++;}}
     toast(count?`Radar odhalil ${count} ${count===1?"nález":"nálezy"}`:"Radar tady nic nezachytil",count?"good":"",900);
+    if(count)save();
   }
 
   function performAction(){
@@ -955,7 +984,7 @@
 
   function talkNpc(npc){
     if(world.id==="chlum"){showDialog("Václav","V","Vltavíny leží po bouřce v brázdách, ale splývají s hlínou. Projdi pole s radarem a odhalené kameny seber z povrchu.");return;}
-    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři vyznačené průzkumné profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");});return;}
+    if(world.id==="nesmen"&&!world.runtime.permit){showDialog("Lesník","L","Tři vyznačené průzkumné profily jsou povolené. Každý po prohlédnutí hned zahrab.",()=>{world.runtime.permit=true;npc.used=true;toast("Profily jsou povolené","good");save();});return;}
     showDialog(npc.name,npc.avatar,"Drž se úkolu a sleduj okolí.");
   }
   function showDialog(name,avatar,text,callback=null){mode="dialog";setPlaying(false);$("dialogName").textContent=name.toUpperCase();$("dialogAvatar").textContent=avatar;$("dialogText").textContent=text;dialogueCallback=callback;showOnly(screens.dialog);}
@@ -1059,7 +1088,7 @@
     if(!filling)state.heat=clamp(state.heat+4,0,100);
     audio.sfx("bad");
     toast(filling?"Zahrabání se nepovedlo – zkus to znovu":"Rytmus se rozpadl – zkus profil znovu","bad",1100);
-    findNearest();updateHUD(true);
+    findNearest();updateHUD(true);save();
   }
   function finishDig(){
     if(mode!=="dig"||digKind!=="dig"||!currentDig||!currentDig.active)return;const h=currentDig;h.active=false;state.stats.digs++;mode="playing";setPlaying(true);showOnly(null);
@@ -1174,6 +1203,7 @@
     r.throwTimer=Math.max(.55,1.12-r.hits*.17);r.target={x:rand(180,1620),y:rand(160,1020)};
     if(r.hits>=r.maxHits){r.active=false;world.runtime.bossDefeated=true;state.stats.rare++;ui.bossHud?.classList.add("hidden");addStone(makeStone("Besednice","hedgehog",true,8),r.x,r.y);}
     else toast(`Zastavení ${r.hits}/${r.maxHits} · Karel zrychluje`,"good",1100);
+    updateHUD(true);save();
   }
 
   function tryExit(){
@@ -1193,13 +1223,27 @@
     finishLevel();
   }
   function finishLevel(){
-    mode="transition";setPlaying(false);state.score+=700+state.combo*120;save();
-    if(state.levelIndex>=LEVELS.length-1){showJury();return;}
+    mode="transition";setPlaying(false);
+    if(!state.pendingTransition){
+      state.score+=700+state.combo*120;
+      state.pendingTransition=state.levelIndex>=LEVELS.length-1?"jury":"perk";
+      save();
+    }
+    if(state.pendingTransition==="jury"){showJury();return;}
     showPerks();
   }
   function showPerks(){
-    const candidates=PERKS.filter(p=>(state.perks[p.id]||0)<p.max).sort(()=>Math.random()-.5).slice(0,3);const list=$("perkList");list.innerHTML="";
-    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;save();showBrief(state.levelIndex);});list.append(b);});
+    mode="transition";setPlaying(false);
+    const available=PERKS.filter(p=>(state.perks[p.id]||0)<p.max);
+    const desired=Math.min(3,available.length);
+    let candidates=(state.pendingPerks||[]).map(id=>available.find(perk=>perk.id===id)).filter(Boolean);
+    if(candidates.length!==desired){
+      candidates=[...available].sort(()=>Math.random()-.5).slice(0,desired);
+      state.pendingPerks=candidates.map(perk=>perk.id);
+      save();
+    }
+    const list=$("perkList");list.innerHTML="";
+    candidates.forEach(p=>{const b=document.createElement("button");b.type="button";b.className="perk-option";b.innerHTML=`<b>${p.icon}</b><span><strong>${p.name}</strong><small>${p.text}</small></span>`;b.addEventListener("click",()=>{audio.sfx("click");state.perks[p.id]++;state.levelIndex++;state.pendingTransition=null;state.pendingPerks=[];save();showBrief(state.levelIndex);});list.append(b);});
     showOnly(screens.perk);
   }
 
@@ -1237,7 +1281,7 @@
   function caught(reason){
     if(player.invuln>0)return;dangerActive=false;dangerExposure=0;dangerWarned=false;player.invuln=2;shake=12;flash=.22;flashColor="255,90,80";state.caught++;state.heat=20;breakCombo();audio.sfx("catch");
     let lost=null;if(state.stones.length){const sorted=[...state.stones].sort((a,b)=>a.value-b.value);lost=state.perks.case>0&&sorted.length>1?sorted[0]:pick(sorted.slice(0,Math.min(2,sorted.length)));state.stones=state.stones.filter(s=>s.id!==lost.id);}
-    player.x=world.id==="malse"?720:world.id==="chlum"?360:world.id==="nesmen"?360:170;player.y=world.id==="malse"?1060:world.id==="chlum"?1070:world.id==="nesmen"?1050:1030;stopPlayerMotion();toast(`${reason}${lost?` · ztracen ${lost.name}`:""}`,"bad",1800);updateHUD(true);
+    player.x=world.id==="malse"?720:world.id==="chlum"?360:world.id==="nesmen"?360:170;player.y=world.id==="malse"?1060:world.id==="chlum"?1070:world.id==="nesmen"?1050:1030;stopPlayerMotion();toast(`${reason}${lost?` · ztracen ${lost.name}`:""}`,"bad",1800);updateHUD(true);save();
   }
 
   function angleDistance(a,b){return Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));}
@@ -2769,6 +2813,7 @@
           return {level:world.id,complete:goalComplete(),stones:state.stones.length};
         },
         exitCurrentLevel(){if(!world)return null;tryExit();return {mode,levelIndex:state.levelIndex};},
+        triggerCaught(reason="Testovací dopadení"){if(!world)return null;player.invuln=0;caught(reason);return {caught:state.caught,stones:state.stones.length,player:{x:player.x,y:player.y}};},
         digSnapshot(){return {mode,kind:digKind,holding:digHolding,hits:digHits,speed:digSpeed,timeLeft:digTimeLeft,zoneCenter:digZoneCenter,finishDelay:digFinishDelay,currentActive:Boolean(currentDig?.active),inputLocked:performance.now()<digInputLockUntil};},
         fillSnapshot(){return world?{open:world.runtime.open||0,filled:world.runtime.filled||0}:null;},
         malseSnapshot(){const r=world?.id==="malse"?world.runtime:null;return r?{registered:Boolean(r.registered),papers:r.papers||0,fraudResolved:Boolean(r.fraudResolved),fraudAttempts:r.fraudAttempts||0,bossStarted:Boolean(r.bossStarted),bossDefeated:Boolean(r.bossDefeated),dossierRecovered:Boolean(r.dossierRecovered),frantaEscaped:Boolean(r.frantaEscaped)}:null;},
@@ -2787,7 +2832,7 @@
         },
         snapCameraToPlayer(){camera.x=clamp(player.x-viewport.w/2,0,Math.max(0,world.w-viewport.w));camera.y=clamp(player.y-viewport.h/2,0,Math.max(0,world.h-viewport.h));return {x:camera.x,y:camera.y};},
         patrolSnapshot(){return world?world.patrols.filter(p=>p.active).map(p=>({type:p.type,x:p.x,y:p.y,angle:p.angle,visualAngle:p.visualAngle,turnAmount:p.turnAmount,facing:p.facing,pose:p.pose,moving:p.moving,motionRatio:p.motionRatio,wheelRotation:p.wheelRotation,distanceTravelled:p.distanceTravelled,working:p.working})):[];},
-        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
+        snapshot(){return {version:APP_VERSION,mode,level:world?.id,heat:state.heat,dangerActive,theftAlertShown,input:{x:input.x,y:input.y,pressed:input.pressed},player:{x:player.x,y:player.y,angle:player.angle,facing:player.facing,pose:player.pose,vx:player.vx,vy:player.vy,speedRatio:player.speedRatio},terrainCache:{key:terrainCache.key,generated:terrainCache.generated,cached:Boolean(terrainCache.canvas),scale:terrainCache.scale},world:world?{hotspots:world.hotspots.filter(h=>h.active).length,stones:world.items.filter(i=>i.active&&i.type==="stone").length,surfaceHidden:world.items.filter(i=>i.active&&i.hidden&&(i.type==="stone"||i.type==="sample")).length,surfaceVisible:world.items.filter(i=>i.active&&!i.hidden&&(i.type==="stone"||i.type==="sample")).length}:null,state:{levelIndex:state.levelIndex,stones:state.stones.length,score:state.score,pendingTransition:state.pendingTransition,caught:state.caught},boss:world?.rival?{name:world.rival.name,active:world.rival.active,hits:world.rival.hits,maxHits:world.rival.maxHits,phase:world.rival.phase,stunTimer:world.rival.stunTimer,dashTime:world.rival.dashTime,graceTimer:world.rival.graceTimer}:null};}
       };
     }
     addEventListener("resize",()=>requestAnimationFrame(resize));
