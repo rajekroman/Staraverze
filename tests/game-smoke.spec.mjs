@@ -714,6 +714,22 @@ test("rozehraná stará Malše se nevrací do Expertizy a certifikace se doplní
   await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 5 / 5");
   const second=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).state, SAVE_KEY);
   expect(second.stones.map(stone=>[stone.id,stone.certified])).toEqual(first.stones.map(stone=>[stone.id,stone.certified]));
+
+  await page.evaluate(saveKey=>{
+    localStorage.clear();
+    localStorage.setItem(saveKey,JSON.stringify({
+      version:"5.2.0",levelIndex:4,score:2400,
+      stones:[{id:"legacy-jury",name:"Kus před porotou",locality:"Nesměň",rarity:"good",weight:3,quality:84,value:2200}],
+      pendingTransition:"jury",perks:{},stats:{},sound:true
+    }));
+  },SAVE_KEY);
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#juryCount")).toHaveText("0 / 1");
+  const juryState=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).state,SAVE_KEY);
+  expect(juryState).toMatchObject({saveSchema:2,expertiseCompleted:true,pendingTransition:"jury"});
+  expect(juryState.stones[0]).toMatchObject({id:"legacy-jury",documented:true,certified:true});
 });
 
 test("Expertiza je robustní pro 0, 1 i 2 kameny", async ({ page }) => {
