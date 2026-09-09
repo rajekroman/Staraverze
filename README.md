@@ -21,6 +21,7 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu;
 - smoke matrix ověřuje desktop a obě orientace iPhonu v Chromiu i WebKitu jako CI aproximaci Chrome/Safari;
 - samostatný offline smoke ověřuje spuštění PWA z cache bez sítě.
+- ambientní zvuk lokalit doplňuje lehká procedurální hudební vrstva s odlišným motivem pro každou kapitolu; po návratu do menu pokračuje vlastní menu motiv bez obcházení autoplay omezení prohlížeče.
 
 ## Vývoj a ověření
 
