@@ -193,10 +193,12 @@ test("render: viewport culling vynechá objekty mimo kameru a referenční scén
   expect(live.rendered + live.culled).toBe(live.candidates);
 
   await page.evaluate(() => window.__lovecDebug.startNesmenReference());
-  await page.waitForTimeout(120);
+  await expect.poll(
+    () => page.evaluate(() => window.__lovecDebug.snapshot().renderStats.culled),
+    { timeout: 2_000 }
+  ).toBe(0);
   const reference = await page.evaluate(() => window.__lovecDebug.snapshot().renderStats);
   expect(reference.candidates).toBeGreaterThan(0);
-  expect(reference.culled).toBe(0);
   expect(reference.rendered).toBe(reference.candidates);
 });
 
