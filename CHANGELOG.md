@@ -9,6 +9,7 @@
 - Besednice neprozrazuje krádež ježka předem a používá jednotně jméno Karel bez staré přezdívky;
 - finále používá „indicie“ místo neurčitých „podkladů“, civilnější dialog pořadatele a jasnější akční texty;
 - sjednoceno pojmenování KD Slávie, české UI texty, pluralizace nálezů a rekordů a výsledkové hodnocení;
+- dokončeny poslední textové návaznosti: Karel je po krádeži jmenován přímo, vstup do Slávie vede k nalezení složky, generický NPC fallback byl odstraněn a před výsledkem poroty se zobrazí krátký mezikrok s hotovou vitrínou;
 - PWA cache zvýšena na `runtime-31`.
 
 
