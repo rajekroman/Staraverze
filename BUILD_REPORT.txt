@@ -1,62 +1,56 @@
-Lovec vltavínů Reborn 5.4.2 — aktuální ověřený stav
+Lovec vltavínů Reborn 5.4.2 — release verification profile
 
-OVĚŘENÍ 5.4.2
-- statická validace: PASS
-- desktop Chromium smoke: 22/22 PASS
-- iPhone portrait Chromium smoke: 22/22 PASS
-- iPhone landscape Chromium smoke: 22/22 PASS
-- desktop WebKit smoke: 22/22 PASS
-- iPhone portrait WebKit smoke: 22/22 PASS
-- iPhone landscape WebKit smoke: 22/22 PASS
-- offline Chromium PWA smoke: 1/1 PASS
-- visual regression: 12/12 PASS (menu, Chlum, radar, kopání × desktop/iPhone portrait/iPhone landscape)
-- všech 5 levelů: spuštěno a vykresleno bez runtime chyby
-- full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek PASS
-- uložený stav: migrace a normalizace PASS
-- uvolnění vstupu při pauze a ztrátě fokusu: PASS
-- PWA cache: online instalace -> aktivní service worker -> offline reload -> start Chlumu PASS
-- Chlum/Ločenice: povrchové nálezy jsou skryté do odhalení radarem PASS
-- Ločenice: reálné otevření identifikačního modalu, správné určení a penalizace chybné volby PASS
-- Chlum: bez starých obdélníkových výkopů PASS
-- Chlum: radar → 6 skutečných povrchových pickupů → odchod do další lokality PASS
-- kopání: klávesnice i mobilní pointer vstup, ochrana proti dvojímu úderu a odezva PASS
-- Nesměň: bez souhlasu lesníka nelze kopat; souhlas → 3 profily → 3× zahrabat → odchod PASS
-- Besednice: theft alert blokuje vstup, Karel nejde zasáhnout mimo stun okno a po 3 zásazích vrátí ježka PASS
-- Malše/Slávie: registrace → 3 podklady → kontrola Frantova vzorku → 1× zachránit složku (nebo bezpečný fallback při úniku) → výstavní sál a vitrína
-- noční Besednice: černá vymazaná plocha odstraněna
-- titulní nabídka v landscape: hlavní ovládací prvky zůstávají uvnitř viewportu
-- Na zelené vlně branding: menu zobrazuje logo, datum, místo, cíl výpravy a odkazy na akci; promo prvky zůstávají ve viewportu PASS
+AKTUÁLNÍ RELEASE GATE
+- workflow: Validate v5.4 continuation
+- celkem jobů: 15
+- static validation
+- clean GitHub Pages publish + publish/offline smoke
+- offline Chromium PWA smoke
+- gameplay smoke: desktop Chromium, iPhone portrait Chromium, iPhone landscape Chromium
+- gameplay smoke: desktop WebKit, iPhone portrait WebKit, iPhone landscape WebKit
+- visual regression: desktop, iPhone portrait, iPhone landscape
+- motion evidence: car, tractor, excavator
+- game-smoke suite: 60 test definitions v aktuální release větvi
+- visual-regression suite: 24 test definitions v aktuální release větvi
+- PWA cache revize: lovec-vltavinu-reborn-v5-4-2-runtime-29
+- čistý Pages balík: explicitní allowlist, bez testů/nástrojů/vývojové dokumentace
 
-PŮVODNÍ KONTROLA 5.4.1
+POKRYTÉ RELEASE SCÉNÁŘE
+- všech 5 levelů se spustí a vykreslí bez runtime chyby
+- full journey: Chlum → Ločenice → Nesměň → Besednice → Malše/Slávie → porota → výsledek
+- Chlum: radar → 6 povrchových nálezů → odchod
+- Ločenice: identifikace vzorků, chybná volba a opakované odhalení radarem
+- Nesměň: souhlas lesníka → 3 profily → 3× zahrabat → odchod
+- Besednice: theft alert → Karel → stun okna → 3 zásahy → návrat ježka
+- Slávie: certifikáty → registrace → 3 podklady → kontrola podvodu → Franta → výstavní sál → vitrína
+- Slávie: Franta lze zastavit reálným akčním tlačítkem v dotykově tolerantním dosahu
+- Slávie: bez cyklistů a policejního patrolu, včetně migrace starších uložených světů
+- fallback finále zůstává dohratelné i při Frantově úniku
+- save integrity: dopadení, radar, lesník, minihra, Karel, perk/jury transition a stabilní perk offer
+- staré/poškozené save: normalizace a bezpečná migrace
+- starší Malše save bez certifikační položky: doplnění chybějící složky bez softlocku
+- mobile controls: joystick + action, pointer lifecycle, portrait/landscape
+- accessibility UI: focus management, modal trap, 200% reflow proxy, reduced motion
+- audio lifecycle: mute, pause, background/visibility a theme switching
+- PWA: instalace, aktualizace herní cache, zachování cizí cache, offline reload
+- Pages: pouze explicitní dist/ a project-relative /Staraverze/ cesty
 
-Nalezené kritické chyby ve v5.4:
-1. Chyběly funkce drawPatrol, drawItem a drawHotspot. Hra spadla při prvním vykreslení levelu chybou ReferenceError.
-2. Upozornění o krádeži vytvářelo nový setTimeout v každém snímku, což vedlo k hromadění časovačů a nespolehlivému skrytí panelu.
-3. Cyklista v Malši začínal téměř na stejné pozici jako hráč a mohl způsobit okamžitou srážku.
-4. Zvětšený traktor měl původní malou kolizní oblast.
-5. Karel mohl hráče osvítit prakticky okamžitě po skončení krádeže.
-6. Pohybová stopa bosse se generovala i mimo sprint a svítilna se vizuálně kreslila také při omráčení.
+MANUÁLNÍ RELEASE GATE
+- Playwright WebKit je CI aproximace Safari, nikoli fyzický iPhone/Safari.
+- Pro finální veřejné vydání stále zbývá skutečný průchod na fyzickém iOS/Android zařízení.
+- Aktivní MP3 s licenčním stavem NOASSERTION vyžadují potvrzení distribučních práv.
+- Je nutný lidský poslech ambientů/efektů na reproduktoru a sluchátkách.
+- Haptická odezva není funkční podmínkou hry a na iOS/Safari se může lišit.
 
-Provedené opravy:
-- obnovené a sjednocené vykreslování patrol, předmětů a profilů;
-- bezpečné jednorázové zavření theft alertu;
-- krádež nyní krátce zmrazí hru a boss se spustí až po zavření upozornění;
-- bezpečný start hráče a cyklisty v Malši;
-- zvětšený hitbox traktoru;
-- 1,15 s ochranná fáze po nástupu Karla;
-- trail jen během sprintu a svítilna vypnutá při omráčení.
-
-Statické kontroly:
-- node --check game.js: OK
-- HTML ID odkazy: OK, 0 chybějících
-- duplicitní HTML ID: 0
-- odkazy na soubory: OK
-- service worker CORE assety: OK
-- manifest JSON: OK
-- 5 WAV stop: validní
-- ikony a hlavní motiv: validní
-- drawPatrol/drawItem/drawHotspot: každá právě 1 definice
-
-OMEZENÍ AUTOMATIZACE
-- Playwright WebKit je CI aproximace Safari, nikoli fyzický Safari na konkrétním Macu nebo iPhonu.
-- Haptická odezva přes navigator.vibrate není v Safari/iOS dostupná stejně jako v podporovaných Chromium prohlížečích; hra na ní není funkčně závislá.
+HISTORICKY OPRAVENÉ KRITICKÉ PROBLÉMY
+- chybějící drawPatrol/drawItem/drawHotspot a první-render ReferenceError
+- hromadění theft-alert timeoutů
+- okamžitá kolize cyklisty v Malši (cyklisté jsou nyní ze Slávie odstraněni)
+- chybný hitbox zvětšeného traktoru
+- okamžité osvětlení hráče Karlem
+- boss trail mimo sprint
+- Ločenice softlock po chybné identifikaci
+- reload softlock Karlova pendingBoss stavu
+- reload duplicita level completion bonusu
+- ztráta dopadení / ztraceného kamene po reloadu
+- starý Malše save bez certifikátů

@@ -12,6 +12,8 @@ test("hráč je bezejmenný sběratel pro výstavu, Franta sbírá kvůli peněz
   expect(source).toContain("Franta sbírá stejné vltavíny, aby je mohl prodat");
   expect(source).toContain("utratit peníze za automaty");
   expect(source).toContain("Frantovu podezřelému vzorku");
+  expect(source).toContain("certifikáty pravosti");
+  expect(source).toContain("Franta ti při příchodu vyrazí složku");
   expect(source).not.toContain("sběratel Franta");
   expect(source).not.toContain("SBĚRATEL FRANTA");
   expect(source).not.toContain("FETÁK FRANTA");
@@ -145,6 +147,7 @@ test("audit: skrytí stránky pozastaví kopání a odchod zruší odměnu", asy
 test("audit: Franta se nespustí před potvrzeným odhalením podvodu ani přes pauzu", async ({ page }) => {
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await recoverMalseCertificates(page);
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
   await page.keyboard.press("Space");
@@ -302,6 +305,18 @@ function watchErrors(page) {
 async function openDebug(page) {
   await page.goto("/?debug=1", { waitUntil: "domcontentloaded" });
   await expect.poll(() => page.evaluate(() => Boolean(window.__lovecDebug))).toBe(true);
+}
+
+async function recoverMalseCertificates(page) {
+  await page.evaluate(() => {
+    window.__lovecDebug.setPlayer(720,1060);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+  await page.evaluate(() => window.__lovecDebug.setPlayer(880,1030));
+  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
+  await page.keyboard.press("Space");
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.malseSnapshot()?.certificateRecovered)).toBe(true);
 }
 
 test("hlavní nabídka je celá dosažitelná v aktuálním viewportu", async ({ page }) => {
@@ -536,10 +551,45 @@ test("kopání reaguje na mezerník a po přesném úderu zrychluje", async ({ p
   expect(errors).toEqual([]);
 });
 
+test("starší Malše save bez certifikační položky se migruje bez softlocku", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.setPlayer(720,1060);
+    window.__lovecDebug.setScanCooldown(0);
+  });
+  await page.keyboard.press("Space");
+
+  await page.evaluate(saveKey => {
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    delete save.world.runtime.certificateRecovered;
+    save.world.runtime.registered=false;
+    save.world.runtime.papers=0;
+    save.world.runtime.bossStarted=false;
+    save.world.runtime.bossDefeated=false;
+    save.world.items=save.world.items.filter(item=>item.special!=="certificate");
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  const migrated = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  const certificate = migrated.world.items.find(item=>item.special==="certificate");
+  expect(certificate).toMatchObject({type:"paper",active:true,hidden:true});
+
+  await recoverMalseCertificates(page);
+  await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
+});
+
 test("legacy Malše save s bossDelay se převede na novou kontrolu podvodu", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await recoverMalseCertificates(page);
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450,250));
   await page.keyboard.press("Space");
   await page.locator("#dialogButton").click();
@@ -1072,6 +1122,14 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
 
   await openDebug(page);
   await page.evaluate(() => window.__lovecDebug.startLevel(4));
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
+  await expect(page.locator("#actionText")).toHaveText("CERTIFIKÁTY");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#objectiveLabel")).toHaveText("Najdi ztracené certifikáty pravosti");
+
+  await recoverMalseCertificates(page);
   await expect(page.locator("#objectiveLabel")).toHaveText("Registrace u vstupu do Slávie");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
@@ -1122,6 +1180,57 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
   await expect(page.locator(".exhibition-hall")).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("Slávie nemá cyklisty ani policii a Frantu lze chytit přímo akčním tlačítkem", async ({ page }, testInfo) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+  });
+
+  expect((await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type)))).not.toContain("bike");
+  expect((await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type)))).not.toContain("police");
+
+  await page.evaluate(() => {
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.spawnBoss("franta");
+    const player = window.__lovecDebug.snapshot().player;
+    window.__lovecDebug.setBossPose(player.x + 125, player.y, 0);
+  });
+  await expect(page.locator("#actionText")).toHaveText("ZASTAVIT");
+  const actionButton=page.locator("#actionButton");
+  if(testInfo.project.name.includes("iphone")){
+    await expect(actionButton).toBeVisible();
+    await actionButton.tap();
+  }else{
+    await page.keyboard.press("Space");
+  }
+  await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().boss)).toMatchObject({
+    name:"franta",active:false,hits:1,maxHits:1
+  });
+});
+
+test("starší Slávie save při načtení odstraní cyklisty a policii", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(saveKey => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    const save=JSON.parse(localStorage.getItem(saveKey));
+    save.world.patrols.push(
+      {type:"bike",x:620,y:820,points:[{x:620,y:820},{x:620,y:180}],index:1,speed:155,active:true},
+      {type:"police",x:1180,y:980,points:[{x:1180,y:980},{x:1220,y:260}],index:1,speed:92,vision:190,active:true}
+    );
+    localStorage.setItem(saveKey,JSON.stringify(save));
+  }, SAVE_KEY);
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const types=await page.evaluate(() => window.__lovecDebug.patrolSnapshot().map(p => p.type));
+  expect(types).not.toContain("bike");
+  expect(types).not.toContain("police");
 });
 
 test("Malše zůstane dohratelná, když Franta se složkou unikne", async ({ page }) => {

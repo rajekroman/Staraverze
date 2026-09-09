@@ -21,7 +21,11 @@ Pokračující vydání vycházející z opraveného balíčku 5.4.1. Na výslov
 - automatické kontroly spouštějí všech pět levelů na desktopu i v obou orientacích iPhonu;
 - smoke matrix ověřuje desktop a obě orientace iPhonu v Chromiu i WebKitu jako CI aproximaci Chrome/Safari;
 - samostatný offline smoke ověřuje spuštění PWA z cache bez sítě.
-- ambientní zvuk lokalit doplňuje lehká procedurální hudební vrstva s odlišným motivem pro každou kapitolu; po návratu do menu pokračuje vlastní menu motiv bez obcházení autoplay omezení prohlížeče.
+- ambientní zvuk lokalit doplňuje lehká procedurální hudební vrstva s odlišným motivem pro každou kapitolu; po návratu do menu pokračuje vlastní menu motiv bez obcházení autoplay omezení prohlížeče;
+- save checkpointy chrání dopadení, radarové odhalení, souhlas lesníka, výsledky minihry, Karlův souboj a pending perk/jury přechody před reload exploity a softlocky;
+- finále Slávie začíná ztracenými certifikáty pravosti, pokračuje registrací a prověřením Frantova vzorku a končí honičkou, vitrínou a porotou;
+- ze Slávie byli odstraněni cyklisté a policejní patrol; akce ZASTAVIT na Frantu má prioritní dotykově tolerantní dosah a je pokrytá browserovým testem;
+- starší Malše/Slávie save se při načtení migrují tak, aby nechyběla certifikační složka a aby odstraněné hlídky nezůstaly ve světě.
 
 ## Vývoj a ověření
 
