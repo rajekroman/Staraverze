@@ -1,5 +1,13 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Finále Slávie — registrace, podvod a výstavní vitrína
+
+- vstup do KD Slávie nyní skutečně obsluhuje registraci sbírky, kontrolu tří podkladů a povinné vyhodnocení Frantova vzorku;
+- po potvrzeném odhalení Franta vezme složku a utíká k východu; jedna kontextová akce složku zachrání, při úniku zůstává finále dohratelné díky kopii podkladů;
+- finále přechází do výstavního sálu a vitríny pro 0–3 kameny, kde porota hodnotí stav, doložený původ, pestrost lokalit a fair play namísto samotné hmotnosti;
+- zachován je společný humanoidní motion-state Franty a Karla z předchozí změny;
+- PWA cache byla zvýšena na `runtime-24`, aby se nový gameplay, UI a testované opravy propsaly i do dříve nainstalované hry.
+
 ## Společný pohyb pěších postav — základ
 
 - Franta a Karel mají stejný stav směru a chůze jako ostatní pěší postavy: `facing`, `pose`, `moving`, `motionRatio` a `motionPhase`;

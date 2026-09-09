@@ -8,6 +8,7 @@ Tento dokument popisuje skutečné chování obrazovek runtime `5.4.2`. Dialogov
 | Úvod lokality `briefScreen` | samostatný krok | Nová/Pokračovat nebo po výběru perku → gameplay | neběží | fokus na nadpis, Tab na „JDU NA TO“, Enter/mezerník | klepnutí, posun |
 | NPC `dialogScreen` | skutečný modal | akce u NPC → stejný gameplay | neběží | focus trap, Enter/mezerník, Escape zavře | klepnutí |
 | Určení vzorku `identifyScreen` | povinný modal | interakce se vzorkem → gameplay | neběží | focus trap, Tab, Enter/mezerník; Escape volbu neobejde | dvě volby klepnutím |
+| Kontrola podvodu `fraudScreen` | povinný modal | tři podklady v Malši → návrat do gameplaye po rozhodnutí | neběží | focus trap, Tab, Enter/mezerník; chybná volba vysvětlí nesrovnalosti a Escape kontrolu neobejde | dvě volby klepnutím |
 | Kopání `digScreen` | modal/minihra | hotspot → gameplay nebo pauza | běží jen čas minihry | mezerník = úder, Escape = pauza | `digButton`, vlastní pointer |
 | Zahrabávání `digScreen` | modal/minihra | otevřená díra → gameplay nebo pauza | čas běží jen při držení; v pauze stojí | držet/pustit mezerník, Escape = pauza | držet/pustit `digButton` |
 | Perky `perkScreen` | samostatný povinný krok | dokončení lokality → briefing další lokality | neběží | fokus na nadpis, Tab a Enter/mezerník; Escape neobejde výběr | klepnutí na perk |
@@ -25,7 +26,7 @@ Tento dokument popisuje skutečné chování obrazovek runtime `5.4.2`. Dialogov
 - Aktivní modal má přístupný název, případný popis, focus trap a zakrytý gameplay je pro klávesnici i čtečku nedostupný.
 - `inert` ani `aria-hidden` se nikdy nepřidává na `#app`, protože `#app` obsahuje i aktivní dialog.
 - Při zavření se fokus vrací na původní prvek jen pokud je stále připojený, viditelný a není v inertním stromu; jinak se použije smysluplný cíl navazující obrazovky nebo herní canvas.
-- Povinné volby Určení vzorku, Perk a Porota nelze přeskočit klávesou Escape.
+- Povinné volby Určení vzorku, Kontrola podvodu, Perk a Porota nelze přeskočit klávesou Escape.
 - `aria-live` je vyhrazeno pro diskrétní stavové zprávy: toast, krádež, úvod protivníka a zpětnou vazbu minihry. Časovač a pohyb ukazatele nejsou živé regiony.
 - `prefers-reduced-motion` vypíná CSS animace/přechody a runtime omezuje dekorativní pohybové efekty.
 

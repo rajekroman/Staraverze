@@ -22,7 +22,7 @@ OVĚŘENÍ 5.4.2
 - kopání: klávesnice i mobilní pointer vstup, ochrana proti dvojímu úderu a odezva PASS
 - Nesměň: bez souhlasu lesníka nelze kopat; souhlas → 3 profily → 3× zahrabat → odchod PASS
 - Besednice: theft alert blokuje vstup, Karel nejde zasáhnout mimo stun okno a po 3 zásazích vrátí ježka PASS
-- Malše/Slávie: 3 dokumenty → Franta → 2× dohnat → vstup do Slávie PASS
+- Malše/Slávie: registrace → 3 podklady → kontrola Frantova vzorku → 1× zachránit složku (nebo bezpečný fallback při úniku) → výstavní sál a vitrína
 - noční Besednice: černá vymazaná plocha odstraněna
 - titulní nabídka v landscape: hlavní ovládací prvky zůstávají uvnitř viewportu
 - Na zelené vlně branding: menu zobrazuje logo, datum, místo, cíl výpravy a odkazy na akci; promo prvky zůstávají ve viewportu PASS
