@@ -1,5 +1,15 @@
 # Produkční audit v5.4.2 — 8. 9. 2026
 
+## Vizuální polish a runtime cleanup — 10. 9. 2026
+
+Na základě otevřených bodů grafického a údržbového auditu byl proveden konzervativní pass bez změny gameplay geometrie nebo save schématu:
+
+- kruhové laloky stromů a borovic byly nahrazeny deterministickými organickými Bézierovými siluetami při zachování stávajících gradientů, fade při překrytí hráče a kolizí;
+- stín NPC a soupeřů je kreslen před vertikální bob animací těla, takže zůstává vizuálně ukotvený k terénu;
+- nábřežní a plaza dlažba Malše/Slávie používá nepravidelné spáry, patinu a lokální opravy; staré cyklistické značení bylo odstraněno jako vizuální relikt po odstranění cyklistů;
+- render queue dispatch, kontextový akční prompt, vignette a objective arrow jsou rozdělené do menších pojmenovaných helperů; cílový jednosouborový Canvas 2D runtime zůstává zachován;
+- PWA cache je `lovec-vltavinu-reborn-v5-4-2-runtime-36`.
+
 ## Aktualizace certifikace a narativní návaznosti — 9. 9. 2026
 
 Pracovní dokončovací revize vychází z `main@7412095799ff911f94b1af8caa27878f647a56f6`. Níže uvedený starší audit zůstává jako historie, ale pro certifikaci a finále platí novější stav:
@@ -75,11 +85,11 @@ Při vstupní kontrole nebyly otevřené issues ani PR. Byly přečteny runtime,
 - **Vyřešeno — audio lifecycle.** Mute, pokračování, pauza, background/visibility a rychlé přepínání theme mají automatické testy a společný AudioEngine lifecycle.
 - **Medium / Medium — vizuální testy.** Automatická brána nyní pokrývá více scén včetně Slávie a běží ve třech viewportových variantách. Fingerprint 8×6 s tolerancí 1,25 může stále přehlédnout malý lokální detail; screenshot artefakty proto zůstávají důležitou ruční kontrolou.
 - **Medium / Medium — výkon.** Terén čtyř map již má cache; drawable seznam se stále znovu alokuje a třídí, Malše překresluje celý povrch. Bez měření na slabším telefonu není odůvodněné zavádět pooling nebo nový renderer. Nové stínování korun přidává gradienty; je kandidátem na sprite cache až po profilu.
-- **Low / Small — údržba.** Jednosouborový runtime odpovídá cílové architektuře, ale dlouhé jednořádkové funkce komplikují review. Původní generátor WAV není současný MP3 build pipeline. Neexistují samostatné unit/lint/typecheck/build kroky; jde o statickou aplikaci s vlastní validací a Playwrightem, ne o rozbitý bundler.
+- **Částečně vyřešeno — údržba.** Nejproblematičtější render/HUD větve byly rozděleny do menších helperů bez architektonického přepisu. Jednosouborový runtime zůstává cílovou architekturou; původní generátor WAV není současný MP3 build pipeline. Samostatné unit/lint/typecheck kroky nejsou zavedeny, protože release gate nadále stojí na vlastní validaci a Playwrightu.
 
 ## Grafika
 
-Nová úprava řeší konkrétní čitelnost postavy a ploché koruny, nikoli celkový redesign. Styl zůstává kreslený 2D. Největší další přínos mají rozmanitější siluety korun, přirozenější přechody vegetace do terénu, kontakt postav se zemí a méně pravidelné městské plochy. Chlum již má členitější brázdy a organické profily jsou přítomné; nepřepisovat tyto hotové části bez referenčního porovnání. Zachovat radar jako podmínku odhalení.
+Vizuální pass nyní řeší i organičtější siluety korun, kontakt humanoidních postav se zemí a méně pravidelné městské plochy. Styl zůstává kreslený 2D; geometrie kolizí ani radar jako podmínka odhalení se nemění. Chlum si zachovává členitější brázdy a organické profily.
 
 ## Gameplay
 
@@ -108,4 +118,3 @@ Konkrétní finální výsledky testů jsou doplněny po dokončení běhů. Aut
 | 3 | Změřit frame-time, paměť a loading na slabším telefonu; optimalizovat pouze prokázanou příčinu | Medium / Medium / Low |
 | 4 | Detailní obrazové reference postavy, vegetace a všech pěti levelů | Medium / Medium / Low |
 | 5 | Odlišit binárně duplicitní finding-b/finding-c feedback a případně přidat výraznější finální hudební motiv | Low / Small–Medium / Low |
-| 6 | Přirozenější koruny a městské povrchy se srovnáním před/po | Low / Medium / Low |
