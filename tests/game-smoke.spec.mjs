@@ -895,6 +895,14 @@ test("certifikační složka nese ID konkrétních certifikovaných kamenů a z�
   expect([...recovered.recoveredCertificateStoneIds].sort()).toEqual(expected);
   expect(recovered.dossierRecovered).toBe(false);
 
+  await page.evaluate(()=>window.__lovecDebug.setPlayer(1450,250));
+  await expect(page.locator("#actionText")).toHaveText("REGISTROVAT");
+  await page.keyboard.press("Space");
+  await expect(page.locator("#dialogScreen")).toHaveClass(/visible/);
+  await expect(page.locator("#dialogText")).toContainText("2 vybranými kusy");
+  await page.locator("#dialogButton").click();
+  await expect.poll(()=>page.evaluate(()=>window.__lovecDebug.malseSnapshot().registered)).toBe(true);
+
   await page.evaluate(()=>window.__lovecDebug.completeGoal());
   const finale=await page.evaluate(()=>window.__lovecDebug.malseSnapshot());
   expect(finale.certificateRecovered).toBe(true);
@@ -946,6 +954,58 @@ test("porota nabízí pouze certifikované kameny a kvalitní necertifikovaný k
   await expect(page.locator("#juryList")).not.toContainText("elite-uncertified");
   for(const card of await page.locator("#juryList .stone-card small").all()) await expect(card).toContainText("CERTIFIKOVÁN");
   await expect(page.locator("#juryList .stone-card small").first()).toContainText(/PŮVOD (DOLOŽENÝ|NEDOLOŽENÝ)/);
+});
+
+test("kalibrace poroty rozlišuje slabý, solidní a výborný realistický profil", async ({ page }) => {
+  const cases=[
+    {
+      name:"weak", expectedScore:"10 890", expectedTitle:"Výprava dokončena", score:3500, caught:3,
+      stats:{filled:3,fraud:1,dossier:0},
+      stones:[
+        savedStone("weak-a",60,{certified:true,documented:false,rarity:"common",locality:"Chlum"}),
+        savedStone("weak-b",60,{certified:true,documented:false,rarity:"common",locality:"Chlum"}),
+        savedStone("weak-c",60,{certified:true,documented:false,rarity:"common",locality:"Chlum"})
+      ]
+    },
+    {
+      name:"solid", expectedScore:"19 540", expectedTitle:"Výstavní uznání", score:5500, caught:1,
+      stats:{filled:3,fraud:1,dossier:1},
+      stones:[
+        savedStone("solid-a",75,{certified:true,documented:true,rarity:"hedgehog",locality:"Besednice"}),
+        savedStone("solid-b",78,{certified:true,documented:true,rarity:"good",locality:"Ločenice"}),
+        savedStone("solid-c",82,{certified:true,documented:false,rarity:"common",locality:"Chlum"})
+      ]
+    },
+    {
+      name:"excellent", expectedScore:"22 960", expectedTitle:"Hlavní cena poroty", score:7000, caught:0,
+      stats:{filled:3,fraud:1,dossier:1},
+      stones:[
+        savedStone("excellent-a",92,{certified:true,documented:true,rarity:"hedgehog",locality:"Besednice"}),
+        savedStone("excellent-b",90,{certified:true,documented:true,rarity:"rare",locality:"Nesměň"}),
+        savedStone("excellent-c",88,{certified:true,documented:true,rarity:"good",locality:"Ločenice"})
+      ]
+    }
+  ];
+
+  for(const scenario of cases){
+    await page.goto("/");
+    await page.evaluate(({saveKey,scenario})=>{
+      localStorage.clear();
+      localStorage.setItem(saveKey,JSON.stringify({
+        version:"5.4.2",saveSchema:2,levelIndex:4,score:scenario.score,stones:scenario.stones,
+        caught:scenario.caught,expertiseCompleted:true,pendingTransition:"jury",perks:{},stats:scenario.stats,sound:true
+      }));
+    },{saveKey:SAVE_KEY,scenario});
+    await page.reload({waitUntil:"domcontentloaded"});
+    await page.locator("#continueButton").click();
+    await expect(page.locator("#juryList .stone-card")).toHaveCount(3);
+    for(let i=0;i<3;i++) await page.locator("#juryList .stone-card").nth(i).click();
+    await page.locator("#juryButton").click();
+    await expect(page.locator("#resultScreen")).toHaveClass(/visible/);
+    await expect(page.locator("#resultTitle"),scenario.name).toHaveText(scenario.expectedTitle);
+    const numeric=await page.locator("#resultScore").textContent();
+    expect(Number(String(numeric).replace(/\D/g,"")),scenario.name).toBe(Number(scenario.expectedScore.replace(/\D/g,"")));
+  }
 });
 
 test("strukturálně poškozený snapshot světa se zahodí a lokalita se bezpečně obnoví", async ({ page }) => {
