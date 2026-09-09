@@ -814,6 +814,15 @@
     if(Math.abs(nx)>.18)actor.facing=nx<0?-1:1;
     actor.pose=Math.abs(ny)>.66?(ny<0?"back":"front"):"side";
   }
+  function updateHumanoidMotionState(actor,dx,dy,movedDistance,dt,speedReference=160,{orient=true}={}){
+    const moving=movedDistance>.02;
+    if(orient&&moving)applyHumanoidDirection(actor,dx,dy);
+    actor.moving=moving;
+    const actualSpeed=dt>0?movedDistance/dt:0;
+    actor.motionRatio=moving?clamp(actualSpeed/Math.max(1,speedReference),0,1):0;
+    if(moving)actor.motionPhase=(actor.motionPhase||0)+movedDistance*.085;
+    actor.distanceTravelled=(actor.distanceTravelled||0)+movedDistance;
+  }
   function updatePlayerMovement(dt){
     player.animTime+=dt;
     const inputLength=Math.hypot(input.x,input.y);
@@ -1039,7 +1048,7 @@
 
   function startRival(name,x,y){
     world.runtime.bossStarted=true;
-    world.rival={name,displayName:name==="karel"?"KRYSTALOVÝ KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:name==="karel"?3:2,speed:name==="karel"?150:166,baseSpeed:name==="karel"?150:166,angle:0,target:{x:rand(250,1550),y:rand(220,950)},throwTimer:1.15,active:true,flashlight:name==="karel",vision:name==="karel"?245:0,baseVision:name==="karel"?245:0,halfAngle:name==="karel"?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:1.15,trail:[]};
+    world.rival={name,displayName:name==="karel"?"KRYSTALOVÝ KAREL":"FRANTA",x,y,r:30,hits:0,maxHits:name==="karel"?3:2,speed:name==="karel"?150:166,baseSpeed:name==="karel"?150:166,angle:0,facing:1,pose:"front",moving:false,motionRatio:0,motionPhase:0,distanceTravelled:0,target:{x:rand(250,1550),y:rand(220,950)},throwTimer:1.15,active:true,flashlight:name==="karel",vision:name==="karel"?245:0,baseVision:name==="karel"?245:0,halfAngle:name==="karel"?.5:0,seesPlayer:false,phase:1,hitFlash:0,dashTimer:1.8,dashTime:0,stunTimer:0,graceTimer:1.15,trail:[]};
     bossIntroTimer=2.35;
     const isKarel=name==="karel";
     if(ui.bossIntroName)ui.bossIntroName.textContent=isKarel?"KRYSTALOVÝ KAREL":"FRANTA";
@@ -1204,12 +1213,8 @@
           p.visualAngle+=clamp(delta,-maxTurn,maxTurn);
           p.turnAmount=approach(p.turnAmount||0,clamp(delta*2.2,-1,1),3.4*dt);
         }else p.turnAmount=approach(p.turnAmount||0,0,4.2*dt);
-      }else applyHumanoidDirection(p,dx,dy);
-      p.moving=p.speed>0&&movedDistance>.02;
-      const actualSpeed=dt>0?movedDistance/dt:0;
-      p.motionRatio=p.moving?clamp(actualSpeed/160,0,1):0;
-      p.motionPhase=(p.motionPhase||0)+movedDistance*.085;
-      p.distanceTravelled=(p.distanceTravelled||0)+movedDistance;
+      }
+      updateHumanoidMotionState(p,p.x-previousX,p.y-previousY,movedDistance,dt,160,{orient:!vehicle});
       if(vehicle){
         const wheelRadius=p.type==="tractor"?20*(p.scale||1):p.type==="bike"?9*(p.scale||1):6*(p.scale||1)*(p.visualScale||1);
         p.wheelRotation=(p.wheelRotation||0)+(wheelRadius>0?movedDistance/wheelRadius:0);
@@ -1230,6 +1235,7 @@
   function updateRival(dt){
     const r=world.rival;
     if(r&&r.active){
+      const previousX=r.x,previousY=r.y;
       r.hitFlash=Math.max(0,(r.hitFlash||0)-dt);
       r.stunTimer=Math.max(0,(r.stunTimer||0)-dt);
       r.graceTimer=Math.max(0,(r.graceTimer||0)-dt);
@@ -1247,6 +1253,8 @@
         if(r.graceTimer<=0&&r.name==="karel"&&r.dashTimer<=0){r.dashTimer=Math.max(1.25,2.5-r.phase*.35)+Math.random()*.55;r.dashTime=.42+.06*r.phase;r.angle=Math.atan2(player.y-r.y,player.x-r.x)+pick([-.72,.72]);audio.sfx("alert");}
       }
       r.x=clamp(r.x,80,1720);r.y=clamp(r.y,100,1120);
+      const movedX=r.x-previousX,movedY=r.y-previousY,movedDistance=Math.hypot(movedX,movedY);
+      updateHumanoidMotionState(r,movedX,movedY,movedDistance,dt,Math.max(160,r.baseSpeed||160));
       r.seesPlayer=false;
       if(r.graceTimer<=0&&r.flashlight&&r.stunTimer<=0&&insideVisionCone(r,r.vision,r.halfAngle)){
         r.seesPlayer=true;markDanger("Karlova svítilna",r.phase>=3?72:r.phase===2?64:58,r.phase>=3?1.15:r.phase===2?1.35:1.55);
@@ -2579,9 +2587,10 @@
 
         setScanCooldown(value=0){scanCooldown=Math.max(0,Number(value)||0);return scanCooldown;},
         setScanPulse(value=.45){scanPulse=clamp(Number(value)||0,0,1);return scanPulse;},
-        setBossPose(x,y,angle=0){if(!world?.rival)return null;world.rival.x=x;world.rival.y=y;world.rival.angle=angle;world.rival.speed=0;world.rival.target={x,y};return {x,y,angle};},
+        setBossPose(x,y,angle=0){if(!world?.rival)return null;world.rival.x=x;world.rival.y=y;world.rival.angle=angle;world.rival.speed=0;world.rival.target={x,y};world.rival.moving=false;world.rival.motionRatio=0;return {x,y,angle};},
         setHeat(value){state.heat=clamp(value,0,100);return state.heat;},
         setBossStun(value=1){if(!world?.rival)return null;world.rival.stunTimer=value;return world.rival.stunTimer;},
+        rivalSnapshot(){const r=world?.rival;return r?{name:r.name,active:r.active,x:r.x,y:r.y,angle:r.angle,facing:r.facing,pose:r.pose,moving:Boolean(r.moving),motionRatio:r.motionRatio||0,motionPhase:r.motionPhase||0,distanceTravelled:r.distanceTravelled||0,stunTimer:r.stunTimer||0,dashTime:r.dashTime||0}:null;},
         triggerTheft(){if(!world)return null;showTheftAlert();startRival("karel",player.x+180,player.y-100);return {shown:theftAlertShown,boss:world.rival?.name};},
         startDigChallenge(index=2){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);if(world.id==="nesmen")world.runtime.permit=true;const hotspot=world.hotspots.find(item=>item.active);if(!hotspot)return null;hotspot.revealed=true;startDig(hotspot);return {mode,level:world.id};},
         startFillChallenge(index=2){state=freshState();state.levelIndex=clamp(index,0,LEVELS.length-1);generateLevel(state.levelIndex);mode="playing";showOnly(null);setPlaying(true);if(world.id==="nesmen")world.runtime.permit=true;const hole={type:"hole",x:player.x+80,y:player.y,r:46,w:74,h:42,angle:0,active:true};world.items.push(hole);world.runtime.open=(world.runtime.open||0)+1;startFill(hole);return {mode,level:world.id};},
