@@ -434,7 +434,7 @@
     return clean;
   }
 
-  let state = freshState();  let state = freshState();
+  let state = freshState();
   let mode = "menu";
   let viewport = {w:innerWidth,h:innerHeight,dpr:1};
   let world = null;
@@ -547,7 +547,7 @@
       return true;
     } catch { return false; }
   }
-  function refreshContinue()  function refreshContinue(){ $("continueButton").classList.toggle("hidden",!storage.get(SAVE_KEY)); }
+  function refreshContinue(){ $("continueButton").classList.toggle("hidden",!storage.get(SAVE_KEY)); }
   function syncSoundButton(){
     const button=$("soundButton");if(!button)return;
     button.textContent=state.sound?"♫":"×";
@@ -1426,7 +1426,7 @@
     $("juryDescription").textContent=target?`Vyber ${target===1?"jeden kámen":target===2?"dva kameny":"tři kameny"} z certifikovaných kusů. Porota hodnotí stav, doložený původ a pestrost lokalit; samotná hmotnost body nepřidává.`:"V tomto save není žádný certifikovaný kámen. Výpravu lze dokončit mimo soutěž, ale vitrína zůstane prázdná.";
     $("juryCount").textContent=`0 / ${target}`;$("juryButton").disabled=target>0;$("juryButton").textContent=target?"POSTAVIT VITRÍNU":"PŘEDSTOUPIT PŘED POROTU";showOnly(screens.jury);
   }
-  function submitJury()  function submitJury(){
+  function submitJury(){
     if(mode!=="jury")return;
     const button=$("juryButton");
     button.disabled=true;
