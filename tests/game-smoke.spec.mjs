@@ -989,6 +989,8 @@ test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }
   await expect(page.locator("#juryCount")).toHaveText("3 / 3");
   await expect(page.locator("#juryButton")).toBeEnabled();
   await page.locator("#juryButton").click();
+  await expect(page.locator("#juryDescription")).toHaveText("Vitrína je připravená. Porota přichází.");
+  await expect(page.locator("#juryButton")).toHaveText("POROTA PŘICHÁZÍ");
 
   await expect(page.locator("#resultScreen")).toHaveClass(/visible/);
   await expect(page.locator("#resultScore")).not.toHaveText("0");
@@ -1006,6 +1008,7 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
 
   const triggered = await page.evaluate(() => window.__lovecDebug.triggerTheft());
   expect(triggered).toEqual({ shown: true, boss: "karel" });
+  await expect(page.locator("#theftAlert strong")).toHaveText("KAREL TI UKRADL JEŽKA");
 
   await page.keyboard.down("KeyD");
   await expect.poll(() => page.evaluate(() => window.__lovecDebug.snapshot().input)).toEqual({ x: 0, y: 0, pressed: false });
@@ -1014,6 +1017,8 @@ test("krádež v Besednici zablokuje vstup a Karel jde porazit jen ve stun oknec
     () => page.evaluate(() => window.__lovecDebug.snapshot().theftAlertShown),
     { timeout: 5_000 }
   ).toBe(false);
+  await expect(page.locator("#bossIntroText")).toHaveText("Karel ti sebral ježka a utíká. Po sprintu se na chvíli zastaví — tehdy ho chyť.");
+  await expect(page.locator("#toast")).toHaveText("Dožeň Karla. Chyť ho, až se zastaví.");
 
   await page.evaluate(() => {
     const player = window.__lovecDebug.snapshot().player;
@@ -1214,7 +1219,7 @@ test("Malše projdou registrací, kontrolou podvodu, jedním zachycením Franty 
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
   await page.evaluate(() => window.__lovecDebug.setPlayer(1450, 250));
-  await expect(page.locator("#actionText")).toHaveText("SLOŽKA");
+  await expect(page.locator("#actionText")).toHaveText("NAJDI SLOŽKU");
   await page.keyboard.press("Space");
   await expect(page.locator("#objectiveLabel")).toHaveText("Najdi složku s certifikáty");
 
@@ -1350,6 +1355,7 @@ test("finále lze dokončit i s prázdnou sbírkou", async ({ page }) => {
   await expect(page.locator("#juryButton")).toBeEnabled();
   await expect(page.locator("#juryDescription")).toContainText("prázdná");
   await page.locator("#juryButton").click();
+  await expect(page.locator("#juryDescription")).toHaveText("Vitrína je připravená. Porota přichází.");
   await expect(page.locator("#resultScreen")).toHaveClass(/visible/);
   await expect(page.locator("#resultScore")).not.toHaveText("0");
 });
