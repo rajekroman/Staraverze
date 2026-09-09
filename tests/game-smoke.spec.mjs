@@ -621,6 +621,70 @@ test("rozehraný level obnoví nálezy, runtime i pozici", async ({ page }) => {
   expect(restored.state.stones).toBe(1);
 });
 
+test("dopadení se uloží okamžitě včetně ztraceného kamene a návratové pozice", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.completeGoal();
+  });
+
+  const penalty = await page.evaluate(() => window.__lovecDebug.triggerCaught("Kontrola save"));
+  expect(penalty.caught).toBe(1);
+  expect(penalty.stones).toBe(5);
+  expect(penalty.player).toEqual({x:360,y:1070});
+
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(saved.state.caught).toBe(1);
+  expect(saved.state.stones).toHaveLength(5);
+  expect(saved.player).toMatchObject({x:360,y:1070});
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await page.locator("#briefButton").click();
+  const restored = await page.evaluate(() => window.__lovecDebug.snapshot());
+  expect(restored.state).toMatchObject({caught:1,stones:5});
+  expect(restored.player).toMatchObject({x:360,y:1070});
+});
+
+test("perk a porota se po reloadu obnoví bez opakovaného bodového bonusu", async ({ page }) => {
+  await openDebug(page);
+  await page.evaluate(() => {
+    localStorage.clear();
+    window.__lovecDebug.startLevel(0);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  const perkSave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(perkSave.state.pendingTransition).toBe("perk");
+  const perkScore = perkSave.state.score;
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#perkScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(key => JSON.parse(localStorage.getItem(key)).state.score, SAVE_KEY))).toBe(perkScore);
+  await page.locator(".perk-option").first().click();
+  await expect(page.locator("#briefKicker")).toHaveText("LOKALITA 2 / 5");
+  const advanced = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(advanced.state).toMatchObject({levelIndex:1,pendingTransition:null});
+
+  await page.evaluate(() => {
+    window.__lovecDebug.startLevel(4);
+    window.__lovecDebug.completeGoal();
+    window.__lovecDebug.exitCurrentLevel();
+  });
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  const jurySave = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), SAVE_KEY);
+  expect(jurySave.state.pendingTransition).toBe("jury");
+  const juryScore = jurySave.state.score;
+
+  await page.reload({waitUntil:"domcontentloaded"});
+  await page.locator("#continueButton").click();
+  await expect(page.locator("#juryScreen")).toHaveClass(/visible/);
+  expect((await page.evaluate(key => JSON.parse(localStorage.getItem(key)).state.score, SAVE_KEY))).toBe(juryScore);
+});
+
 test("celá výprava projde z Chlumu až k porotě a výsledku", async ({ page }) => {
   const errors = watchErrors(page);
   await openDebug(page);
