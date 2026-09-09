@@ -21,7 +21,7 @@
 ## Příběhové role hráče a Franty
 
 - hlavní postava zůstává záměrně bezejmenná: je to přímo hráč, opravdový sběratel, který vltavíny nehledá kvůli penězům, ale chce sestavit nejlepší sbírku a vystavit ji na Na zelené vlně;
-- Franta je jasně odlišený antagonista: vltavíny sbírá kvůli prodeji a penězům na drogy, nikoli kvůli sběratelství nebo výstavě;
+- Franta je jasně odlišený antagonista: vltavíny sbírá kvůli prodeji a penězům na automaty, nikoli kvůli sběratelství nebo výstavě;
 - Chlum vysvětluje rozdílnou motivaci obou postav už při prvním briefingu;
 - finále u KD Slavie staví proti sobě hráčovu výstavní sbírku a Frantovu snahu nálezy zpeněžit kolem akce;
 - odstraněno označení „FETÁK FRANTA“ i zavádějící „SBĚRATEL FRANTA“; v HUD je jednoduše „FRANTA“.
