@@ -838,6 +838,11 @@
     const r=world.runtime||(world.runtime={});
     r.papers=Math.round(finiteNumber(r.papers,0,0,3));
     if(typeof r.certificateRecovered!=="boolean")r.certificateRecovered=Boolean(r.registered||r.papers>0||r.bossStarted||r.bossDefeated);
+    if(!r.certificateRecovered){
+      const certificate=world.items.find(item=>item.type==="paper"&&item.special==="certificate");
+      if(certificate)certificate.active=true;
+      else addItem("paper",880,1030,{hidden:true,special:"certificate",label:"složka s certifikáty pravosti"});
+    }
     if(typeof r.registered!=="boolean")r.registered=Boolean(r.papers>0||r.bossStarted||r.bossDefeated);
     if(typeof r.fraudResolved!=="boolean")r.fraudResolved=Boolean(r.bossStarted||r.bossDefeated);
     if(typeof r.bossStarted!=="boolean")r.bossStarted=false;
