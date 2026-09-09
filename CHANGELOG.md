@@ -13,7 +13,7 @@
 - Expertiza a finále mají bezpečný fallback pro 0/1/2 kameny bez softlocku, přičemž nulová vitrína je považována jen za legacy/poškozený-save scénář;
 - save schema 2 migruje starý `levelIndex=4` bez přechodu do Expertizy, ale již rozehranou Malši nevrací zpět a deterministicky doplní certifikované kusy;
 - smoke sada rozšířena na 70 testů a PR workflow nyní spouští browser smoke, visual regression i offline gate ještě před mergem;
-- PWA cache zvýšena na `runtime-33`.
+- PWA cache zvýšena na `runtime-34`.
 
 ## Narativní a UX copy pass
 

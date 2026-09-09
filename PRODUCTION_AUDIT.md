@@ -12,7 +12,7 @@ Pracovní dokončovací revize vychází z `main@98f6949cf598c254eecb8c9b1b176b9
 - porota nabízí pouze certifikované kameny, ale `documented` zůstává samostatně bodované;
 - save schema 2 řeší starý `levelIndex=4` bez Expertizy, rozehranou Malši zachovává a migraci provádí idempotentně;
 - browser smoke, visual regression a offline testy se nově spouštějí i na pull requestu, nikoli až po merge do `main`;
-- PWA runtime cache této revize je `lovec-vltavinu-reborn-v5-4-2-runtime-33`.
+- PWA runtime cache této revize je `lovec-vltavinu-reborn-v5-4-2-runtime-34`.
 
 Nulová vitrína zůstává pouze defenzivním fallbackem pro legacy nebo poškozený save; normální průchod po Besednici garantuje alespoň příběhový ježek.
 
