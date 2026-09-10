@@ -8,6 +8,7 @@ Ruční gate zůstává záměrně otevřený: soubory označené `NOASSERTION` 
 
 ```sh
 open assets/audio/ambient/ambient-chlum.mp3
+open assets/audio/ambient/ambient-locenice.mp3
 open assets/audio/ambient/ambient-nesmen.mp3
 open assets/audio/ambient/ambient-besednice.mp3
 open assets/audio/ambient/ambient-slavia.mp3

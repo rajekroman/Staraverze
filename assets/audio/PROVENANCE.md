@@ -4,6 +4,10 @@ The active soundtrack and effect files in this directory are the supplied produc
 `LICENSE.md` and this `PROVENANCE.md` travel with the public audio payload.
 `v73-audio-build-audit.json` remains in the source repository as an internal integrity record and is intentionally excluded from the runtime package.
 
+The current user-supplied soundtrack has one dedicated loop for every chapter:
+Chlum, Ločenice, Nesměň, Besednice and Malše/KD Slávie. The menu intentionally
+reuses the Chlum loop.
+
 The four shared effects below were supplied from the earlier `pr297` asset bundle. The same bytes were present in the other supplied work directories; the SHA-256 values confirm that one canonical copy is sufficient:
 
 | File | SHA-256 |

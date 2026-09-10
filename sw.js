@@ -1,9 +1,10 @@
-const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-36";
+const CACHE = "lovec-vltavinu-reborn-v5-4-2-runtime-37";
 const CORE = [
   "./","./index.html","./style.css","./game.js","./manifest.webmanifest",
   "./icon-180.png","./icon-192.png","./icon-512.png",
   "./assets/audio/ambient/ambient-besednice.mp3","./assets/audio/ambient/ambient-chlum.mp3",
-  "./assets/audio/ambient/ambient-nesmen.mp3","./assets/audio/ambient/ambient-slavia.mp3",
+  "./assets/audio/ambient/ambient-locenice.mp3","./assets/audio/ambient/ambient-nesmen.mp3",
+  "./assets/audio/ambient/ambient-slavia.mp3",
   "./assets/audio/effects/danger-besednice.mp3","./assets/audio/effects/danger-caught.mp3",
   "./assets/audio/effects/danger-chlum.mp3","./assets/audio/effects/danger-nesmen.mp3",
   "./assets/audio/effects/danger-pulse.mp3","./assets/audio/effects/danger-slavia.mp3",
