@@ -32,6 +32,7 @@ release:
 
 - `ambient-besednice.mp3`
 - `ambient-chlum.mp3`
+- `ambient-locenice.mp3`
 - `ambient-nesmen.mp3`
 - `ambient-slavia.mp3`
 - `danger-caught.mp3`
@@ -45,7 +46,7 @@ release:
 - `finding-b.mp3`
 - `finding-c.mp3`
 
-Canonical production payload: **2361176 bytes**, below the project-wide 5 MB
+Canonical production payload: **2692997 bytes**, below the project-wide 5 MB
 audio ceiling.
 
 Technical codec/bitrate/duration fields are asserted only for binaries whose

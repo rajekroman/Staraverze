@@ -137,7 +137,7 @@
       this.musicTracks = {
         menu: "./assets/audio/ambient/ambient-chlum.mp3",
         field: "./assets/audio/ambient/ambient-chlum.mp3",
-        meadow: "./assets/audio/ambient/ambient-nesmen.mp3",
+        meadow: "./assets/audio/ambient/ambient-locenice.mp3",
         forest: "./assets/audio/ambient/ambient-nesmen.mp3",
         night: "./assets/audio/ambient/ambient-besednice.mp3",
         city: "./assets/audio/ambient/ambient-slavia.mp3"

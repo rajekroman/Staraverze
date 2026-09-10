@@ -17,6 +17,7 @@ export const PUBLISH_FILES = Object.freeze([
   "icon-512.png",
   "assets/audio/ambient/ambient-besednice.mp3",
   "assets/audio/ambient/ambient-chlum.mp3",
+  "assets/audio/ambient/ambient-locenice.mp3",
   "assets/audio/ambient/ambient-nesmen.mp3",
   "assets/audio/ambient/ambient-slavia.mp3",
   "assets/audio/effects/danger-besednice.mp3",

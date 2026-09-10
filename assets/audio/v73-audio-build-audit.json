@@ -1,40 +1,73 @@
 {
   "schema_version": 2,
-  "integrity_auditor": "GitHub Actions stat + sha256sum",
+  "integrity_auditor": "GitHub Actions stat + sha256sum; replacement technical metadata measured with ffprobe",
   "source": "Mixed provenance; see per-file license_source.",
-  "total_bytes": 2361176,
+  "total_bytes": 2692997,
   "files": [
     {
       "file": "ambient-besednice.mp3",
-      "bytes": 598509,
-      "sha256": "4669ebe70bab8004ad26bf016add8663d6224f99b854dd60f4058aa2a84d2216",
-      "technical_metadata_verified": false,
+      "bytes": 483309,
+      "sha256": "c28f5b9e527861aab3f56af0f317499d0379fe069cd4b2dded64f7d3f7f075ca",
+      "technical_metadata_verified": true,
       "license_spdx": "NOASSERTION",
-      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata.",
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bit_rate": 192247,
+      "duration_seconds": 20.112
     },
     {
       "file": "ambient-chlum.mp3",
-      "bytes": 598509,
-      "sha256": "f159d529caced4a698ce348d8d4abfd375653f210deca94486fdaa2ccda854bc",
-      "technical_metadata_verified": false,
+      "bytes": 482157,
+      "sha256": "1371ee29a3713e7e38beae857ccb8c41ec4454278d41bf970b34fae507620e9a",
+      "technical_metadata_verified": true,
       "license_spdx": "NOASSERTION",
-      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata.",
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bit_rate": 192247,
+      "duration_seconds": 20.064
+    },
+    {
+      "file": "ambient-locenice.mp3",
+      "bytes": 482157,
+      "sha256": "e544a2098fa98be99390536eee6242ef3dc1a5e4c67fbbe0eb86995d96375dd3",
+      "technical_metadata_verified": true,
+      "license_spdx": "NOASSERTION",
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata.",
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bit_rate": 192247,
+      "duration_seconds": 20.064
     },
     {
       "file": "ambient-nesmen.mp3",
-      "bytes": 598509,
-      "sha256": "53ab8786387dda318c9d50f21db30c3f74586321fc1fe3113df385c3f70d0e0b",
-      "technical_metadata_verified": false,
+      "bytes": 482157,
+      "sha256": "caf56e4e81fd9cdec4e0a64d3f4f6fa33bcb47f3c13d77ed0f3c42aa6ac2ebb6",
+      "technical_metadata_verified": true,
       "license_spdx": "NOASSERTION",
-      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata.",
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bit_rate": 192247,
+      "duration_seconds": 20.064
     },
     {
       "file": "ambient-slavia.mp3",
-      "bytes": 284589,
-      "sha256": "1534b563cdab5ef4c19f4ab13999fee8bbf61e38240b78d24996ad5c8084e1b9",
-      "technical_metadata_verified": false,
+      "bytes": 482157,
+      "sha256": "168e5722898118882ecb90eb84e097eca27c0c79f7d3a9ee51250178876a2fd9",
+      "technical_metadata_verified": true,
       "license_spdx": "NOASSERTION",
-      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata."
+      "license_source": "User-supplied production audio; upstream origin/license not asserted by repository metadata.",
+      "codec": "mp3",
+      "sample_rate_hz": 48000,
+      "channels": 2,
+      "bit_rate": 192247,
+      "duration_seconds": 20.064
     },
     {
       "file": "danger-besednice.mp3",

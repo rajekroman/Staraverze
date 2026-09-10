@@ -1,5 +1,12 @@
 # Lovec vltavínů Reborn 5.4.2
 
+## Samostatná hudba pro všech pět kapitol
+
+- nahrazeny ambientní podklady Chlumu, Nesměně, Besednice a Malše/KD Slávie dodanými produkčními MP3;
+- přidán samostatný podklad Ločenic, které už nesdílejí stopu s Nesmění;
+- všech pět stop je zařazeno do publikačního balíčku, offline cache a integrity auditu;
+- PWA cache zvýšena na `runtime-37`, aby se nové podklady načetly i ve dříve nainstalované hře.
+
 ## Vizuální polish a konzervativní runtime cleanup
 
 - stromové a borovicové koruny mají deterministické organické obrysy místo čistě kruhových laloků; fade při překrytí hráče a kolize zůstávají beze změny;
